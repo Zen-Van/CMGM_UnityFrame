@@ -1,0 +1,29 @@
+--项目lua的主定义
+--定义了lua接口与C#接口的对应关系
+--定义了常用的工具函数
+util = require 'xlua/util.lua'
+
+luaBridge = CS.LuaBridge
+
+function combine(func1, func2)
+	return function()
+		local rst = func1()
+		func2(rst)
+	end
+end
+
+--系统预留函数，不要在lua中调用
+LuaExecuteFinished = luaBridge.LuaExecuteFinished
+
+
+
+--带延迟回调的函数
+Talk = util.async_to_sync(luaBridge.Talk)	--对话
+
+
+
+
+
+--工具&测试相关
+Wait = util.async_to_sync(luaBridge.Wait)	--等待函数（秒）
+DebugLog = luaBridge.DebugLog	--控制台打印测试（打印内容）

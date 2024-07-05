@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b84de37df276e7b44b6ab4269f7aa788, type: 3}
+  m_Name: CmgmFrameSettings
+  m_EditorClassIdentifier: 
+  IS_TRUE_AB_LOAD_IN_EDITOR: 0
+  IS_LUA_LOAD_FROM_AB_IN_EDITOR: 0
+  ROOT_FILE_URI: main.lua.txt
+  TEXT_PRINTER_SPEED: 5
+  TEXT_PRINTER_STAY: 1

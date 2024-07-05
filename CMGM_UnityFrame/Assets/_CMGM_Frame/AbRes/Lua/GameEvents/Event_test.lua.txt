@@ -1,0 +1,7 @@
+Talk(100000,"1223aaaa啊了a")
+
+Talk(100000,"你好，世界！")
+
+DebugLog("控制台打印")
+Wait(2)
+DebugLog("2s后的控制台打印！")
