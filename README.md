@@ -6,9 +6,10 @@
 [![star](https://img.shields.io/github/stars/Zen-Van/CMGM_UnityFrame?style=social)](https://github.com/Zen-Van/CMGM_UnityFrame/stargazers)
 
 木蝉的Unity框架。
-[框架文档](https://github.com/Zen-Van/CMGM_UnityFrame/wiki)
 
-后续会持续更新工程内容、并逐步在Wiki里更新框架文档。
+项目说明详见：[Wiki文档](https://github.com/Zen-Van/CMGM_UnityFrame/wiki)
+
+后续会持续更新工程内容、并逐步在Wiki里更新使用文档。
 
 使用时请遵循Apache2.0相关开源协议。
 
