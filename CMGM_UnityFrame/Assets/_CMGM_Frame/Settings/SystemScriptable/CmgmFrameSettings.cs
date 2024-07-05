@@ -36,4 +36,8 @@ public class CmgmFrameSettings : ScriptableObject
     [LabelText("打印完毕停留时间")]
     [Range(0.5f, 2.5f)]
     public float TEXT_PRINTER_STAY;
+
+    [BoxGroup("场景相关")]
+    [LabelText("主角在的默认场景")]
+    public string DEFAULT_SCENE;
 }

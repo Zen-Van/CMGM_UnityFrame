@@ -2,12 +2,13 @@
 
 [![License](https://img.shields.io/badge/License-Apache2.0-red)](https://github.com/Zen-Van/CMGM_UnityFrame/edit/Master/LICENSE)
 [![Unity Version](https://img.shields.io/badge/unity-2022.3.34.f1c1-green)](https://unity.cn/releases/lts/2022) 
-[![fork](https://img.shields.io/github/forks/Zen-Van/CMGM_UnityFrame?style=social)](https://github.com/Zen-Van/CMGM_UnityFrame)
-[![star](https://img.shields.io/github/stars/Zen-Van/CMGM_UnityFrame?style=social)](https://github.com/Zen-Van/CMGM_UnityFrame)
+[![fork](https://img.shields.io/github/forks/Zen-Van/CMGM_UnityFrame?style=social)](https://github.com/Zen-Van/CMGM_UnityFrame/forks)
+[![star](https://img.shields.io/github/stars/Zen-Van/CMGM_UnityFrame?style=social)](https://github.com/Zen-Van/CMGM_UnityFrame/stargazers)
 
 木蝉的Unity框架。
+[框架文档](https://github.com/Zen-Van/CMGM_UnityFrame/wiki)
 
-后续会持续更新工程内容、并逐步在Wiki里更新使用文档。
+后续会持续更新工程内容、并逐步在Wiki里更新框架文档。
 
 使用时请遵循Apache2.0相关开源协议。
 
