@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 
 public static class GameSystem
 {
@@ -32,9 +33,14 @@ public static class GameSystem
     //回到主界面
     public static async UniTask GoToMainUI()
     {
+        //清空运行时档案
+        GameRuntimeData.Instance = null;
+
+        //切回主界面
         UIManager.Instance.ClearPanel();
+        await SceneManager.LoadSceneAsync("MainScene");
+        UIManager.Instance.SetUICameraToMain();
         UIManager.Instance.ShowPanel<MainPanel>().Forget();
-        await ScenesManager.Instance.LoadSceneAsync("MainScene");
     }
 
 

@@ -21,12 +21,9 @@ public class MainPanel : BasePanel
                 //根据Runtime数据安装Gameplay运行环境（基础的需要载入内存的东西都载入内存）
                 RuntimeEnvSetup.SetupBasic();
 
-                //异步进入游戏
-                ScenesManager.Instance.LoadSceneAsync(GameRuntimeData.Instance.Player_curScene,
+                //进入世界
+                LevelLoader.Instance.LoadMapSceneAsync(GameRuntimeData.Instance.Player_curScene,
                     new Vector3(GameRuntimeData.Instance.Player_Pos_X, GameRuntimeData.Instance.Player_Pos_Y, GameRuntimeData.Instance.Player_Pos_Z)).Forget();
-                //切换UI
-                UIManager.Instance.HidePanel<MainPanel>(true);
-                UIManager.Instance.ShowPanel<LevelPanel>().Forget();
                 break;
             case "btnLoad":
                 //读取存档，将数据写入运行时数据
@@ -39,13 +36,9 @@ public class MainPanel : BasePanel
                 //根据存档数据，安装其他附加的Gameplay运行环境
                 //TODO
 
-                //进入游戏
-                ScenesManager.Instance.LoadSceneAsync(GameRuntimeData.Instance.Player_curScene,
+                //进入世界
+                LevelLoader.Instance.LoadMapSceneAsync(GameRuntimeData.Instance.Player_curScene,
                     new Vector3(GameRuntimeData.Instance.Player_Pos_X, GameRuntimeData.Instance.Player_Pos_Y, GameRuntimeData.Instance.Player_Pos_Z)).Forget();
-
-                //切换UI
-                UIManager.Instance.HidePanel<MainPanel>(true);
-                UIManager.Instance.ShowPanel<LevelPanel>().Forget();
                 break;
             case "btnQuit":
                 UIManager.Instance.HidePanel(nameof(MainPanel));

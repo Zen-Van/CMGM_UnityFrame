@@ -40,10 +40,17 @@ public class UIManager : Singleton<UIManager>
     //因为管理器初始化时执行的同步方法和操作逻辑较多，所以要在GameStart的时候初始化该管理器
     private UIManager()
     {
+        //创建UI摄像机
+        uiCamera = GameObject.Instantiate
+            (ResManager.Instance.Load<GameObject>("UI/UICamera", E_ResLoaderType.Resources))
+            .GetComponent<Camera>();
+        GameObject.DontDestroyOnLoad(uiCamera.gameObject);
+
         //创建UI面板
         uiCanvas = GameObject.Instantiate
             (ResManager.Instance.Load<GameObject>("UI/Canvas", E_ResLoaderType.Resources))
             .GetComponent<Canvas>();
+        uiCanvas.worldCamera = uiCamera;
         GameObject.DontDestroyOnLoad(uiCanvas);
 
         //创建EventSystem
@@ -65,6 +72,7 @@ public class UIManager : Singleton<UIManager>
         };
     }
 
+    private Camera uiCamera;
     private Canvas uiCanvas;
     private EventSystem uiEventSystem;
 
@@ -91,6 +99,16 @@ public class UIManager : Singleton<UIManager>
             default:
                 return null;
         }
+    }
+
+    /// <summary>
+    /// 若主摄像机未赋值UI摄像机，则给主相机赋值UI摄像机
+    /// </summary>
+    public void SetUICameraToMain()
+    {
+        List<Camera> overlayCameras = Camera.main.GetUniversalAdditionalCameraData().cameraStack;
+        if (!overlayCameras.Contains(uiCamera))
+            overlayCameras.Add(uiCamera);
     }
     #endregion
 
