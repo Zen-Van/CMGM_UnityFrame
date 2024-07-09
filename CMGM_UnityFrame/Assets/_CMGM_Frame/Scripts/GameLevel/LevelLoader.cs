@@ -26,16 +26,31 @@ public class LevelLoader:Singleton<LevelLoader>
 
         //全屏显示加载面板
         LoadingPanel loadingPanel = await UIManager.Instance.ShowPanel<LoadingPanel>();
+        //加载期间，UICamera独立显示
+        UIManager.Instance.SetUICameraOverlap(null);
         //加载场景
-        AsyncOperation operation = SceneManager.LoadSceneAsync(name,LoadSceneMode.Additive);
+        AsyncOperation operation = SceneManager.LoadSceneAsync(name);
         loadingPanel.StartLoading(operation);
+
+        //加载场景进度暂时是这样算的：
+        //1、场景加载的operation占80%
+        //2、载入场景数据并找到各个根节点2%
+        //3、初始化角色位置2%
+        //4、设置拾取物数据8%
+        //5、设置场景事件数据8%
+        CmgmLog.FrameLog_Normal("这里进行了部分延时模拟加载，后续可视情况删除或改变其时长");
+
+        #region 加载阶段1：场景加载的operation占80%
         //等待场景加载完毕
         await operation;
 
         //若加载场景时未找到存档数据
         if (GameRuntimeData.Instance == null)
             return;
+        #endregion
 
+        #region 加载阶段2：载入场景数据并找到各个根节点2%
+        await UniTask.WaitForSeconds(0.02f);
 
         //如果没有初始化过该场景数据，尝试初始化该场景数据
         if (!GameRuntimeData.Instance.SavedScenes.Contains(name))
@@ -43,26 +58,46 @@ public class LevelLoader:Singleton<LevelLoader>
         else
             Debug.Log("[持久化测试]载入已存在的场景：" + name);
 
-
         //得到场景触发器的根节点，准备初始化各个触发器
         var mapTriggerRoot = GameObject.FindWithTag(E_Tag.MapTriggerRoot.ToString());
+        
+        loadingPanel.slider.value += 0.02f;
+        #endregion
 
-        //如果没有初始化过拾取物数据，尝试初始化拾取物数据
-        UpdatePickups(mapTriggerRoot);
-        //如果没有初始化过场景事件数据，尝试初始化场景事件数据
-        UpdateMapGameEvents(mapTriggerRoot);
+        #region 加载阶段3：初始化角色位置2%
+        await UniTask.WaitForSeconds(0.02f);
 
         //初始化新场景的player
         if (GameSystem.curPlayer != null)
             GameSystem.curPlayer.transform.position = playerPos;
 
+        loadingPanel.slider.value += 0.02f;
+        #endregion
+
+        #region 加载阶段4：设置拾取物数据8%
+        await UniTask.WaitForSeconds(0.05f);
+
+        //如果没有初始化过拾取物数据，尝试初始化拾取物数据
+        UpdatePickups(mapTriggerRoot);
+
+        loadingPanel.slider.value += 0.08f;
+        #endregion
+
+        #region 加载阶段5：设置场景事件数据8%
+        await UniTask.WaitForSeconds(0.05f);
+
+        //如果没有初始化过场景事件数据，尝试初始化场景事件数据
+        UpdateMapGameEvents(mapTriggerRoot);
+
+        loadingPanel.slider.value += 0.08f;
+        #endregion
+
         CmgmLog.FrameLogPositive("此处会短暂的出现两个audio listener，因为音频系统还没有写。\n" +
             "后续音频监听器将设计成DontDestroyOnLoad的单例，这样就不会受到场景加载卸载的影响。");
-        //关闭旧场景
-        await SceneManager.UnloadSceneAsync(lastScene);
+
         //刷新场景UI
         UIManager.Instance.ClearPanel();
-        UIManager.Instance.SetUICameraToMain();
+        UIManager.Instance.SetUICameraOverlap(Camera.main);//加载场景完毕，将ui相机叠加回主相机
         UIManager.Instance.ShowPanel<LevelPanel>().Forget();
     }
 

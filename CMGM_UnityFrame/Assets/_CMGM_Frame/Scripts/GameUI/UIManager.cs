@@ -101,14 +101,34 @@ public class UIManager : Singleton<UIManager>
         }
     }
 
+    private List<Camera> uiAttachs = new List<Camera>();
     /// <summary>
-    /// 若主摄像机未赋值UI摄像机，则给主相机赋值UI摄像机
+    /// 将UI摄像机叠加到其他相机上
     /// </summary>
-    public void SetUICameraToMain()
+    /// <param name="target">叠加到的相机，若为null则UI相机会在屏幕前独立显示</param>
+    public void SetUICameraOverlap(Camera target)
     {
-        List<Camera> overlayCameras = Camera.main.GetUniversalAdditionalCameraData().cameraStack;
+        if (target == null)
+        {
+            foreach (Camera c in uiAttachs)
+            {
+                if (c != null)
+                    c.GetUniversalAdditionalCameraData().cameraStack.Remove(uiCamera);
+            }
+            uiAttachs.Clear();
+
+            uiCamera.GetUniversalAdditionalCameraData().renderType = CameraRenderType.Base;
+            return;
+        }
+
+        uiCamera.GetUniversalAdditionalCameraData().renderType = CameraRenderType.Overlay;
+
+        List<Camera> overlayCameras = target.GetUniversalAdditionalCameraData().cameraStack;
         if (!overlayCameras.Contains(uiCamera))
+        {
             overlayCameras.Add(uiCamera);
+            uiAttachs.Add(target);
+        }
     }
     #endregion
 

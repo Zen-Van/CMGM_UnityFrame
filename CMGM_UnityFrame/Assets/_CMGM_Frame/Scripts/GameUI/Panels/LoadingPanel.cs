@@ -20,7 +20,15 @@ public class LoadingPanel : BasePanel
     {
         if (GameSystem.isloading)
         {
-            slider.value = operation.progress;
+            //加载场景进度暂时是这样算的：
+            //1、场景加载的operation占80%
+            //2、载入场景数据并找到各个根节点2%
+            //3、初始化角色位置2%
+            //4、设置拾取物数据8%
+            //5、设置场景事件数据8%
+
+            if (!operation.isDone)
+                slider.value = operation.progress * 0.8f;
         }
     }
 
@@ -35,7 +43,6 @@ public class LoadingPanel : BasePanel
         this.operation = operation;
         GameSystem.isloading = true;
     }
-
 
     private void OnDisable()
     {

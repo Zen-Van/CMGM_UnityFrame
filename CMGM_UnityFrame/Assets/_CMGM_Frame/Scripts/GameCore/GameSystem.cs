@@ -37,7 +37,7 @@ public static class GameSystem
         //切回主界面
         UIManager.Instance.ClearPanel();
         await SceneManager.LoadSceneAsync("MainScene");
-        UIManager.Instance.SetUICameraToMain();
+        UIManager.Instance.SetUICameraOverlap(Camera.main);
         UIManager.Instance.ShowPanel<MainPanel>().Forget();
     }
 

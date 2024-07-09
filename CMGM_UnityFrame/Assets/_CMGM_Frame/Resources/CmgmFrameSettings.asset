@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b84de37df276e7b44b6ab4269f7aa788, type: 3}
   m_Name: CmgmFrameSettings
   m_EditorClassIdentifier: 
+  IS_LOG_ACTIVE: 1
   IS_TRUE_AB_LOAD_IN_EDITOR: 0
   IS_LUA_LOAD_FROM_AB_IN_EDITOR: 0
   ROOT_FILE_URI: main.lua.txt
