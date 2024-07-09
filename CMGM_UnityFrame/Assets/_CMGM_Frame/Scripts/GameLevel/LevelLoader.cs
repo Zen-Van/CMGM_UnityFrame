@@ -25,11 +25,12 @@ public class LevelLoader:Singleton<LevelLoader>
         Scene lastScene = SceneManager.GetActiveScene();
 
         //全屏显示加载面板
-
+        LoadingPanel loadingPanel = await UIManager.Instance.ShowPanel<LoadingPanel>();
         //加载场景
         AsyncOperation operation = SceneManager.LoadSceneAsync(name,LoadSceneMode.Additive);
+        loadingPanel.StartLoading(operation);
+        //等待场景加载完毕
         await operation;
-
 
         //若加载场景时未找到存档数据
         if (GameRuntimeData.Instance == null)
