@@ -42,7 +42,7 @@ public static class GameSystem
     }
 
     /// <summary>
-    /// 是否正在场景加载重
+    /// 是否正在场景加载中
     /// </summary>
     public static bool isloading = false;
 

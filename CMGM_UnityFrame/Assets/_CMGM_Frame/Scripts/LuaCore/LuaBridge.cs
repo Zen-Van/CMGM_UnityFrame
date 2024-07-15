@@ -18,8 +18,6 @@ public class LuaBridge
         CmgmLog.FrameLogPositive("结束了该lua脚本的调用");
     }
 
-
-
     #region 交互&UI
     /// <summary>
     /// 对话命令
@@ -52,10 +50,6 @@ public class LuaBridge
     }
 
     #endregion
-
-
-
-
 
     #region 工具&测试
     public static void DebugLog(string content)

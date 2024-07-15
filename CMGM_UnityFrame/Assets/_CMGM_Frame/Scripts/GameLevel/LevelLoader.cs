@@ -92,9 +92,6 @@ public class LevelLoader:Singleton<LevelLoader>
         loadingPanel.slider.value += 0.08f;
         #endregion
 
-        CmgmLog.FrameLogPositive("此处会短暂的出现两个audio listener，因为音频系统还没有写。\n" +
-            "后续音频监听器将设计成DontDestroyOnLoad的单例，这样就不会受到场景加载卸载的影响。");
-
         //刷新场景UI
         UIManager.Instance.ClearPanel();
         UIManager.Instance.SetUICameraOverlap(Camera.main);//加载场景完毕，将ui相机叠加回主相机
