@@ -21,9 +21,6 @@ public class LevelLoader:Singleton<LevelLoader>
     /// <returns></returns>
     public async UniTask LoadMapSceneAsync(string name, Vector3 playerPos = default)
     {
-        //记录上一个场景
-        Scene lastScene = SceneManager.GetActiveScene();
-
         //全屏显示加载面板
         LoadingPanel loadingPanel = await UIManager.Instance.ShowPanel<LoadingPanel>();
         //加载期间，UICamera独立显示
