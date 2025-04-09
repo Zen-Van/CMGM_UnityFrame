@@ -17,5 +17,5 @@
 [UniTask](https://github.com/Cysharp/UniTask)
 ## 引用插件说明
 包内插件仅供学习使用，若用于商业目的还请自行购买重新导入：<br>
-[Odin Inspector](https://assetstore.unity.com/packages/tools/utilities/odin-inspector-and-serializer-89041) 
+[Odin Inspector](https://assetstore.unity.com/packages/tools/utilities/odin-inspector-and-serializer-89041) 、
 [Yarn Spinner](https://assetstore.unity.com/packages/tools/behavior-ai/yarn-spinner-for-unity-267061)
