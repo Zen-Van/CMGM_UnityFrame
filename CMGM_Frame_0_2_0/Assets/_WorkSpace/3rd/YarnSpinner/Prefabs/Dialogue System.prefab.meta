@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 7f29e5f7ffdea4a6793cefb278b61f0c
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 267061
+  packageName: Yarn Spinner for Unity
+  packageVersion: 2.5.2
+  assetPath: Assets/YarnSpinner/Prefabs/Dialogue System.prefab
+  uploadId: 717764

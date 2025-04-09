@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 5b5f09716ba7bce4a8d2f115ea6083d3
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 267061
+  packageName: Yarn Spinner for Unity
+  packageVersion: 2.5.2
+  assetPath: Assets/YarnSpinner/Tests/Runtime/VariableStorageTests/VariableStorageTests.unity
+  uploadId: 717764

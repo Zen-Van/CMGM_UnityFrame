@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: a04d7174042154a47a29ac4f924e0474
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 267061
+  packageName: Yarn Spinner for Unity
+  packageVersion: 2.5.2
+  assetPath: Assets/YarnSpinner/Tests/Runtime/DialogueRunnerTests/DialogueRunnerTest.unity
+  uploadId: 717764

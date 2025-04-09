@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 7ac06ab5f152f5044b042bb90157b8d1
+AssemblyDefinitionImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 267061
+  packageName: Yarn Spinner for Unity
+  packageVersion: 2.5.2
+  assetPath: Assets/YarnSpinner/Tests/Editor/YarnSpinnerEditorTests.asmdef
+  uploadId: 717764

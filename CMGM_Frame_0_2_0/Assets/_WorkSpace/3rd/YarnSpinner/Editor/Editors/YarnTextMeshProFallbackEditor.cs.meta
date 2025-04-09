@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: 20204a7ba9004a3db629284f50991ae6
+timeCreated: 1684292521
+AssetOrigin:
+  serializedVersion: 1
+  productId: 267061
+  packageName: Yarn Spinner for Unity
+  packageVersion: 2.5.2
+  assetPath: Assets/YarnSpinner/Editor/Editors/YarnTextMeshProFallbackEditor.cs
+  uploadId: 717764

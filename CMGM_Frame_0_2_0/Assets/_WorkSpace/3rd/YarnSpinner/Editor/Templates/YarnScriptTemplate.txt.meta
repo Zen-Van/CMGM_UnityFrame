@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 4f4ca4a46020a454f80e2ac78eda5aa1
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 267061
+  packageName: Yarn Spinner for Unity
+  packageVersion: 2.5.2
+  assetPath: Assets/YarnSpinner/Editor/Templates/YarnScriptTemplate.txt
+  uploadId: 717764

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 196fd0eadc8f948bd8826563153b96c9
+AssemblyDefinitionImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 267061
+  packageName: Yarn Spinner for Unity
+  packageVersion: 2.5.2
+  assetPath: Assets/YarnSpinner/Tests/Runtime/CommandDispatchTests/AssemblyDefinition/YarnSpinnerTests.CommandsInAnAssemblyDefinition.asmdef
+  uploadId: 717764

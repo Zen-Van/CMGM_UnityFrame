@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 5803e1d7bdc0b42d88017d33800d2635
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 267061
+  packageName: Yarn Spinner for Unity
+  packageVersion: 2.5.2
+  assetPath: Assets/YarnSpinner/Prefabs/Rounded Options List View.prefab
+  uploadId: 717764

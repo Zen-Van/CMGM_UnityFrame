@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 45ef7c8cb3b944679826ad6a5fa6accb
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 267061
+  packageName: Yarn Spinner for Unity
+  packageVersion: 2.5.2
+  assetPath: Assets/YarnSpinner/Runtime/DLLs/YarnSpinner.xml
+  uploadId: 717764
