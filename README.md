@@ -7,8 +7,8 @@
 
 木蝉的Unity框架v0.2.0。引擎更新为了unity6，剧情系统替换为了yarn spinner，其他接口有所更新。
 
-项目说明详见：[Wiki文档](https://github.com/Zen-Van/CMGM_UnityFrame/wiki)
-
+v0.1.0版项目说明详见：[Wiki文档](https://github.com/Zen-Van/CMGM_UnityFrame/wiki)
+新版Wiki待补充
 后续会持续更新工程内容、并逐步在Wiki里更新使用文档。
 
 使用时请遵循Apache2.0相关开源协议。
