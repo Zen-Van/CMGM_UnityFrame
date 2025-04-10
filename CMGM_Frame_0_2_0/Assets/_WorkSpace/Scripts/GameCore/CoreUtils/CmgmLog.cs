@@ -18,11 +18,11 @@ public class CmgmLog
     {
         if (!CmgmFrameSettings.Instance.IS_LOG_ACTIVE) return;
 
-        Debug.Log($"<color=#E0FFFF>[小蝉]</color>：{log}");
+        Debug.Log($"<color=white>[小蝉]</color>：{log}");
     }
     public static void fNegative(string log)
     {
-        if(!CmgmFrameSettings.Instance.IS_LOG_ACTIVE) return;
+        if (!CmgmFrameSettings.Instance.IS_LOG_ACTIVE) return;
 
         Debug.Log($"<color=#e0c110>[小蝉]</color>：{log}");
     }
@@ -32,12 +32,21 @@ public class CmgmLog
 
         Debug.LogWarning($"<color=#d69509>[小蝉]</color>：{log}");
     }
-    
+
     public static void fError(string log)
     {
-        if(!CmgmFrameSettings.Instance.IS_LOG_ACTIVE) return;
+        if (!CmgmFrameSettings.Instance.IS_LOG_ACTIVE) return;
 
         Debug.LogError($"<color=#FF7F00>[小蝉]</color>：{log}");
+    }
+    #endregion
+
+    #region yarnLog打印
+    public static void yarnNormal(string log)
+    {
+        if (!CmgmFrameSettings.Instance.IS_LOG_ACTIVE) return;
+
+        Debug.Log($"<color=#white>[YarnSpinner]</color>：{log}");
     }
     #endregion
 
@@ -68,4 +77,6 @@ public class CmgmLog
 
         Debug.Log($"<color=#d4eb07>[TODO]</color>：{log}");
     }
+    
+
 }
