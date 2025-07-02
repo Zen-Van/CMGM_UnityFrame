@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: e727e3495b7464d28aa9d2d5cf3a06bf
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 253396
+  packageName: vTabs 2
+  packageVersion: 2.1.2
+  assetPath: Assets/vTabs/VTabsCache.cs
+  uploadId: 731049

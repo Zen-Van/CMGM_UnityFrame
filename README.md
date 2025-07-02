@@ -20,3 +20,6 @@ v0.1.0版项目说明详见：[Wiki文档](https://github.com/Zen-Van/CMGM_Unity
 ## 引用插件说明
 包内插件仅供学习使用，若用于商业目的还请自行购买重新导入：<br>
 [Odin Inspector](https://assetstore.unity.com/packages/tools/utilities/odin-inspector-and-serializer-89041) 
+[vFolder 2](https://assetstore.unity.com/packages/tools/utilities/vfolders-2-255470)
+[vTab 2](https://assetstore.unity.com/packages/tools/utilities/vtabs-2-253396)
+[vHierarchy 2](https://assetstore.unity.com/packages/tools/utilities/vhierarchy-2-253397)

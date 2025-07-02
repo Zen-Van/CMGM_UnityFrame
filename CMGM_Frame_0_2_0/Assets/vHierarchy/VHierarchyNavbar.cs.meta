@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: b0951d821533c4f9486bb1430540ef3b
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 253397
+  packageName: vHierarchy 2
+  packageVersion: 2.1.2
+  assetPath: Assets/vHierarchy/VHierarchyNavbar.cs
+  uploadId: 765418

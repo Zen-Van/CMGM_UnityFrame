@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 61290d425f1c94a8cbfb56f754ca6757
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 253397
+  packageName: vHierarchy 2
+  packageVersion: 2.1.2
+  assetPath: Assets/vHierarchy/VHierarchyPalette.cs
+  uploadId: 765418

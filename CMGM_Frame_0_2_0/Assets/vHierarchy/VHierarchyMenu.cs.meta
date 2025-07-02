@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 4d7f0448bdeda4aad9cfdd9e7c7ee27f
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 253397
+  packageName: vHierarchy 2
+  packageVersion: 2.1.2
+  assetPath: Assets/vHierarchy/VHierarchyMenu.cs
+  uploadId: 765418
