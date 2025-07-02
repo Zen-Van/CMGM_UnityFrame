@@ -1,7 +1,7 @@
 # CMGM_UnityFrame
 
 [![License](https://img.shields.io/badge/License-Apache2.0-red)](https://github.com/Zen-Van/CMGM_UnityFrame/edit/Master/LICENSE)
-[![Unity Version](https://img.shields.io/badge/unity-6000.0.43f1-green)](https://unity.com/releases/editor/archive) 
+[![Unity Version](https://img.shields.io/badge/unity-6000.0.48f1-green)](https://unity.com/releases/editor/archive) 
 [![fork](https://img.shields.io/github/forks/Zen-Van/CMGM_UnityFrame?style=social)](https://github.com/Zen-Van/CMGM_UnityFrame/forks)
 [![star](https://img.shields.io/github/stars/Zen-Van/CMGM_UnityFrame?style=social)](https://github.com/Zen-Van/CMGM_UnityFrame/stargazers)
 

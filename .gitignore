@@ -5,7 +5,7 @@
 # And 木蝉修改了一部分
 
 # Mac缓存文件
-.DS_Store
+*.DS_Store
 
 # 可构建文件夹
 [Ll]ibrary/
