@@ -28,11 +28,10 @@ public class GameInitializer : MonoBehaviour
         UniTask.Void(async () =>
         {
             //将UI包载入内存随时准备使用
+            await AddressablesResMgr.Instance.PreloadAssetsAsync("UI");
             //初始化UI管理器
-
-            //加载所有场景AB包
+            UIManager.Instance.Init();
             
-
             //初始化存档管理器，载入存档元数据
             
             //逻辑层初始化完成
@@ -74,9 +73,8 @@ public class GameInitializer : MonoBehaviour
             //等待逻辑层初始化完成
             //await UniTask.WaitUntil(() => GameSystem.GameInitFinished);
             //跳转至主界面
-            //await GameSystem.GoToMainUI();
-            //把beforeGame包卸载了
-            //ResManager.Instance.UnLoad_AssetBundle("before_game", true);
+            //await 
+
         });
     }
     
