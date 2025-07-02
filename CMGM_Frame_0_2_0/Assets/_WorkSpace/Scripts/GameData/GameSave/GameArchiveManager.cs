@@ -15,6 +15,9 @@ public static partial class Consts
     }
 }
 
+/// <summary>
+/// 存档管理器，该管理器须在游戏初始化时预热
+/// </summary>
 public class GameArchiveManager : Singleton<GameArchiveManager>
 {
     /// <summary>

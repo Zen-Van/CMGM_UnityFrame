@@ -16,7 +16,9 @@ public class GameInitializer : MonoBehaviour
 
         InitGame();
     }
+    
 
+    private bool _gameInitFinished = false;
     /// <summary>
     /// 初始化游戏的方法（包括显示LOGO并跳转主界面）
     /// </summary>
@@ -31,11 +33,15 @@ public class GameInitializer : MonoBehaviour
             await AddressablesResMgr.Instance.PreloadAssetsAsync("UI");
             //初始化UI管理器
             UIManager.Instance.Init();
-            
+
             //初始化存档管理器，载入存档元数据
-            
+            GameArchiveManager.Instance.Init();
+            CmgmLog.fPositive($"存档元数据载入完毕，" +
+                $"其中共检测到{GameArchiveManager.Instance.ArchiveMeta.dataSet.Count}个存档资料");
+
             //逻辑层初始化完成
-            
+            _gameInitFinished = true;
+            CmgmLog.fPositive("游戏逻辑层初始化完成");
         });
 
         //游戏初始化时的显示层逻辑
@@ -71,9 +77,9 @@ public class GameInitializer : MonoBehaviour
             }
 
             //等待逻辑层初始化完成
-            //await UniTask.WaitUntil(() => GameSystem.GameInitFinished);
+            await UniTask.WaitUntil(() => _gameInitFinished);
             //跳转至主界面
-            //await 
+            //await UIManager.Instance.ShowPanel<>
 
         });
     }
