@@ -57,6 +57,9 @@ public class UIManager : Singleton<UIManager>
             (ResourcesResMgr.Instance.LoadAsset<GameObject>("UI/UICamera"))
             .GetComponent<Camera>();
         GameObject.DontDestroyOnLoad(uiCamera.gameObject);
+        //将UI摄像机挂在主相机上
+        SetUICameraOverlap(Camera.main);
+
 
         //创建UI面板
         uiCanvas = GameObject.Instantiate
@@ -209,7 +212,7 @@ public class UIManager : Singleton<UIManager>
         panelInfo = new PanelWrapper<T>(null, true, layer);   //初始化一个面板为空的加载信息
         panelDic.Add(panelName, panelInfo);     //占位置
         //赋值且启动伪线程
-        panelInfo.loadTask = AddressablesResMgr.Instance.LoadAssetAsync<GameObject>($"/{panelName}.prefab");
+        panelInfo.loadTask = AddressablesResMgr.Instance.LoadAssetAsync<GameObject>($"UI/Panels/{panelName}.prefab");
         GameObject panelObj = null;
         try
         {
@@ -279,7 +282,7 @@ public class UIManager : Singleton<UIManager>
         panelInfo = new PanelWrapper<BasePanel>(null, true, layer);   //初始化一个面板为空的加载信息
         panelDic.Add(panelName, panelInfo);     //占位置
         //赋值且启动伪线程
-        panelInfo.loadTask = AddressablesResMgr.Instance.LoadAssetAsync<GameObject>($"/{panelName}.prefab");
+        panelInfo.loadTask = AddressablesResMgr.Instance.LoadAssetAsync<GameObject>($"UI/Panels/{panelName}.prefab");
         GameObject panelObj = null;
         try
         {

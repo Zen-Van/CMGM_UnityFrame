@@ -267,7 +267,7 @@ GameObject:
   - component: {fileID: 1067468340}
   - component: {fileID: 1067468342}
   - component: {fileID: 1067468341}
-  m_Layer: 5
+  m_Layer: 0
   m_Name: VedioImage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -456,7 +456,7 @@ GameObject:
   - component: {fileID: 2057797841}
   - component: {fileID: 2057797840}
   - component: {fileID: 2057797839}
-  m_Layer: 5
+  m_Layer: 0
   m_Name: Canvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}

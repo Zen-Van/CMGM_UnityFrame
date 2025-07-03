@@ -30,7 +30,7 @@ public class GameInitializer : MonoBehaviour
         UniTask.Void(async () =>
         {
             //将UI包载入内存随时准备使用
-            await AddressablesResMgr.Instance.PreloadAssetsAsync("UI");
+            await AddressablesResMgr.Instance.PreloadAssetsAsync("UI/Panels");
             //初始化UI管理器
             UIManager.Instance.Init();
 
@@ -80,6 +80,7 @@ public class GameInitializer : MonoBehaviour
             await UniTask.WaitUntil(() => _gameInitFinished);
             //跳转至主界面
             //await UIManager.Instance.ShowPanel<>
+            await UIManager.Instance.ShowPanel<SamplePanel>();
 
         });
     }

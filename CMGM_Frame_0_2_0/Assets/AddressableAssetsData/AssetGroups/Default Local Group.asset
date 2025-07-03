@@ -15,13 +15,18 @@ MonoBehaviour:
   m_GroupName: Default Local Group
   m_GUID: 3d1131ab9a5494c558ed4aed4038f883
   m_SerializeEntries:
-  - m_GUID: 01e699ac5c2e0425ea9d3efc655d1741
-    m_Address: Assets/_WorkSpace/HotRes
+  - m_GUID: 174c32fe8f9004702b422573b5e2275c
+    m_Address: Assets/_WorkSpace/HotRes/Scenes
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: a50347001413741acb8264c25f7ceaec
-    m_Address: Assets/_WorkSpace/HotRes/LevelPrefabs/Cube.prefab
+  - m_GUID: 906eb8245c213425893f7e89595596e9
+    m_Address: Assets/_WorkSpace/HotRes/LevelPrefabs
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e798c53c71f95404cb242f3db5068120
+    m_Address: Assets/_WorkSpace/HotRes/BuildSource
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
