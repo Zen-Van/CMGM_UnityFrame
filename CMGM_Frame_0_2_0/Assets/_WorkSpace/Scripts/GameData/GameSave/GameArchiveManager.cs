@@ -127,6 +127,13 @@ public class GameArchiveManager : Singleton<GameArchiveManager>
     public GameRuntimeData GameRuntimeDataInstance { get; private set; } = null;
 
     /// <summary>
+    /// 清除当前游戏运行时档案
+    /// </summary>
+    public void ClearRuntimeData()
+    {
+        GameRuntimeDataInstance = null;
+    }
+    /// <summary>
     /// 新建游戏运行时档案，新建一个存档数据实例并写入GameRuntimeDataInstance
     /// </summary>
     /// <param name="InitArchive">初始化RuntimeData数据</param>

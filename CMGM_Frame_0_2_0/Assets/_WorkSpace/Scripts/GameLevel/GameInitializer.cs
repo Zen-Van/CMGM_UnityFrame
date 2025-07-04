@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 using UnityEngine.Video;
 
 public class GameInitializer : MonoBehaviour
@@ -30,7 +31,7 @@ public class GameInitializer : MonoBehaviour
         UniTask.Void(async () =>
         {
             //将UI包载入内存随时准备使用
-            await AddressablesResMgr.Instance.PreloadAssetsAsync("UI/Panels");
+            await AddressablesResMgr.Instance.PreloadAssetsAsync("UI");
             //初始化UI管理器
             UIManager.Instance.Init();
 
@@ -79,8 +80,7 @@ public class GameInitializer : MonoBehaviour
             //等待逻辑层初始化完成
             await UniTask.WaitUntil(() => _gameInitFinished);
             //跳转至主界面
-            //await UIManager.Instance.ShowPanel<>
-            await UIManager.Instance.ShowPanel<SamplePanel>();
+            await ScenesManager.Instance.GoToMainScene();
 
         });
     }
