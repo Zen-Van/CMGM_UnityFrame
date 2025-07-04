@@ -232,7 +232,7 @@ public class UIManager : Singleton<UIManager>
         //并重新赋值panelObj
         panelObj = GameObject.Instantiate(panelObj, GetLayerNode(layer), false);
         //如果对象上没有脚本，可以自动绑一下
-        //二编：不花性能处理这种逻辑，让Bug报出来好定位深层原因
+        //二编：不花性能处理这种逻辑，让Bug报出来好定位深层原因（后续：已在创建面板时期新增自动化绑定逻辑，几乎不会发生该问题了）
         //if (panelObj.GetComponent<T>() == null) panelObj.AddComponent<T>();
 
         //将panel存进字典
