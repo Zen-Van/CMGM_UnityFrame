@@ -10,19 +10,21 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
-  m_Name: UI
+  m_Name: MainScene
   m_EditorClassIdentifier: 
-  m_GroupName: UI
-  m_GUID: ac255ad0d8528394b98bd14fe3c1dfd9
+  m_GroupName: MainScene
+  m_GUID: 06047bd4cf90c467f8ac410a8d8fd088
   m_SerializeEntries:
-  - m_GUID: 6caed71f51fa14befa7b0c5102e13861
-    m_Address: Assets/_WorkSpace/HotRes/UI
+  - m_GUID: d871e2219c5b34a3cab05d62652ce525
+    m_Address: Assets/_WorkSpace/HotRes/UI/Panels/MainPanel.prefab
     m_ReadOnly: 0
-    m_SerializedLabels: []
+    m_SerializedLabels:
+    - MainScene
+    - UI
     FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 8f950768ad0e548e89a1d82b2358b9b5, type: 2}
   m_SchemaSet:
     m_Schemas:
-    - {fileID: 11400000, guid: 2d8d5e28cb8715843916c931d39618a3, type: 2}
-    - {fileID: 11400000, guid: fa161cb71456a3543ab118da30d4cb80, type: 2}
+    - {fileID: 11400000, guid: 791400fbd2aeb4981a776350bd83badb, type: 2}
+    - {fileID: 11400000, guid: 7c497083cb88f460bb8ed4a792e5708c, type: 2}

@@ -20,7 +20,7 @@ public class MainPanel : BasePanel
             case "btnLoad":
                 CmgmLog.fNormal("加载游戏");
                 break;
-            case "btnBack":
+            case "btnQuit":
                 ScenesManager.Instance.QuitGame();
                 break;
             default:

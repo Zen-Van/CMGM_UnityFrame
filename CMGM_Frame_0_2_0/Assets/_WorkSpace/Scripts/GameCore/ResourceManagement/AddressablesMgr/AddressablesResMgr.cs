@@ -192,27 +192,31 @@ public class AddressablesResMgr : Singleton<AddressablesResMgr>
 
     private async UniTask PreloadSingleAssetAsync(string address)
     {
+        string relativePath = address.StartsWith($"{Consts.Paths.HotRes}/")
+            ? address.Substring(Consts.Paths.HotRes.Length + 1) // 去掉前缀
+            : address;
+
         try
         {
-            await LoadAssetAsync<object>(address);
+            await Addressables.LoadAssetAsync<object>(address).Task;
         }
         catch (Exception e)
         {
-            Debug.LogError($"预加载失败: {address}\n{e}");
+            CmgmLog.fError($"预加载失败: {relativePath}\n{e}");
         }
     }
 
     /// <summary>
     /// 批量预加载资源（加载场景进度条）
     /// </summary>
-    /// <param name="uris">资源地址列表（ HotRes文件夹下相对路径 ）</param>
-    public async UniTask<bool> PreloadAssetsAsync(IEnumerable<string> uris,
+    /// <param name="uris">资源地址列表（ Assets文件夹下完整路径 ）</param>
+    public async UniTask<bool> PreloadAssetsAsync(IEnumerable<string> urls,
         IProgress<float> progress = null)
     {
-        IEnumerable<string> addresses = uris.Select(uri => $"{Consts.Paths.HotRes}/{uri}");
-        var addressList = addresses.ToList(); // 转换为List避免多次枚举
+        var addressList = urls.ToList(); // 转换为List避免多次枚举
         int total = addressList.Count;
         int completed = 0;
+        string logPrefix = "";
 
         // 创建任务列表并添加完成回调
         var tasks = new List<UniTask>();
@@ -222,6 +226,7 @@ public class AddressablesResMgr : Singleton<AddressablesResMgr>
             {
                 Interlocked.Increment(ref completed); // 线程安全递增
                 ReleaseAsset(address); // 预加载完成后立即释放资源(引用计数-1)
+                logPrefix += $"{address}\n";
             }));
         }
 
@@ -237,21 +242,20 @@ public class AddressablesResMgr : Singleton<AddressablesResMgr>
         // 最终进度报告（确保到达100%）
         progress?.Report(1f);
 
+        CmgmLog.fPositive($"预加载完成，共加载{completed}个资源:\n{logPrefix}");
+
         return allTasks.Status == UniTaskStatus.Succeeded;
     }
 
     /// <summary>
     /// 批量预加载资源（加载场景进度条）
     /// </summary>
-    /// <param name="folderPath"> 资源文件夹（ HotRes文件夹下相对路径 ）</param>
-    public async UniTask<bool> PreloadAssetsAsync(string folderPath, IProgress<float> progress = null)
+    /// <param name="label"> HotRes文件夹下一级路径 </param>
+    public async UniTask<bool> PreloadAssetsAsync(string label, IProgress<float> progress = null)
     {
-        // 构建完整的文件夹地址路径
-        string fullFolderPath = $"{Consts.Paths.HotRes}/{folderPath}/";
-
         // 加载Addressables中所有资源的位置信息
         AsyncOperationHandle<IList<IResourceLocation>> locationHandle
-            = Addressables.LoadResourceLocationsAsync(fullFolderPath, typeof(object));
+            = Addressables.LoadResourceLocationsAsync(label);
 
         // 等待加载完成
         await locationHandle.Task;
@@ -259,14 +263,14 @@ public class AddressablesResMgr : Singleton<AddressablesResMgr>
         // 检查加载状态
         if (locationHandle.Status != AsyncOperationStatus.Succeeded)
         {
-            CmgmLog.fError($"Failed to load resource locations for folder: {fullFolderPath}");
+            CmgmLog.fError($"从{label}标签加载资源失败");
             Addressables.Release(locationHandle);
             return false;
         }
 
         // 获取文件夹下所有资源的地址
-        List<string> addresses = locationHandle.Result
-            .Where(loc => loc.PrimaryKey.StartsWith(fullFolderPath))
+        List<string> addressesList = locationHandle.Result
+            .Where(loc => loc.PrimaryKey.StartsWith(Consts.Paths.HotRes))
             .Select(loc => loc.PrimaryKey)
             .Distinct()
             .ToList();
@@ -274,53 +278,7 @@ public class AddressablesResMgr : Singleton<AddressablesResMgr>
         // 释放位置句柄
         Addressables.Release(locationHandle);
 
-        // 如果没有找到资源
-        if (addresses.Count == 0)
-        {
-            Debug.LogWarning($"No assets found in folder: {fullFolderPath}");
-            progress?.Report(1f);
-            return true;
-        }
-
-        // 创建预加载任务列表
-        var tasks = new List<UniTask>();
-        foreach (var address in addresses)
-        {
-            tasks.Add(PreloadSingleAssetAsync(address));
-        }
-
-        // 进度跟踪
-        int total = tasks.Count;
-        int completed = 0;
-
-        // 创建组合任务
-        var whenAllTask = UniTask.WhenAll(tasks).ContinueWith(() =>
-        {
-            foreach (var address in addresses)
-            {
-                ReleaseAsset(address);
-            }
-        });
-
-        // 进度报告协程
-        var progressTask = UpdateProgressAsync();
-
-        // 等待所有任务完成
-        await UniTask.WhenAll(whenAllTask, progressTask);
-
-        return whenAllTask.Status == UniTaskStatus.Succeeded;
-
-        // 本地函数：更新进度
-        async UniTask UpdateProgressAsync()
-        {
-            while (completed < total)
-            {
-                progress?.Report((float)completed / total);
-                await UniTask.Yield();
-                completed = tasks.Count(t => t.Status == UniTaskStatus.Succeeded);
-            }
-            progress?.Report(1f);
-        }
+        return await PreloadAssetsAsync(addressesList, progress);
     }
 
 }
