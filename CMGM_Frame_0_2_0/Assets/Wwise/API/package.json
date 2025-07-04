@@ -1,0 +1,21 @@
+{
+    "name": "com.audiokinetic.wwise.api",
+    "version": "2024.1.0",
+    "displayName": "Wwise Unity API",
+    "description": "Low-level API for Wwise integration in Unity",
+    "unity": "2021.3",
+    "unityRelease": "32f1",
+    "dependencies": {},
+    "keywords": [
+        "Wwise",
+        "wwise",
+        "audiokinetic",
+        "ak",
+        "Audiokinetic"
+    ],
+    "author": {
+        "name": "Audiokinetic Inc.",
+        "email": "info@audiokinetic.com",
+        "url": "https://www.audiokinetic.com"
+    }
+}

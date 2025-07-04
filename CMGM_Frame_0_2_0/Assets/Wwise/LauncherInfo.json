@@ -1,0 +1,28 @@
+{
+    "originalSdkFolder": "F:\\GameAudioEngine\\Wwise2024.1.4.8780\\SDK",
+    "currentVersion": {
+        "nickname": "",
+        "build": 3441,
+        "major": 1,
+        "minor": 4,
+        "year": 2024
+    },
+    "installedBundleGroups": [
+        {
+            "id": "Packages",
+            "valueId": "Unity"
+        },
+        {
+            "id": "Packages",
+            "valueId": "Extensions"
+        },
+        {
+            "id": "DeploymentPlatforms",
+            "valueId": "Mac"
+        },
+        {
+            "id": "DeploymentPlatforms",
+            "valueId": "Windows"
+        }
+    ]
+}

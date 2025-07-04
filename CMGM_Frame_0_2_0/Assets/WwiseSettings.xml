@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WwiseSettings xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <CopySoundBanksAsPreBuildStep>true</CopySoundBanksAsPreBuildStep>
+  <GenerateSoundBanksAsPreBuildStep>false</GenerateSoundBanksAsPreBuildStep>
+  <SoundbankPath>Audio/GeneratedSoundBanks</SoundbankPath>
+  <CreatedPicker>true</CreatedPicker>
+  <CreateWwiseGlobal>true</CreateWwiseGlobal>
+  <CreateWwiseListener>true</CreateWwiseListener>
+  <ObjectReferenceAutoCleanup>true</ObjectReferenceAutoCleanup>
+  <LoadSoundEngineInEditMode>true</LoadSoundEngineInEditMode>
+  <ShowMissingRigidBodyWarning>true</ShowMissingRigidBodyWarning>
+  <ShowSpatialAudioWarningMsg>true</ShowSpatialAudioWarningMsg>
+  <WwiseInstallationPathMac />
+  <WwiseInstallationPathWindows>F:\GameAudioEngine\Wwise2024.1.4.8780</WwiseInstallationPathWindows>
+  <WwiseProjectPath>../../CMGM_Frame_0_2_0/CmgmFrame_WwiseProject/CmgmFrame_WwiseProject.wproj</WwiseProjectPath>
+  <UseWaapi>true</UseWaapi>
+  <WaapiPort>8080</WaapiPort>
+  <WaapiIP>127.0.0.1</WaapiIP>
+  <XMLTranslatorTimeout>0</XMLTranslatorTimeout>
+  <WaapiTranslatorTimeout>0</WaapiTranslatorTimeout>
+</WwiseSettings>

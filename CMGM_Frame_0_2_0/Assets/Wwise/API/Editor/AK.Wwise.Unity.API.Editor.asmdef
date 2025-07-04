@@ -1,0 +1,21 @@
+{
+    "name": "AK.Wwise.Unity.API.Editor",
+    "references": [
+        "AK.Wwise.Unity.API",
+        "AK.Wwise.Unity.API.WwiseTypes",
+        "AK.Wwise.Unity.MonoBehaviour",
+        "Ak.Wwise.Api.WAAPI",
+        "AK.Wwise.Unity.ProjectDatabase"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [ "!UNITY_SERVER" ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,25 @@
+{
+    "name": "com.audiokinetic.wwise.monobehaviour",
+    "version": "2024.1.0",
+    "displayName": "Wwise Unity MonoBehaviour",
+    "description": "Wwise Integration in Unity using MonoBehaviour",
+    "unity": "2021.3",
+    "unityRelease": "32f1",
+    "dependencies": {
+        "com.audiokinetic.wwise.api": "2024.1.0"
+    },
+    "keywords": [
+        "Wwise",
+        "wwise",
+        "audiokinetic",
+        "ak",
+        "Audiokinetic",
+        "monobehaviour",
+        "MonoBehaviour"
+    ],
+    "author": {
+        "name": "Audiokinetic Inc.",
+        "email": "info@audiokinetic.com",
+        "url": "https://www.audiokinetic.com"
+    }
+}
