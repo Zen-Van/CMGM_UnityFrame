@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class ArchiveEditor
 {
-    [MenuItem("草木句萌/清空所有玩家存档数据", false, 113)]
+    [MenuItem("草木句萌/清空所有本地存档数据", false, 113)]
     private static void ClearArchiveData()
     {
         if(Directory.Exists(Application.persistentDataPath + "/Archives/"))
