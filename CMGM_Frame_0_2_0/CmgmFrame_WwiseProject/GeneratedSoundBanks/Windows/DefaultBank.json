@@ -1,0 +1,68 @@
+{
+ "SoundBanksInfo": {
+  "Platform": "Windows",
+  "BasePlatform": "Windows",
+  "SchemaVersion": "16",
+  "SoundBankVersion": "154",
+  "SoundBanks": [
+   {
+    "Id": "187290962",
+    "Type": "User",
+    "GUID": "{BCE4E449-6DF9-43DA-9E78-6E81E8E048FB}",
+    "Language": "SFX",
+    "Hash": "{0D77CE8D-F833-4D3E-DABC-FB3A764E9261}",
+    "ObjectPath": "\\SoundBanks\\Default Work Unit\\DefaultBank",
+    "ShortName": "DefaultBank",
+    "Path": "DefaultBank.bnk",
+    "Media": [
+     {
+      "Id": "2433084",
+      "Language": "SFX",
+      "Streaming": "false",
+      "Location": "Memory",
+      "ShortName": "Empty.wav",
+      "CachePath": "AA/{AAD17417-A2B7-2DE7-981B-8264A9B7ED3F}.wem"
+     },
+     {
+      "Id": "232200431",
+      "Language": "SFX",
+      "Streaming": "true",
+      "Location": "Loose",
+      "ShortName": "外星人-恋爱曲.wav",
+      "Path": "Media/232200431.wem",
+      "CachePath": "6B/{6BF3C01C-AA90-D5E1-1D80-DC83DAFBCE5A}.wem"
+     }
+    ],
+    "Events": [
+     {
+      "Id": "3703829241",
+      "Name": "Play_Empty",
+      "ObjectPath": "\\Events\\Default Work Unit\\Play_Empty",
+      "GUID": "{E46759D8-1B19-42F3-9B5D-35474BBE2649}",
+      "DurationType": "OneShot",
+      "DurationMin": "2",
+      "DurationMax": "2",
+      "MediaRefs": [
+       {
+        "Id": "2433084"
+       }
+      ]
+     },
+     {
+      "Id": "2872770759",
+      "Name": "Play_TestMusic",
+      "ObjectPath": "\\Events\\Default Work Unit\\Play_TestMusic",
+      "GUID": "{6B5C2355-5681-4927-8371-977C6F408862}",
+      "DurationType": "Infinite",
+      "MediaRefs": [
+       {
+        "Id": "232200431"
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "FileHash": "{CEA45770-0A34-2D0A-6B44-453FA2B8B85B}"
+ }
+}

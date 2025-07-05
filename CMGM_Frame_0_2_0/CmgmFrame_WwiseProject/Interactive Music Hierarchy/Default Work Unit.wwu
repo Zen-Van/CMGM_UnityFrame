@@ -1,6 +1,150 @@
 <?xml version="1.0" encoding="utf-8"?>
-<WwiseDocument Type="WorkUnit" ID="{E694D874-03E9-4A17-97DA-7FCB74E60068}" SchemaVersion="123">
+<WwiseDocument Type="WorkUnit" ID="{CA10A4A7-74C6-47FD-BF51-708FD8FAB69A}" SchemaVersion="123">
 	<InteractiveMusic>
-		<WorkUnit Name="Default Work Unit" ID="{E694D874-03E9-4A17-97DA-7FCB74E60068}" PersistMode="Standalone"/>
+		<WorkUnit Name="Default Work Unit" ID="{CA10A4A7-74C6-47FD-BF51-708FD8FAB69A}" PersistMode="Standalone">
+			<ChildrenList>
+				<MusicPlaylistContainer Name="TestMusic" ID="{D9406DDE-8CAA-4BF9-94FD-80DC4F86A5C3}" ShortID="701098060">
+					<ReferenceList>
+						<Reference Name="Conversion">
+							<ObjectRef Name="Default Conversion Settings" ID="{6D1B890C-9826-4384-BF07-C15223E9FB56}" WorkUnitID="{5F4960A6-4841-40D6-A3AC-9173E0A01932}"/>
+						</Reference>
+						<Reference Name="OutputBus">
+							<ObjectRef Name="Music" ID="{912BE058-40E0-4E33-8E72-86B9703C8D0A}" WorkUnitID="{1E68C62F-A779-47A3-8A12-491B57C1E121}"/>
+						</Reference>
+						<Reference Name="PlaylistRoot">
+							<Custom>
+								<MusicPlaylistItem Name="" ID="{5E4EC865-67D5-4567-B003-1DF91EC34224}" ShortID="1039811151">
+									<PropertyList>
+										<Property Name="LoopCount" Type="int16" Value="0"/>
+									</PropertyList>
+									<ChildrenList>
+										<MusicPlaylistItem Name="" ID="{85BEEDE8-152F-459B-9A8A-7F46759FD7F2}" ShortID="343232619">
+											<PropertyList>
+												<Property Name="PlaylistItemType" Type="int16" Value="1"/>
+											</PropertyList>
+											<ReferenceList>
+												<Reference Name="Segment">
+													<ObjectRef Name="外星人-恋爱曲" ID="{0225F9FC-BC61-4D44-8C39-8618FF8C11F8}" WorkUnitID="{CA10A4A7-74C6-47FD-BF51-708FD8FAB69A}"/>
+												</Reference>
+											</ReferenceList>
+										</MusicPlaylistItem>
+									</ChildrenList>
+								</MusicPlaylistItem>
+							</Custom>
+						</Reference>
+						<Reference Name="TransitionRoot">
+							<Custom>
+								<MusicTransition Name="Root" ID="{CDFBD4DE-E826-4FDC-81BB-D3D2D57154A6}">
+									<PropertyList>
+										<Property Name="IsFolder" Type="bool" Value="True"/>
+									</PropertyList>
+									<ChildrenList>
+										<MusicTransition Name="Transition" ID="{34DE7706-340D-4DF5-AC17-0644D3942332}">
+											<TransitionInfo/>
+										</MusicTransition>
+									</ChildrenList>
+									<TransitionInfo/>
+								</MusicTransition>
+							</Custom>
+						</Reference>
+					</ReferenceList>
+					<ChildrenList>
+						<MusicSegment Name="外星人-恋爱曲" ID="{0225F9FC-BC61-4D44-8C39-8618FF8C11F8}" ShortID="961444213">
+							<PropertyList>
+								<Property Name="EndPosition" Type="Real64" Value="116035.020833333"/>
+							</PropertyList>
+							<ReferenceList>
+								<Reference Name="Conversion">
+									<ObjectRef Name="Default Conversion Settings" ID="{6D1B890C-9826-4384-BF07-C15223E9FB56}" WorkUnitID="{5F4960A6-4841-40D6-A3AC-9173E0A01932}"/>
+								</Reference>
+								<Reference Name="OutputBus">
+									<ObjectRef Name="Master Audio Bus" ID="{1514A4D8-1DA6-412A-A17E-75CA0C2149F3}" WorkUnitID="{1E68C62F-A779-47A3-8A12-491B57C1E121}"/>
+								</Reference>
+							</ReferenceList>
+							<ChildrenList>
+								<MusicTrack Name="外星人-恋爱曲" ID="{D0BEA40F-386B-4A0F-8D7C-399CF0CA6A5E}" ShortID="316546231">
+									<PropertyList>
+										<Property Name="IsStreamingEnabled" Type="bool">
+											<ValueList>
+												<Value>True</Value>
+											</ValueList>
+										</Property>
+									</PropertyList>
+									<ReferenceList>
+										<Reference Name="OutputBus">
+											<ObjectRef Name="Master Audio Bus" ID="{1514A4D8-1DA6-412A-A17E-75CA0C2149F3}" WorkUnitID="{1E68C62F-A779-47A3-8A12-491B57C1E121}"/>
+										</Reference>
+										<Reference Name="TransitionRoot">
+											<Custom>
+												<MusicTransition Name="Root" ID="{F1E6E4E1-77C5-4A8A-A5B0-A1892019E599}">
+													<PropertyList>
+														<Property Name="IsFolder" Type="bool" Value="True"/>
+													</PropertyList>
+													<TransitionInfo/>
+												</MusicTransition>
+											</Custom>
+										</Reference>
+									</ReferenceList>
+									<ChildrenList>
+										<AudioFileSource Name="外星人-恋爱曲" ID="{57A051BE-CC95-443C-9E24-2ED74847A44C}">
+											<Language>SFX</Language>
+											<AudioFile>外星人-恋爱曲.wav</AudioFile>
+											<MediaIDList>
+												<MediaID ID="232200431"/>
+											</MediaIDList>
+										</AudioFileSource>
+									</ChildrenList>
+									<ObjectLists>
+										<ObjectList Name="Sequences">
+											<Reference>
+												<Local>
+													<MusicTrackSequence Name="" ID="{917BE83D-55C0-4EB4-879E-6ED3239C1D8F}">
+														<ObjectLists>
+															<ObjectList Name="Clips">
+																<Reference>
+																	<Local>
+																		<MusicClip Name="外星人-恋爱曲" ID="{EB7B7774-2EE5-4BA9-AA2D-9F9A2B86BEB8}">
+																			<PropertyList>
+																				<Property Name="EndTrimOffset" Type="Real64" Value="116035.020833333"/>
+																				<Property Name="FadeInMode" Type="int16" Value="0"/>
+																				<Property Name="FadeOutMode" Type="int16" Value="0"/>
+																			</PropertyList>
+																			<AudioSourceRef Name="外星人-恋爱曲" ID="{57A051BE-CC95-443C-9E24-2ED74847A44C}"/>
+																		</MusicClip>
+																	</Local>
+																</Reference>
+															</ObjectList>
+														</ObjectLists>
+													</MusicTrackSequence>
+												</Local>
+											</Reference>
+										</ObjectList>
+									</ObjectLists>
+								</MusicTrack>
+							</ChildrenList>
+							<ObjectLists>
+								<ObjectList Name="Cues">
+									<Reference>
+										<Local>
+											<MusicCue Name="Entry Cue" ID="{BDE6CD4A-F2CF-4E1F-A34D-7FEE402234BA}"/>
+										</Local>
+									</Reference>
+									<Reference>
+										<Local>
+											<MusicCue Name="Exit Cue" ID="{E69C23EA-1F8C-42CE-AE6E-5631697B8230}">
+												<PropertyList>
+													<Property Name="CueType" Type="int16" Value="1"/>
+													<Property Name="TimeMs" Type="Real64" Value="116035.020833333"/>
+												</PropertyList>
+											</MusicCue>
+										</Local>
+									</Reference>
+								</ObjectList>
+							</ObjectLists>
+						</MusicSegment>
+					</ChildrenList>
+				</MusicPlaylistContainer>
+			</ChildrenList>
+		</WorkUnit>
 	</InteractiveMusic>
 </WwiseDocument>

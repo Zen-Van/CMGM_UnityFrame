@@ -1,6 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
-<WwiseDocument Type="WorkUnit" ID="{FD92C152-4FC0-4ADE-BC30-2DDEE487D085}" SchemaVersion="123">
+<WwiseDocument Type="WorkUnit" ID="{040055E5-47B9-48E2-BD95-3428EA8653D1}" SchemaVersion="123">
 	<AudioObjects>
-		<WorkUnit Name="Default Work Unit" ID="{FD92C152-4FC0-4ADE-BC30-2DDEE487D085}" PersistMode="Standalone"/>
+		<WorkUnit Name="Default Work Unit" ID="{040055E5-47B9-48E2-BD95-3428EA8653D1}" PersistMode="Standalone">
+			<ChildrenList>
+				<ActorMixer Name="TestAudioMixer" ID="{CE387A92-8E0E-42D0-8337-781875837810}" ShortID="674621417">
+					<ReferenceList>
+						<Reference Name="Conversion">
+							<ObjectRef Name="Default Conversion Settings" ID="{6D1B890C-9826-4384-BF07-C15223E9FB56}" WorkUnitID="{89D2F2DE-20AB-4C84-A5B2-30C877B813C2}"/>
+						</Reference>
+						<Reference Name="OutputBus">
+							<ObjectRef Name="SFX" ID="{6E050B6E-2839-43A1-9266-F1E3A088F144}" WorkUnitID="{1E68C62F-A779-47A3-8A12-491B57C1E121}"/>
+						</Reference>
+					</ReferenceList>
+					<ChildrenList>
+						<Sound Name="Empty" ID="{A89BF7AD-40AA-4DB5-8BD0-1BCC95C320E7}" ShortID="216159277">
+							<ReferenceList>
+								<Reference Name="Conversion">
+									<ObjectRef Name="Default Conversion Settings" ID="{6D1B890C-9826-4384-BF07-C15223E9FB56}" WorkUnitID="{89D2F2DE-20AB-4C84-A5B2-30C877B813C2}"/>
+								</Reference>
+								<Reference Name="OutputBus">
+									<ObjectRef Name="Master Audio Bus" ID="{1514A4D8-1DA6-412A-A17E-75CA0C2149F3}" WorkUnitID="{1E68C62F-A779-47A3-8A12-491B57C1E121}"/>
+								</Reference>
+							</ReferenceList>
+							<ChildrenList>
+								<AudioFileSource Name="Empty" ID="{78306833-8742-4F72-ADDA-2AFB4841F229}">
+									<Language>SFX</Language>
+									<AudioFile>Empty.wav</AudioFile>
+									<MediaIDList>
+										<MediaID ID="2433084"/>
+									</MediaIDList>
+								</AudioFileSource>
+							</ChildrenList>
+							<ActiveSourceList>
+								<ActiveSource Name="Empty" ID="{78306833-8742-4F72-ADDA-2AFB4841F229}" Platform="Linked"/>
+							</ActiveSourceList>
+						</Sound>
+					</ChildrenList>
+				</ActorMixer>
+			</ChildrenList>
+		</WorkUnit>
 	</AudioObjects>
 </WwiseDocument>

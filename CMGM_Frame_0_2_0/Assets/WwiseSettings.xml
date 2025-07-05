@@ -10,9 +10,9 @@
   <LoadSoundEngineInEditMode>true</LoadSoundEngineInEditMode>
   <ShowMissingRigidBodyWarning>true</ShowMissingRigidBodyWarning>
   <ShowSpatialAudioWarningMsg>true</ShowSpatialAudioWarningMsg>
-  <WwiseInstallationPathMac />
+  <WwiseInstallationPathMac>/Applications/Audiokinetic/Wwise2024.1.2.8726/Wwise.app</WwiseInstallationPathMac>
   <WwiseInstallationPathWindows>F:\GameAudioEngine\Wwise2024.1.4.8780</WwiseInstallationPathWindows>
-  <WwiseProjectPath>../../CMGM_Frame_0_2_0/CmgmFrame_WwiseProject/CmgmFrame_WwiseProject.wproj</WwiseProjectPath>
+  <WwiseProjectPath>../CmgmFrame_WwiseProject/CmgmFrame_WwiseProject.wproj</WwiseProjectPath>
   <UseWaapi>true</UseWaapi>
   <WaapiPort>8080</WaapiPort>
   <WaapiIP>127.0.0.1</WaapiIP>

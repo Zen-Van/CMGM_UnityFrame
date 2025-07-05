@@ -1,0 +1,10 @@
+Event	ID	Name			Wwise Object Path	Notes
+	2872770759	Play_TestMusic			\Default Work Unit\Play_TestMusic	
+	3703829241	Play_Empty			\Default Work Unit\Play_Empty	
+
+In Memory Audio	ID	Name	Audio source file		Wwise Object Path	Notes	Data Size
+	2433084	Empty	Y:\MYDQC.localized\Unity_Project\CMGM_UnityFrame\CMGM_Frame_0_2_0\CmgmFrame_WwiseProject\.cache\AA\{AAD17417-A2B7-2DE7-981B-8264A9B7ED3F}.wem		\Actor-Mixer Hierarchy\Default Work Unit\TestAudioMixer\Empty		352896
+
+Streamed Audio	ID	Name	Audio source file	Generated audio file	Wwise Object Path	Notes
+	232200431	外星人-恋爱曲	Y:\MYDQC.localized\Unity_Project\CMGM_UnityFrame\CMGM_Frame_0_2_0\CmgmFrame_WwiseProject\.cache\6B\{6BF3C01C-AA90-D5E1-1D80-DC83DAFBCE5A}.wem	232200431.wem	\Interactive Music Hierarchy\Default Work Unit\TestMusic\外星人-恋爱曲\外星人-恋爱曲	
+
