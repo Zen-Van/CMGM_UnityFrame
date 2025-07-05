@@ -439,6 +439,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1526370340}
   - component: {fileID: 1526370339}
+  - component: {fileID: 1526370341}
   m_Layer: 0
   m_Name: WwiseGlobal
   m_TagString: Untagged
@@ -486,6 +487,39 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1526370341
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1526370338}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a5420bdc92794c00895f1c0c1f05b3c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mainBank:
+    idInternal: 0
+    valueGuidInternal: 
+    WwiseObjectReference: {fileID: 0}
+  loadBankOnAwake: 1
+  masterVolume:
+    idInternal: 0
+    valueGuidInternal: 
+    WwiseObjectReference: {fileID: 0}
+  musicVolume:
+    idInternal: 0
+    valueGuidInternal: 
+    WwiseObjectReference: {fileID: 0}
+  sfxVolume:
+    idInternal: 0
+    valueGuidInternal: 
+    WwiseObjectReference: {fileID: 0}
+  voiceVolume:
+    idInternal: 0
+    valueGuidInternal: 
+    WwiseObjectReference: {fileID: 0}
 --- !u!1 &1587593132
 GameObject:
   m_ObjectHideFlags: 0

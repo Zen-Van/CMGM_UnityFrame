@@ -18,7 +18,7 @@ public class SingletonMono<T> : MonoBehaviour where T : MonoBehaviour
     {
         if (instance != null)
         {
-            Destroy(this);
+            DestroyImmediate(this);
             return;
         }
         instance = this as T;
