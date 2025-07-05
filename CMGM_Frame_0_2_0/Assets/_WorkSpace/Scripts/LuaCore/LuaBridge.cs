@@ -5,7 +5,6 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using XLua;
 
-/* 待重构
 
 [LuaCallCSharp]
 public class LuaBridge
@@ -29,6 +28,7 @@ public class LuaBridge
     /// <param name="content">文本内容</param>
     public static void Talk(int roleId, int imgId, string content, Action callback)
     {
+        /*   这段逻辑封装到剧情系统的代码里，不放在Lua系统里写，Lua系统仅仅调用
         UniTask.Void(async () =>
         {
             //显示UI面板
@@ -40,6 +40,7 @@ public class LuaBridge
             //通知lua，命令完成
             callback?.Invoke();
         });
+        */
     }
     /// <summary>
     /// 对话命令（默认立绘）
@@ -56,7 +57,7 @@ public class LuaBridge
     #region 工具&测试
     public static void DebugLog(string content)
     {
-        CmgmLog.fPositive(content);
+        CmgmLog.fNormal(content);
     }
     public static void Wait(float sec, Action callback)
     {
@@ -66,5 +67,3 @@ public class LuaBridge
 
     #endregion
 }
-
-*/

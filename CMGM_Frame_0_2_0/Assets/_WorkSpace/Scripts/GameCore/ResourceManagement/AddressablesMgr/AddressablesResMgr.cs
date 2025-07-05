@@ -186,6 +186,28 @@ public class AddressablesResMgr : Singleton<AddressablesResMgr>
         await UniTask.Yield();
     }
 
+    public async UniTask<IList<IResourceLocation>> LoadResourceLocationsAsync(string label,Type type = null)
+    {
+        // 异步加载资源位置
+        AsyncOperationHandle<IList<IResourceLocation>> handle = Addressables.LoadResourceLocationsAsync(label,type);
+        await handle.Task;
+
+        // 检查加载状态
+        if (handle.Status != AsyncOperationStatus.Succeeded)
+        {
+            CmgmLog.fError($"加载资源位置失败: {label}");
+            Addressables.Release(handle);
+            return null;
+        }
+
+        // 获取资源位置列表
+        IList<IResourceLocation> locations = handle.Result;
+        Addressables.Release(handle); // 释放句柄
+        
+        return locations;
+    }
+
+
     //--------------------------------------------------
     // 高级功能扩展
     //--------------------------------------------------

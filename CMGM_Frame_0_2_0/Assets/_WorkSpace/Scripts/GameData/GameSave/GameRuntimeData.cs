@@ -59,7 +59,7 @@ public class GameRuntimeData : I_Saveable
     #endregion
 
     #region 玩家数据
-    public string Player_curScene = CmgmFrameSettings.Instance.DEFAULT_SCENE;
+    //public string Player_curScene = CmgmFrameSettings.Instance.DEFAULT_SCENE;
     public float Player_Pos_X = 0;
     public float Player_Pos_Y = 0;
     public float Player_Pos_Z = 0;

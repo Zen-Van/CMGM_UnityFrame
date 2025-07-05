@@ -12,6 +12,7 @@ public static partial class Consts
 
         public const string HotRes = WorkSpace + "/HotRes";
         public const string HotScene = HotRes + "/Scenes";
+        public const string Lua_Path = HotRes + "/Lua";
 
         //Scripts下路径
         public const string ScriptsPath = WorkSpace + "/Scripts";

@@ -13,3 +13,5 @@ MonoBehaviour:
   m_Name: CmgmFrameSettings
   m_EditorClassIdentifier: 
   IS_LOG_ACTIVE: 1
+  IS_HOT_LUA: 0
+  ROOT_LUA_URI: main.lua.txt

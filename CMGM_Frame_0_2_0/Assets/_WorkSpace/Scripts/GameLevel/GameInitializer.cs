@@ -40,6 +40,9 @@ public class GameInitializer : MonoBehaviour
             CmgmLog.fPositive($"存档元数据载入完毕，" +
                 $"其中共检测到{GameArchiveManager.Instance.ArchiveMeta.dataSet.Count}个存档资料");
 
+            //初始化Lua管理器
+            LuaManager.Instance.Init();
+
             //逻辑层初始化完成
             _gameInitFinished = true;
             CmgmLog.fPositive("游戏逻辑层初始化完成");
