@@ -31,7 +31,7 @@ public class WwiseAudioManager : SingletonMono<WwiseAudioManager>
     public AK.Wwise.RTPC voiceVolume;
 
 
-    #region 基础接口
+    #region 基础公共接口
     public void LoadBank(AK.Wwise.Bank bank)
     {
         if (bank == null) return;
@@ -43,21 +43,20 @@ public class WwiseAudioManager : SingletonMono<WwiseAudioManager>
         bank.Unload();
     }
 
-    /// <summary> 播放音频事件 </summary>
-    /// <param name="wwiseEvent">Wwise事件</param>
-    /// <param name="emitter">音源物体（可选）</param>
-    public void PlayWwiseEvent(AK.Wwise.Event wwiseEvent, GameObject emitter = null)
+
+    //以下播放接口仅播放Wwise事件，不会将播放事件纳入音乐/音效/语音的分类管理
+    //若想要播放音乐音效请使用PlayCommonSfx/PlayCommonBgm/PlayCommonVo
+    public uint PlayWwiseEvent(AK.Wwise.Event wwiseEvent, GameObject emitter = null)
     {
-        if (wwiseEvent == null) return;
-        wwiseEvent.Post(emitter == null ? gameObject : emitter);
+        if (wwiseEvent == null) return AkUnitySoundEngine.AK_INVALID_PLAYING_ID;
+        return wwiseEvent.Post(emitter == null ? gameObject : emitter);
     }
-    
-    /// <summary> 播放带回调的音频事件 </summary>
-    /// <param name="wwiseEvent">Wwise事件</param>
-    /// <param name="emitter">音源物体</param>
-    /// <param name="callbackFlags">回调类型</param>
-    /// <param name="callbackFunc">回调函数</param>
-    /// <returns></returns>
+    public uint PlayWwiseEvent(string eventName, GameObject emitter = null)
+    {
+        return AkUnitySoundEngine.PostEvent(eventName, emitter == null ? gameObject : emitter);
+    }
+
+
     public uint PlayWwiseEventWithCallback(AK.Wwise.Event wwiseEvent, GameObject emitter,
         AkCallbackType callbackFlags, AkCallbackManager.EventCallback callbackFunc)
     {
@@ -69,60 +68,39 @@ public class WwiseAudioManager : SingletonMono<WwiseAudioManager>
         {
             emitter = gameObject;
         }
-        uint playingId = wwiseEvent.Post(emitter, (uint)callbackFlags, CallbackFunc);
+        uint playingId = wwiseEvent.Post(emitter, (uint)callbackFlags, callbackFunc);
 
         return playingId;
     }
-    #endregion
-
-    #region 音乐通用回调接口（也可作为非通用回调的案例）
-    /// <summary> 设置节拍参数 </summary>
-    public static bool _isBarTriggered = false;
-    public static int _beatIndex = 0;
-
-    public static void CallbackFunc(object inCookie, AkCallbackType inType, AkCallbackInfo inInfo)
+    public uint PlayWwiseEventWithCallback(string eventName, GameObject emitter,
+        AkCallbackType callbackFlags, AkCallbackManager.EventCallback callbackFunc)
     {
-        switch (inType)
+        if (emitter == null)
         {
-            case AkCallbackType.AK_MusicSyncEntry:
-                Debug.Log("【TestAudioCallback】 Received: AK_MusicSyncEntry");
-                break;
-            case AkCallbackType.AK_MusicSyncExit:
-                Debug.Log("【TestAudioCallback】 Received: AK_MusicSyncExit");
-                break;
-            case AkCallbackType.AK_MusicSyncBar:
-                if (!_isBarTriggered) // 防止同一帧重复处理 
-                {
-                    _isBarTriggered = true;
-                    Debug.Log("【TestAudioCallback】 Received: AK_MusicSyncBar");
-                    _beatIndex = 0;
-                }
-                break;
-            case AkCallbackType.AK_MusicSyncBeat:
-                if (_isBarTriggered)
-                {
-                    _isBarTriggered = false;
-                    return;
-                }
-                Debug.Log($"【TestAudioCallback】 Received: AK_MusicSyncBeat({_beatIndex})");
-                //先不使用beatPerBar试试，因为每次AK_MusicSyncBar的时候是会将_beatIndex重置的
-                //_beatIndex = (_beatIndex + 1) % beatPerBar;
-                _beatIndex++;
-                break;
-            case AkCallbackType.AK_MusicSyncUserCue:
-                var musicInfo = (AkMusicSyncCallbackInfo)inInfo;
-                if (musicInfo != null)
-                {
-                    Debug.Log("【TestAudioCallback】 Received: AK_MusicSyncUserCue, CueName: " + musicInfo.userCueName);
-                }
-                break;
-            case AkCallbackType.AK_EnableGetMusicPlayPosition:
-                // 这个回调类型通常用于获取音乐播放位置
-                break;
-            default:
-                Debug.Log("【TestAudioCallback】 Received: " + inType);
-                break;
+            emitter = gameObject;
         }
+        return AkUnitySoundEngine.PostEvent(eventName, emitter, (uint)callbackFlags, callbackFunc, null);
     }
     #endregion
+
+    #region 进一步封装公共接口
+    public uint PlayCommonSfx(string eventName, GameObject emitter = null)
+    {
+        return PlayWwiseEvent(eventName, emitter);
+    }
+    public uint PlayCommonVo(string eventName,GameObject emitter = null)
+    {
+        return PlayWwiseEvent(eventName, emitter);
+    }
+    public uint PlayCommonBgm(string eventName, AkCallbackManager.EventCallback callbackFunc = null)
+    {
+        MusicSyncTool.curGameBgmEventId = AkUnitySoundEngine.GetIDFromString(eventName);
+
+        MusicSyncTool.curGameBgmPlayingId = PlayWwiseEventWithCallback(eventName, gameObject,
+            AkCallbackType.AK_EnableGetMusicPlayPosition | AkCallbackType.AK_EnableGetSourcePlayPosition | AkCallbackType.AK_MusicSyncAll,
+            callbackFunc == null ? MusicSyncTool.MusicEventDefaultCallbackFunc : callbackFunc);
+        return MusicSyncTool.curGameBgmPlayingId;
+    }
+    #endregion
+
 }
