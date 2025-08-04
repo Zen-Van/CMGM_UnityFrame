@@ -29,8 +29,8 @@ public class SimpleTest : MonoBehaviour
     private void Update()
     {
         //得到的是在Source上的位置（即每次循环清空&暂停不计时），单位是毫秒
-        AkUnitySoundEngine.GetSourcePlayPosition(MusicSyncTool.curGameBgmPlayingId, out bgmPosition);
-        CmgmLog.fNormal($"音乐播放的进度为：{bgmPosition}");
+        
+        CmgmLog.fNormal($"音乐播放的进度为：{MusicSyncTool.GetCurBgmPosition()}");
     }
 
 }

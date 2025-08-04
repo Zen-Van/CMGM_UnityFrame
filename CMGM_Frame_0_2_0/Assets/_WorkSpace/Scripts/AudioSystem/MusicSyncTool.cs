@@ -6,11 +6,19 @@ public static class MusicSyncTool
     public static uint curGameBgmPlayingId = AkUnitySoundEngine.AK_INVALID_PLAYING_ID;
     public static uint curGameBgmEventId = 0;
 
+
+    /// <summary>
+    /// 获取正在播放的音乐的播放位置（单位：ms）
+    /// </summary>
+    /// <returns>播放位置（单位：ms）</returns>
+    public static float GetCurBgmPosition()
+    {
+        int bgmPosition;
+        AkUnitySoundEngine.GetSourcePlayPosition(curGameBgmPlayingId, out bgmPosition);
+        return bgmPosition;
+    }
+
     #endregion
-
-
-
-
 
 
     #region 音乐通用回调接口（也可作为非通用回调的案例）
