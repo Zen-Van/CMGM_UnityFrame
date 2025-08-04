@@ -43,6 +43,9 @@ public class GameInitializer : MonoBehaviour
             //初始化Lua管理器
             LuaManager.Instance.Init();
 
+            //初始化音频管理器
+            WwiseAudioManager.Instance.Init();
+
             //逻辑层初始化完成
             _gameInitFinished = true;
             CmgmLog.fPositive("游戏逻辑层初始化完成");

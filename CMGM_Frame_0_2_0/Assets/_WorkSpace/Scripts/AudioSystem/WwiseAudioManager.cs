@@ -1,4 +1,5 @@
 
+using System;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Serialization;
@@ -6,44 +7,53 @@ using UnityEngine.Serialization;
 /// <summary>
 /// Wwise音频管理器（须手动绑在初始化场景的WwiseGlobal上）
 /// </summary>
-public class WwiseAudioManager : SingletonMono<WwiseAudioManager>
+public class WwiseAudioManager : SingletonAutoMono<WwiseAudioManager>
 {
     override protected void Awake()
     {
         base.Awake();
 
         // 开始自动加载主bank
-        if (loadBankOnAwake && mainBank != null)
+        if (loadBankOnAwake)
         {
-            mainBank.Load();
+            LoadBank(mainBankName);
         }
     }
 
+    private string masterVolumeRtpcName = "MasterVolume";
+    private string musicVolumeRtpcName = "MusicVolume";
+    private string sfxVolumeRtpcName = "SfxVolume";
+    private string voiceVolumeRtpcName = "VoiceVolume";
+
     [Header("Wwise Banks")]
-    public AK.Wwise.Bank mainBank;
-    [FormerlySerializedAs("LoadBankOnAwake")] public bool loadBankOnAwake = true;
+    private string mainBankName = "DefaultBank";
+    private bool loadBankOnAwake = true;
 
 
-    [Header("Wwise Game Parameters")]
-    public AK.Wwise.RTPC masterVolume;
-    public AK.Wwise.RTPC musicVolume;
-    public AK.Wwise.RTPC sfxVolume;
-    public AK.Wwise.RTPC voiceVolume;
-
-
-    #region 基础公共接口
+    #region Bank管理接口
     public void LoadBank(AK.Wwise.Bank bank)
     {
         if (bank == null) return;
         bank.Load();
+    }
+    public uint LoadBank(string bankName)
+    {
+        uint bankId = 0;
+        AkUnitySoundEngine.LoadBank(bankName, out bankId);
+        return bankId;
     }
     public void UnloadBank(AK.Wwise.Bank bank)
     {
         if (bank == null) return;
         bank.Unload();
     }
+    public AKRESULT UnloadBank(string bankName)
+    {
+        return AkUnitySoundEngine.UnloadBank(bankName, IntPtr.Zero);
+    }
+    #endregion
 
-
+    #region 基础播放接口
     //以下播放接口仅播放Wwise事件，不会将播放事件纳入音乐/音效/语音的分类管理
     //若想要播放音乐音效请使用PlayCommonSfx/PlayCommonBgm/PlayCommonVo
     public uint PlayWwiseEvent(AK.Wwise.Event wwiseEvent, GameObject emitter = null)
@@ -83,7 +93,7 @@ public class WwiseAudioManager : SingletonMono<WwiseAudioManager>
     }
     #endregion
 
-    #region 进一步封装公共接口
+    #region 进一步封装播放接口
     public uint PlayCommonSfx(string eventName, GameObject emitter = null)
     {
         return PlayWwiseEvent(eventName, emitter);
@@ -100,7 +110,14 @@ public class WwiseAudioManager : SingletonMono<WwiseAudioManager>
             AkCallbackType.AK_EnableGetMusicPlayPosition | AkCallbackType.AK_EnableGetSourcePlayPosition | AkCallbackType.AK_MusicSyncAll,
             callbackFunc == null ? MusicSyncTool.MusicEventDefaultCallbackFunc : callbackFunc);
         return MusicSyncTool.curGameBgmPlayingId;
+
     }
     #endregion
 
+    #region 全局音量调整接口
+    public void SetMasterVolume(float value) => AkUnitySoundEngine.SetRTPCValue(masterVolumeRtpcName, value);
+    public void SetMusicVolume(float value) => AkUnitySoundEngine.SetRTPCValue(musicVolumeRtpcName, value);
+    public void SetSfxVolume(float value)=>AkUnitySoundEngine.SetRTPCValue(sfxVolumeRtpcName,value);
+    public void SetVoiceVolume(float value) => AkUnitySoundEngine.SetRTPCValue(voiceVolumeRtpcName, value);
+    #endregion
 }

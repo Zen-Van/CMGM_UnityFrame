@@ -499,27 +499,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2a5420bdc92794c00895f1c0c1f05b3c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mainBank:
-    idInternal: 0
-    valueGuidInternal: 
-    WwiseObjectReference: {fileID: 11400000, guid: 0613621f4630c43408652e289d959e1b, type: 2}
-  loadBankOnAwake: 1
-  masterVolume:
-    idInternal: 0
-    valueGuidInternal: 
-    WwiseObjectReference: {fileID: 11400000, guid: 37bfe923f6faf4e3ba3c87ec719383cb, type: 2}
-  musicVolume:
-    idInternal: 0
-    valueGuidInternal: 
-    WwiseObjectReference: {fileID: 11400000, guid: bbafa915be8614e9d8e79747f9886f02, type: 2}
-  sfxVolume:
-    idInternal: 0
-    valueGuidInternal: 
-    WwiseObjectReference: {fileID: 11400000, guid: 74098008e588a47df9bd1c967cd8162d, type: 2}
-  voiceVolume:
-    idInternal: 0
-    valueGuidInternal: 
-    WwiseObjectReference: {fileID: 11400000, guid: 1e537faa584384ad79b4a8501830c0e3, type: 2}
 --- !u!1 &1587593132
 GameObject:
   m_ObjectHideFlags: 0

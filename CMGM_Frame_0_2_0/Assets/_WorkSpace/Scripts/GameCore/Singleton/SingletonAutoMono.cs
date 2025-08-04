@@ -25,6 +25,18 @@ public class SingletonAutoMono<T> : MonoBehaviour where T : MonoBehaviour
         }
     }
 
+    //支持手动挂载，如果没有手动挂载则自动生成
+    protected virtual void Awake()
+    {
+        if (instance != null)
+        {
+            DestroyImmediate(this);
+            return;
+        }
+        instance = this as T;
+        DontDestroyOnLoad(gameObject);
+    }
+
     /// <summary>
     /// 不等到懒加载的提前加载方法
     /// </summary>

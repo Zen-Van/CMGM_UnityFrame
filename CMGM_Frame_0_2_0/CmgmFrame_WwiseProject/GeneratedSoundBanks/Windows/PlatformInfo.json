@@ -3,7 +3,7 @@
   "Platform": {
    "Name": "Windows",
    "BasePlatform": "Windows",
-   "Generator": "2024.1.2.8726"
+   "Generator": "2024.1.4.8780"
   },
   "RootPaths": {
    "ProjectRoot": "../..",
@@ -21,7 +21,7 @@
    "SourceControlGeneratedFiles": "false",
    "GenerateHeaderFile": "true",
    "GenerateContentTxtFile": "true",
-   "GenerateMetadataXML": "false",
+   "GenerateMetadataXML": "true",
    "GenerateMetadataJSON": "true",
    "GenerateAllBanksMetadata": "false",
    "GeneratePerBankMetadata": "true",
@@ -33,6 +33,6 @@
    "PrintObjectPath": "true",
    "PrintObjectColor": "true"
   },
-  "FileHash": "{9A42AB2C-37A3-F593-9B69-7EAC59796321}"
+  "FileHash": "{801284CF-C983-0581-C6C4-AC2B96EE1341}"
  }
 }
