@@ -111,7 +111,7 @@ public class WwiseAudioManager : SingletonAutoMono<WwiseAudioManager>
     {
         return PlayWwiseEvent(eventName, emitter);
     }
-    public uint PlayCommonBgm(string eventName, string bgmEvtListPath = null, AkCallbackManager.EventCallback callbackFunc = null)
+    public uint PlayCommonBgm(string eventName, string bgmNameForEvtList = null, AkCallbackManager.EventCallback callbackFunc = null)
     {
         MusicSyncTool.curGameBgmEventId = AkUnitySoundEngine.GetIDFromString(eventName);
 
@@ -120,8 +120,8 @@ public class WwiseAudioManager : SingletonAutoMono<WwiseAudioManager>
             callbackFunc == null ? MusicSyncTool.MusicEventDefaultCallbackFunc : callbackFunc);
         
         //是否开启音乐节拍计算
-        if(bgmEvtListPath != null)
-            MusicSyncTool.ActiveMusicBeatSync(bgmEvtListPath);
+        if(bgmNameForEvtList != null)
+            MusicSyncTool.ActiveMusicBeatSync(Consts.Paths.RhythmMap_Path + $"/{bgmNameForEvtList}/{bgmNameForEvtList}_BeatEvtList.json");
         else
             MusicSyncTool.DisableMusicBeatSync();
 

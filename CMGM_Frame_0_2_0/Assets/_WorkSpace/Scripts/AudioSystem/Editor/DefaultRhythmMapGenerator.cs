@@ -82,7 +82,7 @@ public class DefaultRhythmMapGenerator : EditorWindow
         string path = EditorUtility.SaveFilePanel(
             "保存节奏映射数据",
             Consts.Paths.RhythmMap_Path + $"/{selectedClip.name}",
-            $"{selectedClip.name}_BeatCueMap.json",
+            $"{selectedClip.name}_BeatEvtList.json",
             "json");
 
         if (!string.IsNullOrEmpty(path))

@@ -44,6 +44,8 @@ public static class MusicSyncTool
         if (CurBgmPosition >= evtTimeList[evtTimeList.Count-1] + WwiseAudioManager.Instance.goodWindow)
         {
             judgeIndex = 0;
+            BeatPercent = 0;
+            curBeatInputState = BeatInputState.miss;
             return;
         }
 
@@ -162,6 +164,10 @@ public static class MusicSyncTool
                 break;
             case AkCallbackType.AK_MusicSyncExit:
                 Debug.Log("【TestAudioCallback】 Received: AK_MusicSyncExit");
+                //重置节拍进度
+                judgeIndex = 0;
+                BeatPercent = 0;
+                curBeatInputState = BeatInputState.miss;
                 break;
             case AkCallbackType.AK_MusicSyncBar:
                 if (!_isBarTriggered) // 防止同一帧重复处理 

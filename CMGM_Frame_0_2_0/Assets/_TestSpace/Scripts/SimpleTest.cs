@@ -21,8 +21,7 @@ public class SimpleTest : MonoBehaviour
         Instantiate(cube, Vector3.zero, Quaternion.identity);
 
 
-        WwiseAudioManager.Instance.PlayCommonBgm("Play_AlienLoveSong",
-            Consts.Paths.RhythmMap_Path + $"/AlienLoveStory/AlienLoveStory_BeatCueMap.json");
+        WwiseAudioManager.Instance.PlayCommonBgm("Play_AlienLoveSong", "AlienLoveSong");
     }
 
     private void Start()
