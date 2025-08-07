@@ -3,10 +3,14 @@
 	<InteractiveMusic>
 		<WorkUnit Name="Default Work Unit" ID="{CA10A4A7-74C6-47FD-BF51-708FD8FAB69A}" PersistMode="Standalone">
 			<ChildrenList>
-				<MusicPlaylistContainer Name="TestMusic" ID="{D9406DDE-8CAA-4BF9-94FD-80DC4F86A5C3}" ShortID="701098060">
+				<MusicPlaylistContainer Name="AlienLoveSong" ID="{D9406DDE-8CAA-4BF9-94FD-80DC4F86A5C3}" ShortID="701098060">
+					<PropertyList>
+						<Property Name="Tempo" Type="Real64" Value="160"/>
+						<Property Name="TimeSignatureUpper" Type="int16" Value="3"/>
+					</PropertyList>
 					<ReferenceList>
 						<Reference Name="Conversion">
-							<ObjectRef Name="Default Conversion Settings" ID="{6D1B890C-9826-4384-BF07-C15223E9FB56}" WorkUnitID="{5F4960A6-4841-40D6-A3AC-9173E0A01932}"/>
+							<ObjectRef Name="Default Conversion Settings" ID="{6D1B890C-9826-4384-BF07-C15223E9FB56}" WorkUnitID="{89D2F2DE-20AB-4C84-A5B2-30C877B813C2}"/>
 						</Reference>
 						<Reference Name="OutputBus">
 							<ObjectRef Name="Music" ID="{912BE058-40E0-4E33-8E72-86B9703C8D0A}" WorkUnitID="{1E68C62F-A779-47A3-8A12-491B57C1E121}"/>
@@ -55,7 +59,7 @@
 							</PropertyList>
 							<ReferenceList>
 								<Reference Name="Conversion">
-									<ObjectRef Name="Default Conversion Settings" ID="{6D1B890C-9826-4384-BF07-C15223E9FB56}" WorkUnitID="{5F4960A6-4841-40D6-A3AC-9173E0A01932}"/>
+									<ObjectRef Name="Default Conversion Settings" ID="{6D1B890C-9826-4384-BF07-C15223E9FB56}" WorkUnitID="{89D2F2DE-20AB-4C84-A5B2-30C877B813C2}"/>
 								</Reference>
 								<Reference Name="OutputBus">
 									<ObjectRef Name="Master Audio Bus" ID="{1514A4D8-1DA6-412A-A17E-75CA0C2149F3}" WorkUnitID="{1E68C62F-A779-47A3-8A12-491B57C1E121}"/>
@@ -135,6 +139,149 @@
 												<PropertyList>
 													<Property Name="CueType" Type="int16" Value="1"/>
 													<Property Name="TimeMs" Type="Real64" Value="116035.020833333"/>
+												</PropertyList>
+											</MusicCue>
+										</Local>
+									</Reference>
+								</ObjectList>
+							</ObjectLists>
+						</MusicSegment>
+					</ChildrenList>
+				</MusicPlaylistContainer>
+				<MusicPlaylistContainer Name="ThythmTestMusic" ID="{470FFA36-642E-4915-B825-0CF8A774E0A0}" ShortID="819393541">
+					<PropertyList>
+						<Property Name="Tempo" Type="Real64" Value="143"/>
+					</PropertyList>
+					<ReferenceList>
+						<Reference Name="Conversion">
+							<ObjectRef Name="Default Conversion Settings" ID="{6D1B890C-9826-4384-BF07-C15223E9FB56}" WorkUnitID="{89D2F2DE-20AB-4C84-A5B2-30C877B813C2}"/>
+						</Reference>
+						<Reference Name="OutputBus">
+							<ObjectRef Name="Master Audio Bus" ID="{1514A4D8-1DA6-412A-A17E-75CA0C2149F3}" WorkUnitID="{1E68C62F-A779-47A3-8A12-491B57C1E121}"/>
+						</Reference>
+						<Reference Name="PlaylistRoot">
+							<Custom>
+								<MusicPlaylistItem Name="" ID="{EEF98D72-F117-4232-BA35-A99A8503719E}" ShortID="1040622405">
+									<PropertyList>
+										<Property Name="LoopCount" Type="int16" Value="0"/>
+									</PropertyList>
+									<ChildrenList>
+										<MusicPlaylistItem Name="" ID="{B0CD8102-B44D-4161-97D0-4999F7BFDD46}" ShortID="318386351">
+											<PropertyList>
+												<Property Name="PlaylistItemType" Type="int16" Value="1"/>
+											</PropertyList>
+											<ReferenceList>
+												<Reference Name="Segment">
+													<ObjectRef Name="Heatwave_MUG_Test" ID="{9DE01C58-50C1-42CC-9731-513ACC8BD3C2}" WorkUnitID="{CA10A4A7-74C6-47FD-BF51-708FD8FAB69A}"/>
+												</Reference>
+											</ReferenceList>
+										</MusicPlaylistItem>
+									</ChildrenList>
+								</MusicPlaylistItem>
+							</Custom>
+						</Reference>
+						<Reference Name="TransitionRoot">
+							<Custom>
+								<MusicTransition Name="Root" ID="{A1742299-CDB9-48B6-984A-B374798EFFFC}">
+									<PropertyList>
+										<Property Name="IsFolder" Type="bool" Value="True"/>
+									</PropertyList>
+									<ChildrenList>
+										<MusicTransition Name="Transition" ID="{42CF6384-040E-4821-8D23-54DE0B48F70C}">
+											<TransitionInfo/>
+										</MusicTransition>
+									</ChildrenList>
+									<TransitionInfo/>
+								</MusicTransition>
+							</Custom>
+						</Reference>
+					</ReferenceList>
+					<ChildrenList>
+						<MusicSegment Name="Heatwave_MUG_Test" ID="{9DE01C58-50C1-42CC-9731-513ACC8BD3C2}" ShortID="652246961">
+							<PropertyList>
+								<Property Name="EndPosition" Type="Real64" Value="449143.123543123"/>
+								<Property Name="OverrideClockSettings" Type="bool" Value="True"/>
+								<Property Name="Tempo" Type="Real64" Value="143"/>
+							</PropertyList>
+							<ReferenceList>
+								<Reference Name="Conversion">
+									<ObjectRef Name="Default Conversion Settings" ID="{6D1B890C-9826-4384-BF07-C15223E9FB56}" WorkUnitID="{89D2F2DE-20AB-4C84-A5B2-30C877B813C2}"/>
+								</Reference>
+								<Reference Name="OutputBus">
+									<ObjectRef Name="Master Audio Bus" ID="{1514A4D8-1DA6-412A-A17E-75CA0C2149F3}" WorkUnitID="{1E68C62F-A779-47A3-8A12-491B57C1E121}"/>
+								</Reference>
+							</ReferenceList>
+							<ChildrenList>
+								<MusicTrack Name="Heatwave_MUG_Test" ID="{4B30AEE0-C2D4-4344-BC8C-6FFFBD556656}" ShortID="162898688">
+									<ReferenceList>
+										<Reference Name="OutputBus">
+											<ObjectRef Name="Master Audio Bus" ID="{1514A4D8-1DA6-412A-A17E-75CA0C2149F3}" WorkUnitID="{1E68C62F-A779-47A3-8A12-491B57C1E121}"/>
+										</Reference>
+										<Reference Name="TransitionRoot">
+											<Custom>
+												<MusicTransition Name="Root" ID="{B2A9D2F7-6365-41B9-918D-4A013D7C9A3F}">
+													<PropertyList>
+														<Property Name="IsFolder" Type="bool" Value="True"/>
+													</PropertyList>
+													<TransitionInfo/>
+												</MusicTransition>
+											</Custom>
+										</Reference>
+									</ReferenceList>
+									<ChildrenList>
+										<AudioFileSource Name="Heatwave_MUG_Test" ID="{08B4F492-719A-454B-AE5E-371478761F05}">
+											<Language>SFX</Language>
+											<AudioFile>Heatwave_MUG_Test.wav</AudioFile>
+											<MediaIDList>
+												<MediaID ID="965978631"/>
+											</MediaIDList>
+										</AudioFileSource>
+									</ChildrenList>
+									<ObjectLists>
+										<ObjectList Name="Sequences">
+											<Reference>
+												<Local>
+													<MusicTrackSequence Name="" ID="{A5D5CF2D-BAB3-437A-87F5-DF19A015E6FE}">
+														<ObjectLists>
+															<ObjectList Name="Clips">
+																<Reference>
+																	<Local>
+																		<MusicClip Name="Heatwave_MUG_Test" ID="{BBA36E33-8FEF-4304-9D8B-E314535E6307}">
+																			<PropertyList>
+																				<Property Name="EndTrimOffset" Type="Real64" Value="448933.333333333"/>
+																				<Property Name="FadeInMode" Type="int16" Value="0"/>
+																				<Property Name="FadeOutMode" Type="int16" Value="0"/>
+																			</PropertyList>
+																			<AudioSourceRef Name="Heatwave_MUG_Test" ID="{08B4F492-719A-454B-AE5E-371478761F05}"/>
+																		</MusicClip>
+																	</Local>
+																</Reference>
+															</ObjectList>
+														</ObjectLists>
+													</MusicTrackSequence>
+												</Local>
+											</Reference>
+										</ObjectList>
+									</ObjectLists>
+								</MusicTrack>
+							</ChildrenList>
+							<ObjectLists>
+								<ObjectList Name="Cues">
+									<Reference>
+										<Local>
+											<MusicCue Name="Entry Cue" ID="{D8C342F7-4223-4B08-ADC1-2055624D1475}">
+												<PropertyList>
+													<Property Name="TimeMs" Type="Real64" Value="79.1223713032069"/>
+												</PropertyList>
+											</MusicCue>
+										</Local>
+									</Reference>
+									<Reference>
+										<Local>
+											<MusicCue Name="Exit Cue" ID="{00E655E8-7ABD-4402-AAEB-C95C87D87429}">
+												<PropertyList>
+													<Property Name="CueType" Type="int16" Value="1"/>
+													<Property Name="TimeMs" Type="Real64" Value="449012.455704636"/>
 												</PropertyList>
 											</MusicCue>
 										</Local>

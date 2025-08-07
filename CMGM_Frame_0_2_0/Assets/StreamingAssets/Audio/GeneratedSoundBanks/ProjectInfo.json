@@ -3,7 +3,7 @@
   "Project": {
    "Name": "CmgmFrame_WwiseProject",
    "GUID": "{62A67A84-88A2-4373-956B-5CDEA5810E50}",
-   "Generator": "2024.1.4.8780"
+   "Generator": "2024.1.2.8726"
   },
   "CacheRoot": "../../../../CmgmFrame_WwiseProject/.cache",
   "Platforms": [
@@ -31,6 +31,6 @@
     "UseAsStandIn": "true"
    }
   ],
-  "FileHash": "{6AF021CA-20A7-A215-2E90-9BBFA9A86799}"
+  "FileHash": "{F3489FB5-8454-679E-BBE8-19E06D9DA3B7}"
  }
 }

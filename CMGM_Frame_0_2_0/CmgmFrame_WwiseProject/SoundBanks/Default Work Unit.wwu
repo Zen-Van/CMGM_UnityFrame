@@ -6,7 +6,7 @@
 				<SoundBank Name="DefaultBank" ID="{BCE4E449-6DF9-43DA-9E78-6E81E8E048FB}">
 					<ObjectInclusionList>
 						<ObjectRef Name="Play_Empty" ID="{E46759D8-1B19-42F3-9B5D-35474BBE2649}" WorkUnitID="{3AFBA6DE-0609-404A-87FA-8A3C77F7C455}" Origin="Manual" Filter="7"/>
-						<ObjectRef Name="Play_TestMusic" ID="{6B5C2355-5681-4927-8371-977C6F408862}" WorkUnitID="{3AFBA6DE-0609-404A-87FA-8A3C77F7C455}" Origin="Manual" Filter="7"/>
+						<ObjectRef Name="Play_AlienLoveSong" ID="{6B5C2355-5681-4927-8371-977C6F408862}" WorkUnitID="{3AFBA6DE-0609-404A-87FA-8A3C77F7C455}" Origin="Manual" Filter="7"/>
 					</ObjectInclusionList>
 					<ObjectExclusionList/>
 					<GameSyncExclusionList/>

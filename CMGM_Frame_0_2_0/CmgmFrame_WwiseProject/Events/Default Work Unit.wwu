@@ -14,12 +14,12 @@
 						</Action>
 					</ChildrenList>
 				</Event>
-				<Event Name="Play_TestMusic" ID="{6B5C2355-5681-4927-8371-977C6F408862}">
+				<Event Name="Play_AlienLoveSong" ID="{6B5C2355-5681-4927-8371-977C6F408862}">
 					<ChildrenList>
 						<Action Name="" ID="{8680511E-A327-4BEE-A70C-56BB9818FDE2}" ShortID="735579874">
 							<ReferenceList>
 								<Reference Name="Target">
-									<ObjectRef Name="TestMusic" ID="{D9406DDE-8CAA-4BF9-94FD-80DC4F86A5C3}" WorkUnitID="{CA10A4A7-74C6-47FD-BF51-708FD8FAB69A}"/>
+									<ObjectRef Name="AlienLoveSong" ID="{D9406DDE-8CAA-4BF9-94FD-80DC4F86A5C3}" WorkUnitID="{CA10A4A7-74C6-47FD-BF51-708FD8FAB69A}"/>
 								</Reference>
 							</ReferenceList>
 						</Action>

@@ -10,7 +10,7 @@
     "Type": "User",
     "GUID": "{BCE4E449-6DF9-43DA-9E78-6E81E8E048FB}",
     "Language": "SFX",
-    "Hash": "{0D77CE8D-F833-4D3E-DABC-FB3A764E9261}",
+    "Hash": "{B7C08A36-D4B5-08C5-4CFE-3B5BC62A4971}",
     "ObjectPath": "\\SoundBanks\\Default Work Unit\\DefaultBank",
     "ShortName": "DefaultBank",
     "Path": "DefaultBank.bnk",
@@ -35,6 +35,18 @@
     ],
     "Events": [
      {
+      "Id": "551019928",
+      "Name": "Play_AlienLoveSong",
+      "ObjectPath": "\\Events\\Default Work Unit\\Play_AlienLoveSong",
+      "GUID": "{6B5C2355-5681-4927-8371-977C6F408862}",
+      "DurationType": "Infinite",
+      "MediaRefs": [
+       {
+        "Id": "232200431"
+       }
+      ]
+     },
+     {
       "Id": "3703829241",
       "Name": "Play_Empty",
       "ObjectPath": "\\Events\\Default Work Unit\\Play_Empty",
@@ -47,22 +59,10 @@
         "Id": "2433084"
        }
       ]
-     },
-     {
-      "Id": "2872770759",
-      "Name": "Play_TestMusic",
-      "ObjectPath": "\\Events\\Default Work Unit\\Play_TestMusic",
-      "GUID": "{6B5C2355-5681-4927-8371-977C6F408862}",
-      "DurationType": "Infinite",
-      "MediaRefs": [
-       {
-        "Id": "232200431"
-       }
-      ]
      }
     ]
    }
   ],
-  "FileHash": "{6C62CC82-EF3A-CC25-E018-01B164E0B831}"
+  "FileHash": "{0567B410-CB9C-2F2D-6697-D5814E365A28}"
  }
 }
