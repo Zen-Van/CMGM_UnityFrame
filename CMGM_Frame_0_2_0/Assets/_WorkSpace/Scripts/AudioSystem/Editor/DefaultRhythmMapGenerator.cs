@@ -62,7 +62,7 @@ public class DefaultRhythmMapGenerator : EditorWindow
         }
 
         // 创建JSON数据
-        BeatMapData data = new BeatMapData();
+        BeatEvtListData data = new BeatEvtListData();
         data.beatTimesMs = beatTimes.ToArray();
 
         string json = JsonUtility.ToJson(data, true);
@@ -81,7 +81,7 @@ public class DefaultRhythmMapGenerator : EditorWindow
         // 保存文件
         string path = EditorUtility.SaveFilePanel(
             "保存节奏映射数据",
-            Application.dataPath + "/" + Consts.Paths.RhythmMap_Path + $"/{selectedClip.name}",
+            Consts.Paths.RhythmMap_Path + $"/{selectedClip.name}",
             $"{selectedClip.name}_BeatCueMap.json",
             "json");
 
@@ -91,12 +91,5 @@ public class DefaultRhythmMapGenerator : EditorWindow
             AssetDatabase.Refresh();
             Debug.Log($"节奏映射已保存至: {path}");
         }
-    }
-
-    // JSON数据结构
-    [System.Serializable]
-    private class BeatMapData
-    {
-        public int[] beatTimesMs;
     }
 }

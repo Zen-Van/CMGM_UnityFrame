@@ -1,4 +1,8 @@
-﻿using UnityEngine;
+﻿using Sirenix.OdinInspector;
+using System.Collections.Generic;
+using System.Data;
+using System.IO;
+using UnityEngine;
 
 public static class MusicSyncTool
 {
@@ -8,14 +12,133 @@ public static class MusicSyncTool
 
 
     /// <summary>
-    /// 获取正在播放的音乐的播放位置（单位：ms）
+    /// 正在播放的音乐的播放位置（单位：ms）
     /// </summary>
     /// <returns>播放位置（单位：ms）</returns>
-    public static float GetCurBgmPosition()
+    public static int CurBgmPosition
     {
-        int bgmPosition;
-        AkUnitySoundEngine.GetSourcePlayPosition(curGameBgmPlayingId, out bgmPosition);
-        return bgmPosition;
+        get
+        {
+            int bgmPosition;
+            AkUnitySoundEngine.GetSourcePlayPosition(curGameBgmPlayingId, out bgmPosition);
+            return bgmPosition;
+        }
+    }
+
+    #endregion
+
+    #region 节拍同步判定
+    public enum BeatInputState { miss = 0, good = 1, great = 2, perfect = 3 }
+    public static BeatInputState curBeatInputState = BeatInputState.miss;
+    /// <summary>据下一拍的时长</summary>
+    public static float BeatPercent { get;private set; }
+
+    /// <summary>
+    /// 当前判定的事件的角标
+    /// </summary>
+    private static int judgeIndex = 0;
+
+    private static void RefreshCurBeatState()
+    {
+        //如果音乐指针在最后一个事件判定之后，则重置判定角标
+        if (CurBgmPosition >= evtTimeList[evtTimeList.Count-1] + WwiseAudioManager.Instance.goodWindow)
+        {
+            judgeIndex = 0;
+            return;
+        }
+
+        //赋值节拍器
+        if (judgeIndex > 0)
+            BeatPercent = ((float)CurBgmPosition - (float)evtTimeList[judgeIndex - 1]) /
+                ((float)evtTimeList[judgeIndex] - (float)evtTimeList[judgeIndex - 1]);
+        if (BeatPercent > 1) BeatPercent -= 1;
+
+        //按区域判定节拍状态
+        if (evtTimeList.Count == 0) return;
+        int judgeEvtTime = evtTimeList[judgeIndex];
+        if (CurBgmPosition < judgeEvtTime - WwiseAudioManager.Instance.goodWindow)
+        {
+            curBeatInputState = BeatInputState.miss;
+        }
+        else if (CurBgmPosition < judgeEvtTime - WwiseAudioManager.Instance.greatWindow)//从左侧进入good区域
+        {
+            curBeatInputState = BeatInputState.good;
+        }
+        else if (CurBgmPosition < judgeEvtTime - WwiseAudioManager.Instance.perfectWindow)//从左侧进入great区域
+        {
+            curBeatInputState = BeatInputState.great;
+        }
+        else if (CurBgmPosition < judgeEvtTime + WwiseAudioManager.Instance.perfectWindow)//从左侧进入perfect区域
+        {
+            curBeatInputState = BeatInputState.perfect;
+        }
+        else if (CurBgmPosition < judgeEvtTime + WwiseAudioManager.Instance.greatWindow)//从右侧离开perfect区域
+        {
+            curBeatInputState = BeatInputState.great;
+        }
+        else if (CurBgmPosition < judgeEvtTime + WwiseAudioManager.Instance.goodWindow)//从右侧离开great区域
+        {
+            curBeatInputState = BeatInputState.good;
+        }
+        else//从右侧离开good区域
+        {
+            curBeatInputState = BeatInputState.miss;
+            if (judgeIndex < evtTimeList.Count - 1) judgeIndex++; //保证结尾时数组不越界，并保证数值锁定
+        }
+    }
+
+
+    /// <summary>
+    /// 单轨事件
+    /// </summary>
+    private static List<int> evtTimeList = new List<int>();
+    public static void ActiveMusicBeatSync(string beatEvtListJsonPath)
+    {
+        //清空事件列表
+        evtTimeList.Clear();
+        //获取当前音乐需要被判定的事件列表
+        LoadBeatEvtListFromJson(beatEvtListJsonPath);
+        //将RefreshCurState()注册进Update()
+        MonoMgr.Instance.AddUpdateListener(RefreshCurBeatState);
+
+    }
+    public static void DisableMusicBeatSync()
+    {
+        evtTimeList.Clear();
+        //将RefreshCurState()从Update()中移除
+        MonoMgr.Instance.RemoveUpdateListener(RefreshCurBeatState);
+    }
+    // 从JSON文件加载节拍映射数据
+    private static List<int> LoadBeatEvtListFromJson(string beatEvtListJsonPath)
+    {
+        if (string.IsNullOrEmpty(beatEvtListJsonPath))
+        {
+            Debug.LogError("节拍映射JSON路径未设置!");
+            return null;
+        }
+
+        if (!File.Exists(beatEvtListJsonPath))
+        {
+            Debug.LogError($"节拍映射文件不存在: {beatEvtListJsonPath}");
+            return null;
+        }
+
+        try
+        {
+            string jsonContent = File.ReadAllText(beatEvtListJsonPath);
+            BeatEvtListData beatMapData = JsonUtility.FromJson<BeatEvtListData>(jsonContent);
+
+            // 将节拍时间添加到列表
+            evtTimeList.AddRange(beatMapData.beatTimesMs);
+
+            Debug.Log($"成功加载节拍映射数据，共 {beatMapData.beatTimesMs.Length} 个节拍点");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"加载节拍映射失败: {e.Message}");
+        }
+
+        return evtTimeList;
     }
 
     #endregion
@@ -74,3 +197,6 @@ public static class MusicSyncTool
     #endregion
 
 }
+
+
+

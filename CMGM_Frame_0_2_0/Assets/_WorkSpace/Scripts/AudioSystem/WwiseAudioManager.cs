@@ -1,4 +1,5 @@
 
+using Sirenix.OdinInspector;
 using System;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -29,6 +30,14 @@ public class WwiseAudioManager : SingletonAutoMono<WwiseAudioManager>
     private string mainBankName = "DefaultBank";
     private bool loadBankOnAwake = true;
 
+    #region 方便调试的音频数据
+    //应当写到节拍输入的脚本中（输入控制器中设置窗口而非音频系统中设置窗口）
+    //最好设置成根据歌曲的bpm而适应变化的，现在这个数值在bpm超过180的时候可能不适用
+    [BoxGroup("节拍判定窗口（单位：毫秒）")] public int goodWindow = 100;
+    [BoxGroup("节拍判定窗口（单位：毫秒）")] public int greatWindow = 60;
+    [BoxGroup("节拍判定窗口（单位：毫秒）")] public int perfectWindow = 30;
+
+    #endregion
 
     #region Bank管理接口
     public void LoadBank(AK.Wwise.Bank bank)
@@ -102,15 +111,26 @@ public class WwiseAudioManager : SingletonAutoMono<WwiseAudioManager>
     {
         return PlayWwiseEvent(eventName, emitter);
     }
-    public uint PlayCommonBgm(string eventName, AkCallbackManager.EventCallback callbackFunc = null)
+    public uint PlayCommonBgm(string eventName, string bgmEvtListPath = null, AkCallbackManager.EventCallback callbackFunc = null)
     {
         MusicSyncTool.curGameBgmEventId = AkUnitySoundEngine.GetIDFromString(eventName);
 
         MusicSyncTool.curGameBgmPlayingId = PlayWwiseEventWithCallback(eventName, gameObject,
             AkCallbackType.AK_EnableGetMusicPlayPosition | AkCallbackType.AK_EnableGetSourcePlayPosition | AkCallbackType.AK_MusicSyncAll,
             callbackFunc == null ? MusicSyncTool.MusicEventDefaultCallbackFunc : callbackFunc);
-        return MusicSyncTool.curGameBgmPlayingId;
+        
+        //是否开启音乐节拍计算
+        if(bgmEvtListPath != null)
+            MusicSyncTool.ActiveMusicBeatSync(bgmEvtListPath);
+        else
+            MusicSyncTool.DisableMusicBeatSync();
 
+        return MusicSyncTool.curGameBgmPlayingId;
+    }
+    public void StopCommonBgm(uint playingId)
+    {
+        AkUnitySoundEngine.StopPlayingID(MusicSyncTool.curGameBgmPlayingId);
+        MusicSyncTool.DisableMusicBeatSync();
     }
     #endregion
 
