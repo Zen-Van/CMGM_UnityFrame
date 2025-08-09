@@ -1,9 +1,13 @@
 ﻿using UnityEngine;
 
-public class InputManager : Singleton<InputManager>
+public class InputManager : SingletonAutoMono<InputManager>
 {
-    private InputManager()
+    protected override void Awake()
     {
+        base.Awake();
+
+        //初始化inputActions
+        inputActions = new InputActions_Main();
         inputActions.Enable();
 
         #region 初始化输入系统时就注册的游戏输入事件(系统输入事件)
@@ -15,12 +19,8 @@ public class InputManager : Singleton<InputManager>
         };
         #endregion
     }
-    ~InputManager()
-    {
-        inputActions.Disable();
-    }
 
-    private InputActions_Main inputActions = new InputActions_Main();
+    private InputActions_Main inputActions;
     /// <summary> 所有玩家输入集 </summary>
     public InputActions_Main.GamePlayActions Gameplay => inputActions.GamePlay;
     /// <summary> 所有UI输入集 </summary>

@@ -33,9 +33,9 @@ public class WwiseAudioManager : SingletonAutoMono<WwiseAudioManager>
     #region 方便调试的音频数据
     //应当写到节拍输入的脚本中（输入控制器中设置窗口而非音频系统中设置窗口）
     //最好设置成根据歌曲的bpm而适应变化的，现在这个数值在bpm超过180的时候可能不适用
-    [BoxGroup("节拍判定窗口（单位：毫秒）")] public int goodWindow = 100;
-    [BoxGroup("节拍判定窗口（单位：毫秒）")] public int greatWindow = 60;
-    [BoxGroup("节拍判定窗口（单位：毫秒）")] public int perfectWindow = 30;
+    [BoxGroup("节拍判定窗口（单位：毫秒）")] public int goodWindow = 150;
+    [BoxGroup("节拍判定窗口（单位：毫秒）")] public int greatWindow = 100;
+    [BoxGroup("节拍判定窗口（单位：毫秒）")] public int perfectWindow = 50;
 
     #endregion
 
