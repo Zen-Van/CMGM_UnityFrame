@@ -169,9 +169,9 @@ public class ExcelTool
         //写入代码，先写入一行数据的容器类，再用一个以主键为key的字典去存它
         string str =
             "using System.Collections.Generic;\n" +
-            "/// <summary>" +
-            $"/// {table.TableName}表中一行数据的存储类" +
-            "/// </summary>" +
+            "/// <summary>\n" +
+            $"/// {table.TableName}表中一行数据的存储类\n" +
+            "/// </summary>\n" +
             $"public class {table.TableName}Row\n" +
             "{\n";
 
