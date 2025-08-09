@@ -8,7 +8,7 @@ public class InputManager : Singleton<InputManager>
 
         #region 初始化输入系统时就注册的游戏输入事件(系统输入事件)
         //顶层UI隐藏事件（当输入UI取消按钮时，隐藏顶层面板）
-        InputManager.Instance.UI.Cancel.started += (ctx) =>
+        UI.Cancel.started += (ctx) =>
         {
             if (UIManager.Instance.GetTopDynamicPanel() != null)
                 UIManager.Instance.HidePanel(UIManager.Instance.GetTopDynamicPanel().name, false);
