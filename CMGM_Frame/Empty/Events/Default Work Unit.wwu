@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WwiseDocument Type="WorkUnit" ID="{D9A50F73-133D-4506-8459-1A510659239C}" SchemaVersion="133">
+	<Events>
+		<WorkUnit Name="Default Work Unit" ID="{D9A50F73-133D-4506-8459-1A510659239C}" PersistMode="Standalone">
+			<ChildrenList>
+				<Event Name="New_Event" ID="{80838B8A-5E44-4E1C-84E6-1601D84D398E}">
+					<ChildrenList>
+						<Action Name="" ID="{71C1D8CD-C986-44C2-8CFF-EFB397E0800F}" ShortID="113888383"/>
+						<Action Name="" ID="{9BA0C90D-5152-4980-843B-EE1FA28D790B}" ShortID="990360527">
+							<PropertyList>
+								<Property Name="ActionType" Type="int16" Value="26"/>
+								<Property Name="FadeTime" Type="Real64" Value="5.5"/>
+							</PropertyList>
+							<ReferenceList/>
+						</Action>
+					</ChildrenList>
+				</Event>
+			</ChildrenList>
+		</WorkUnit>
+	</Events>
+</WwiseDocument>

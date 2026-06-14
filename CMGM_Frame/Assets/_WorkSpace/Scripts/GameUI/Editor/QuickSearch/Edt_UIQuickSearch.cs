@@ -1,0 +1,21 @@
+﻿using UnityEditor;
+using UnityEngine;
+
+public class Edt_UIQuickSearch
+{
+    //------------------------------------------------------
+    [MenuItem("Assets/CMGM Search/UI面板_脚本", false, -189)]
+    static void SelectPanelScriptPath()//s = s.Substring(0,s.Length - 1)
+    {
+        string path = Consts.Paths.Script_UI_Panel_Path;
+        Edt_BaseUtils.PathSelect(path);
+    }
+    
+    [MenuItem("Assets/CMGM Search/UI面板_资源", false, -189)]
+    static void SelectPanelAssetPath()
+    {
+        string path = Consts.Paths.HotRes_UIPanel;
+        Edt_BaseUtils.PathSelect(path);
+    }
+    
+}
