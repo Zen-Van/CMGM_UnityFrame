@@ -16,5 +16,5 @@ public class RoleInfoRow
 }
 public class RoleInfo
 {
-    public Dictionary<int,RoleInfo> dataDic = new Dictionary<int,RoleInfo>();
+    public Dictionary<int, RoleInfoRow> dataDic = new Dictionary<int, RoleInfoRow>();
 }

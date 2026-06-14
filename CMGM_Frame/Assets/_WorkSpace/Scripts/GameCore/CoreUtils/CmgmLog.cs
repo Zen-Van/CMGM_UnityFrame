@@ -35,8 +35,6 @@ public class CmgmLog
 
     public static void fError(string log)
     {
-        if (!CmgmFrameSettings.Instance.IS_LOG_ACTIVE) return;
-
         Debug.LogError($"<color=#FF7F00>[小蝉]</color>：{log}");
     }
     #endregion
@@ -66,8 +64,6 @@ public class CmgmLog
 
     public static void Error(string log)
     {
-        if (!CmgmFrameSettings.Instance.IS_LOG_ACTIVE) return;
-
         Debug.LogError($"<color=#gray>[Game]</color>：{log}");
     }
 

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Reflection;
-using NUnit.Framework.Internal;
 
 /// <summary>
 /// 懒汉单例（子类必须具有私有的无参构造函数）
