@@ -17,6 +17,24 @@ public class LuaManager : Singleton<LuaManager>
     /// <summary> 是否在editor中调试时热加载lua（可以不重启游戏进行编辑）</summary>
     private bool IS_HOT_LUA = Application.isEditor && CmgmFrameSettings.Instance.IS_HOT_LUA;
 
+
+    #region 关于热重载和非热重载的路径说明
+    /*
+    ┌─────────────────────────────────────────────────────────┐
+    │  热重载（Editor + IS_HOT_LUA）                           │
+    │  Init → 跳过 LoadLuaMapper                               │
+    │  require / ExecuteLua → Loader 1 / GetLuaContent 读磁盘  │
+    └─────────────────────────────────────────────────────────┘
+
+    ┌─────────────────────────────────────────────────────────┐
+    │  正式包体（非热重载）                                    │
+    │  Init → LoadLuaMapper 预加载全部 Lua                     │
+    │  require → Loader 3 查 luaMapper                        │
+    │  ExecuteLua → GetLuaContent 查 luaMapper                │
+    └─────────────────────────────────────────────────────────┘
+    */
+    #endregion
+    
     private string ROOT_FILE_URI = CmgmFrameSettings.Instance.ROOT_LUA_URI;
 
     private LuaManager() { }
@@ -37,7 +55,7 @@ public class LuaManager : Singleton<LuaManager>
         //重定向指在lua脚本中require时加载的相对路径
         LuaEnv.AddLoader((ref string uri) =>
         {
-            //编辑器下查询逻辑
+            //编辑器下查询逻辑，每次require都读磁盘
             string path = Consts.Paths.Lua_Path + "/" + uri;
             if (File.Exists(path))
                 return File.ReadAllBytes(path);
@@ -46,7 +64,7 @@ public class LuaManager : Singleton<LuaManager>
         });
         LuaEnv.AddLoader((ref string uri) =>
         {
-            //Resource下查询逻辑
+            //Resource下查询逻辑，备用
             TextAsset lua = Resources.Load<TextAsset>(uri);
             if (lua != null)
                 return lua.bytes;
@@ -54,13 +72,11 @@ public class LuaManager : Singleton<LuaManager>
         });
         LuaEnv.AddLoader((ref string uri) =>
         {
-            //Addressables下查询逻辑
-            TextAsset lua = AddressablesResMgr.Instance.LoadAssetAsync<TextAsset>($"Lua/{uri}")
-                                .GetAwaiter().GetResult();
-            if (lua != null)
-                return lua.bytes;
-            else
-                Debug.Log("lua文件重定向失败，试图重定向的lua文件：" + uri);
+            // Loader 1 失败时的兜底：正式包体下 require 主要走这里（luaMapper 预加载）；
+            // 热重载下 require 通常已由 Loader 1 直读磁盘解决
+            string key = uri.ToLower();
+            if (luaMapper != null && luaMapper.TryGetValue(key, out byte[] content))
+                return content;
 
             return null;
         });
@@ -68,8 +84,10 @@ public class LuaManager : Singleton<LuaManager>
         //Lua管理器初始化的时候，就把所有lua脚本载入内存，并且把main执行了
         UniTask.Void(async () =>
         {
-            //读取所有lua映射表
-            await LoadLuaMapper();
+            // 正式包体：预加载全部 Lua 到 luaMapper；热重载：跳过，运行时直读磁盘
+            // 热重载真正读脚本还是靠 Loader 1 / GetLuaContent 读磁盘，不靠luaMapper
+            if (!IS_HOT_LUA)
+                await LoadLuaMapper();
             //执行lua根文件
             await ExecuteLua(ROOT_FILE_URI);
             //都完成了才初始化完成
@@ -111,23 +129,13 @@ public class LuaManager : Singleton<LuaManager>
     #region 所有Lua资产的映射与管理
     private Dictionary<string, byte[]> luaMapper = null;
 
-    //从所有lua加载路径加载lua文件，并存入luaMapper,映射关系为 【lua脚本名，带.lua后缀】->【luaBytes】
+    // 正式包体专用：从 Addressables 预加载全部 Lua 到 luaMapper
     public async UniTask LoadLuaMapper()
     {
-        string[] files;
-        if (IS_HOT_LUA)
-        {
-            //依次加载Consts.Paths.Lua_Path路径下的每一个文本文件名
-            files = Directory.GetFiles(Consts.Paths.Lua_Path, "*.lua.txt", SearchOption.AllDirectories);
-        }
-        else
-        {
-            //从Addressables中加载所有Lua脚本名
-            files = (await AddressablesResMgr.Instance.LoadResourceLocationsAsync("Lua", typeof(TextAsset)))
-                .Select(loc => loc.PrimaryKey)
-                .Where(key => key.EndsWith(".lua.txt"))
-                .ToArray();
-        }
+        string[] files = (await AddressablesResMgr.Instance.LoadResourceLocationsAsync("Lua", typeof(TextAsset)))
+            .Select(loc => loc.PrimaryKey)
+            .Where(key => key.EndsWith(".lua.txt"))
+            .ToArray();
 
         if (files.Length <= 0)
         {
@@ -140,12 +148,10 @@ public class LuaManager : Singleton<LuaManager>
         {
             string fileUrl = files[i].ToLower();
             string fileUri = fileUrl.Substring(Consts.Paths.Lua_Path.Length + 1);//此处的+1删除了斜杠
-            //Editor和AB包都通过Assets下完整路径加载
             var asset = await AddressablesResMgr.Instance.LoadAssetAsync<TextAsset>($"Lua/{fileUri}");
 
-            //用lua文件夹下的uri映射内容
             luaMapper[fileUri] = Encoding.UTF8.GetBytes(asset.text);
-            CmgmLog.fPositive($"载入了Lua脚本【{fileUri}】，其内容为：\n{asset.text}");
+            CmgmLog.fPositive($"载入了 Lua 脚本【{fileUri}】");
         }
     }
     /// <summary>
@@ -153,6 +159,8 @@ public class LuaManager : Singleton<LuaManager>
     /// </summary>
     public void ClearLuaMapper()
     {
+        if (luaMapper == null) return;
+
         luaMapper.Clear();
         luaMapper = null;
     }
