@@ -184,7 +184,7 @@ public class ExcelTool
             "\n" +
             $"public class {table.TableName}\n" +
             "{\n" +
-            $"    public Dictionary<{rowType[keyIndex]},{table.TableName}> dataDic = new Dictionary<{rowType[keyIndex]},{table.TableName}>();\n" +
+            $"    public Dictionary<{rowType[keyIndex]},{table.TableName}Row> dataDic = new Dictionary<{rowType[keyIndex]},{table.TableName}Row>();\n" +
             "}";
 
 
