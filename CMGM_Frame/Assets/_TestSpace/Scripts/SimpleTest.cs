@@ -5,6 +5,7 @@ using Cysharp.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using CMGM.Core;
 
 public class SimpleTest : MonoBehaviour
 {

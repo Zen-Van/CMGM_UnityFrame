@@ -12,9 +12,9 @@ using UnityEngine;
 public class Edt_CreateUIPanelAction : EndNameEditAction
 {
     #region 各模板路径
-    private const string TemplatesPath = Edt_BaseUtils.EditorRoot + "/TemplateCreator/Templates";
-    private const string TemplatePath_PanelScript = TemplatesPath + "/NewPanel.cs.txt";
-    private const string TemplatePath_PanelPrefab = TemplatesPath + "/NewPanel.prefab.txt";
+    private static string TemplatesPath = Edt_BaseUtils.EditorRoot + "/TemplateCreator/Templates";
+    private static string TemplatePath_PanelScript = TemplatesPath + "/NewPanel.cs.txt";
+    private static string TemplatePath_PanelPrefab = TemplatesPath + "/NewPanel.prefab.txt";
     #endregion
 
     public override void Action(int instanceId, string pathName, string resourceFile)

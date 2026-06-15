@@ -8,7 +8,7 @@ using UnityEngine;
 
 public class Edt_BaseUtils
 {
-    public const string EditorRoot = Consts.Paths.WorkSpace + "/Editor";
+    public static string EditorRoot = Consts.Paths.WorkSpace + "/Editor";
 
     #region 快速检索
     [MenuItem("Assets/CMGM Search/入口场景", false, -200)]

@@ -8,11 +8,11 @@ using System.IO;
 public class Edt_CreateScriptAssetAction : EndNameEditAction
 {
     #region 各模板路径
-    private const string TemplatesPath = Edt_BaseUtils.EditorRoot + "/TemplateCreator/Templates";
+    private static string TemplatesPath = Edt_BaseUtils.EditorRoot + "/TemplateCreator/Templates";
     
-    private const string Path_Empty = TemplatesPath + "/Empty.txt";
-    private const string Path_MonoBehaviour = TemplatesPath + "/NewMonoBehaviour.cs.txt";
-    private const string Path_CSharp = TemplatesPath + "/NewCSharp.cs.txt";
+    private static string Path_Empty = TemplatesPath + "/Empty.txt";
+    private static string Path_MonoBehaviour = TemplatesPath + "/NewMonoBehaviour.cs.txt";
+    private static string Path_CSharp = TemplatesPath + "/NewCSharp.cs.txt";
     #endregion
 
 
