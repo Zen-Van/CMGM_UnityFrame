@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using CMGM.Core;
+using UnityEngine;
 
 public class InputManager : SingletonAutoMono<InputManager>
 {

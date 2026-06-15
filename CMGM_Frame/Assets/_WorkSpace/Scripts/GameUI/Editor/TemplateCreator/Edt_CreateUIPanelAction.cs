@@ -3,6 +3,7 @@ using System.CodeDom;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using CMGM.Core;
 using UnityEditor;
 using UnityEditor.Compilation;
 using UnityEditor.ProjectWindowCallback;

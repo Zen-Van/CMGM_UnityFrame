@@ -2,26 +2,29 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SingletonMono<T> : MonoBehaviour where T : MonoBehaviour
+namespace CMGM.Core
 {
-    private static T instance;
-
-    public static T Instance
+    public class SingletonMono<T> : MonoBehaviour where T : MonoBehaviour
     {
-        get
-        {
-            return instance;
-        }
-    }
+        private static T instance;
 
-    protected virtual void Awake()
-    {
-        if (instance != null)
+        public static T Instance
         {
-            DestroyImmediate(this);
-            return;
+            get
+            {
+                return instance;
+            }
         }
-        instance = this as T;
-        DontDestroyOnLoad(gameObject);
+
+        protected virtual void Awake()
+        {
+            if (instance != null)
+            {
+                DestroyImmediate(this);
+                return;
+            }
+            instance = this as T;
+            DontDestroyOnLoad(gameObject);
+        }
     }
 }

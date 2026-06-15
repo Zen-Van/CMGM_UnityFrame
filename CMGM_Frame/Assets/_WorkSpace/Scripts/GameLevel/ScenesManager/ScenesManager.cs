@@ -1,4 +1,5 @@
-﻿using Cysharp.Threading.Tasks;
+﻿using CMGM.Core;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.SceneManagement;

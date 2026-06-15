@@ -1,4 +1,5 @@
-﻿using UnityEditor;
+﻿using CMGM.Core;
+using UnityEditor;
 using UnityEngine;
 
 public class Edt_UIQuickSearch

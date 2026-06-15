@@ -1,19 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
+using CMGM.Core;
 using UnityEngine;
 using UnityEngine.Events;
-
-public static partial class Consts
-{
-    public static partial class Paths
-    {
-        /// <summary>
-        /// 游戏存档位置路径
-        /// </summary>
-        public static string ARCHIVE_PATH = Application.persistentDataPath + "/Archives";
-    }
-}
 
 /// <summary>
 /// 存档管理器，该管理器须在游戏初始化时预热

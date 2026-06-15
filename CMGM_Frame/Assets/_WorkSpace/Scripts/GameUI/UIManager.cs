@@ -1,4 +1,5 @@
 ﻿using Cysharp.Threading.Tasks;
+using CMGM.Core;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -28,18 +29,6 @@ public enum E_UILayer : byte
     /// 系统层 最高层
     /// </summary>
     System,
-}
-
-
-public static partial class Consts
-{
-    public static partial class Paths
-    {
-        /// <summary>
-        /// UI面板路径
-        /// </summary>
-        public const string HotRes_UIPanel = WorkSpace + "/HotRes/UI/Panels";
-    }
 }
 
 

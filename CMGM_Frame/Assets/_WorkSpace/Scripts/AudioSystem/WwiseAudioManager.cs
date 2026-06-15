@@ -1,4 +1,5 @@
 
+using CMGM.Core;
 using Sirenix.OdinInspector;
 using System;
 using UnityEngine;

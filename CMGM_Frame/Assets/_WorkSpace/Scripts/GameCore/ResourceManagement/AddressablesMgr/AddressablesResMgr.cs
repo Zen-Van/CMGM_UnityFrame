@@ -9,6 +9,8 @@ using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceLocations;
 
+namespace CMGM.Core
+{
 //封装句柄，优化了装箱拆箱的情况
 public class AddressablesResInfo
 {
@@ -303,4 +305,5 @@ public class AddressablesResMgr : Singleton<AddressablesResMgr>
         return await PreloadAssetsAsync(addressesList, progress);
     }
 
+}
 }

@@ -3,23 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text;
+using CMGM.Core;
 using UnityEngine;
-
-public static partial class Consts
-{
-    /// <summary>
-    /// 游戏数据文件后缀名（包括存档文件和配置文件）
-    /// </summary>
-    public static string DATAFILE_EXTENSION = ".cmgm";
-
-    public static partial class Paths
-    {
-        /// <summary>
-        /// 游戏配置数据存储位置路径
-        /// </summary>
-        public static string ConfigData = Application.streamingAssetsPath + "/GameConfig/";
-    }
-}
 
 /// <summary>
 /// 游戏配置管理器，管理策划配置表中配置的数据的读取和转化
