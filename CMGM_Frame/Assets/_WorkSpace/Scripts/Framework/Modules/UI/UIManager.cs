@@ -11,6 +11,8 @@ using UnityEngine.EventSystems;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
 
+namespace CMGM.UI
+{
 public enum E_UILayer : byte
 {
     /// <summary>
@@ -459,4 +461,5 @@ public class UIManager : Singleton<UIManager>
         trigger.triggers.Add(entry);
     }
     #endregion
+}
 }

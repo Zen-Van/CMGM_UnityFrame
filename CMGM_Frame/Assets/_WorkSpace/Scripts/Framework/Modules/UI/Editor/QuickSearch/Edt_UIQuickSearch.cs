@@ -2,6 +2,8 @@
 using UnityEditor;
 using UnityEngine;
 
+namespace CMGM.UI.Editor
+{
 public class Edt_UIQuickSearch
 {
     //------------------------------------------------------
@@ -19,4 +21,5 @@ public class Edt_UIQuickSearch
         Edt_BaseUtils.PathSelect(path);
     }
     
+}
 }

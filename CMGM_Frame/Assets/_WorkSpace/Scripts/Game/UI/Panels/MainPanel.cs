@@ -1,9 +1,12 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using CMGM.Core;
+using CMGM.UI;
 using UnityEngine;
 using UnityEngine.UI;
 
+namespace CMGM.Game
+{
 public class MainPanel : BasePanel
 {
     protected override void Awake()
@@ -22,10 +25,11 @@ public class MainPanel : BasePanel
                 CmgmLog.fNormal("加载游戏");
                 break;
             case "btnQuit":
-                ScenesManager.Instance.QuitGame();
+                CmgmApplication.Quit();
                 break;
             default:
                 break;
         }
     }
+}
 }

@@ -9,6 +9,8 @@ using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
+namespace CMGM.UI
+{
 public abstract class BasePanel : MonoBehaviour
 {
     [Description("动态面板指可以随时被呼出或关闭的面板，按ESC会关闭顶层的动态面板")]
@@ -227,4 +229,5 @@ public abstract class BasePanel : MonoBehaviour
     /// <summary>面板隐藏时调用</summary>
     public virtual void OnHide() { }
 
+}
 }

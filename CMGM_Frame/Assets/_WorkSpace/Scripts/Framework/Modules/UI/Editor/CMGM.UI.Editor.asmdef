@@ -1,0 +1,20 @@
+{
+    "name": "CMGM.UI.Editor",
+    "rootNamespace": "CMGM.UI.Editor",
+    "references": [
+        "CMGM.Core",
+        "CMGM.Editor.Base",
+        "CMGM.UI"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

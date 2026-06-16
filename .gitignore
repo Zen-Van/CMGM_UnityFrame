@@ -85,3 +85,6 @@ crashlytics-build.properties
 
 # Wwise 用户信息文件
 [Aa]kWwiseProjectData.asset
+
+# AI 本地对话偏好（不随框架发布，仅本机保留）
+CMGM_Frame/Assets/_WorkSpace/_AiLocal/

@@ -1,8 +1,11 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using CMGM.UI;
 using UnityEngine;
 using UnityEngine.UI;
 
+namespace CMGM.Game
+{
 public class zzzTextPanel : BasePanel
 {
     protected override void Awake()
@@ -21,4 +24,5 @@ public class zzzTextPanel : BasePanel
                 break;
         }
     }
+}
 }

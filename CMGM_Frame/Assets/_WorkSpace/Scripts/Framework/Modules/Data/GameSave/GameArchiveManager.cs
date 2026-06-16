@@ -114,32 +114,34 @@ public class GameArchiveManager : Singleton<GameArchiveManager>
     #endregion
 
     #region 运行时数据管理
-    public GameRuntimeData GameRuntimeDataInstance { get; private set; } = null;
+    public I_Saveable RuntimeDataInstance { get; private set; } = null;
+
+    public T GetRuntimeData<T>() where T : class, I_Saveable => RuntimeDataInstance as T;
 
     /// <summary>
     /// 清除当前游戏运行时档案
     /// </summary>
     public void ClearRuntimeData()
     {
-        GameRuntimeDataInstance = null;
+        RuntimeDataInstance = null;
     }
-    /// <summary>
-    /// 新建游戏运行时档案，新建一个存档数据实例并写入GameRuntimeDataInstance
-    /// </summary>
-    /// <param name="InitArchive">初始化RuntimeData数据</param>
-    public void NewRuntimeData(UnityAction InitArchive)
-    {
-        var tempRuntimeData = new GameRuntimeData();
-        //其他初始化逻辑：如角色初始化、主角入队
-        InitArchive?.Invoke();
 
-        GameRuntimeDataInstance = tempRuntimeData;
-    }
     /// <summary>
-    /// 读取游戏运行时档案，将硬盘存档文件读入GameRuntimeDataInstance
+    /// 新建游戏运行时档案，由调用方提供存档数据实例
     /// </summary>
-    /// <param name="archiveID">存档id</param>
-    public void LoadRuntimeData(int archiveID)
+    /// <param name="runtimeData">游戏层创建的存档数据实例</param>
+    /// <param name="initArchive">初始化 RuntimeData 数据</param>
+    public void NewRuntimeData(I_Saveable runtimeData, UnityAction initArchive)
+    {
+        initArchive?.Invoke();
+        RuntimeDataInstance = runtimeData;
+    }
+
+    /// <summary>
+    /// 读取游戏运行时档案，将硬盘存档文件读入 RuntimeDataInstance
+    /// </summary>
+    /// <param name="archiveID">存档 id</param>
+    public void LoadRuntimeData<T>(int archiveID) where T : class, I_Saveable
     {
         if (!File.Exists(Consts.Paths.ARCHIVE_PATH + GetArchiveNameFromId(archiveID) + Consts.DATAFILE_EXTENSION))
         {
@@ -148,37 +150,27 @@ public class GameArchiveManager : Singleton<GameArchiveManager>
             return;
         }
 
-        GameRuntimeDataInstance = Load<GameRuntimeData>(GetArchiveNameFromId(archiveID));
+        RuntimeDataInstance = Load<T>(GetArchiveNameFromId(archiveID));
     }
+
     /// <summary>
-    /// 存储游戏运行时档案,将GameRuntimeDataInstance写入硬盘（会同时写入ArchiveMeta）
+    /// 存储游戏运行时档案，将 RuntimeDataInstance 写入硬盘（会同时写入 ArchiveMeta）
     /// </summary>
     /// <param name="archiveIdx">存档栏位</param>
-    public void SaveRuntimeData(int archiveIdx)
+    /// <param name="mainQuestIdForMeta">写入存档元数据的主线任务 ID（游戏层提供）</param>
+    public void SaveRuntimeData(int archiveIdx, int? mainQuestIdForMeta = null)
     {
-        if (GameRuntimeDataInstance == null)
+        if (RuntimeDataInstance == null)
         {
             CmgmLog.fError("当前游戏运行时数据为空，无法将空值写入存档文件");
             return;
         }
 
-        //修改ArchiveMeta数据
         ArchiveMeta.dataSet[archiveIdx] = new ArchiveMetaDataSet.SingleArchiveMeta
-            (archiveIdx, GetArchiveNameFromId(archiveIdx), System.DateTime.Now,
-            GameRuntimeDataInstance.MainQuestId.Count > 0 ? GameRuntimeDataInstance.MainQuestId[0] : null); //判断使该值可空
-        //保存ArchiveMeta
+            (archiveIdx, GetArchiveNameFromId(archiveIdx), System.DateTime.Now, mainQuestIdForMeta);
         SaveArchiveMeta();
 
-        //查看保存的是否正确
-        string scenes = "";
-        foreach (string s in GameRuntimeDataInstance.SavedScenes)
-        {
-            scenes += s + "\n";
-        }
-        Debug.Log(scenes);
-
-        //保存RuntimeData
-        Save(GameRuntimeDataInstance, GetArchiveNameFromId(archiveIdx));
+        Save(RuntimeDataInstance, GetArchiveNameFromId(archiveIdx));
     }
     #endregion
 

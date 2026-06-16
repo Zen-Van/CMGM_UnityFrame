@@ -9,6 +9,8 @@ using UnityEditor.Compilation;
 using UnityEditor.ProjectWindowCallback;
 using UnityEngine;
 
+namespace CMGM.UI.Editor
+{
 public class Edt_CreateUIPanelAction : EndNameEditAction
 {
     #region 各模板路径
@@ -142,4 +144,5 @@ public class Edt_CreateUIPanelAction : EndNameEditAction
         EditorPrefs.DeleteKey("RawUiPrefabPath");
         EditorPrefs.DeleteKey("RawUiScriptPath");
     } 
+}
 }
