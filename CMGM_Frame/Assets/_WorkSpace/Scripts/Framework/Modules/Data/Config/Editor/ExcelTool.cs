@@ -16,7 +16,7 @@ public class ExcelTool
     /// <summary>
     /// 数据容器脚本存储位置路径
     /// </summary>
-    public static string DATA_CONTAINER_PATH = Consts.Paths.Data_ExcelContainer;
+    public static string DATA_CONTAINER_PATH = Consts.Paths.Game.Config;
 
     /// <summary>
     /// 表格中数据信息开始的行号
@@ -169,7 +169,8 @@ public class ExcelTool
 
         //写入代码，先写入一行数据的容器类，再用一个以主键为key的字典去存它
         string str =
-            "using System.Collections.Generic;\n" +
+            "using System.Collections.Generic;\n\n" +
+            "namespace CMGM.Game\n{\n" +
             "/// <summary>\n" +
             $"/// {table.TableName}表中一行数据的存储类\n" +
             "/// </summary>\n" +
@@ -186,6 +187,7 @@ public class ExcelTool
             $"public class {table.TableName}\n" +
             "{\n" +
             $"    public Dictionary<{rowType[keyIndex]},{table.TableName}Row> dataDic = new Dictionary<{rowType[keyIndex]},{table.TableName}Row>();\n" +
+            "}\n" +
             "}";
 
 

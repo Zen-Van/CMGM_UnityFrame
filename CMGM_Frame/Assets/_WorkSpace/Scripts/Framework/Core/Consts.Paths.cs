@@ -25,18 +25,12 @@ namespace CMGM.Core
                 }
             }
 
+            public static string ScriptsPath => WorkSpace + "/Scripts";
+
             public static string HotRes => WorkSpace + "/HotRes";
             public static string HotScene => HotRes + "/Scenes";
             public static string Lua_Path => HotRes + "/Lua";
             public static string RhythmMap_Path => HotRes + "/RhythmMap";
-
-            public static string ScriptsPath => WorkSpace + "/Scripts";
-            public static string Framework_Root => ScriptsPath + "/Framework";
-            public static string Framework_Core => Framework_Root + "/Core";
-            public static string Framework_Modules => Framework_Root + "/Modules";
-
-            public static string Script_UI_Panel_Path => ScriptsPath + "/Game/UI/Panels";
-            public static string Data_ExcelContainer => Framework_Modules + "/Data/GameConfig/ExcelContainer";
             public static string HotRes_UIPanel => WorkSpace + "/HotRes/UI/Panels";
 
             /// <summary>游戏存档目录（运行时路径）</summary>
@@ -44,6 +38,33 @@ namespace CMGM.Core
 
             /// <summary>配表二进制输出目录（StreamingAssets）</summary>
             public static string ConfigData => Application.streamingAssetsPath + "/GameConfig/";
+
+            /// <summary>框架目录（Core + Modules）</summary>
+            public static class Framework
+            {
+                public static string Root => ScriptsPath + "/Framework";
+                public static string Core => Root + "/Core";
+                public static string Modules => Root + "/Modules";
+
+                /// <summary>Framework/Modules/Data/ 模块（Archive 存档管线 + Config 配表管线）</summary>
+                public static class DataModule
+                {
+                    public static string Root => Modules + "/Data";
+                    public static string Archive => Root + "/Archive";
+                    public static string Config => Root + "/Config";
+                }
+            }
+
+            /// <summary>游戏层目录（Panel、存档结构、配表 Container 等）</summary>
+            public static class Game
+            {
+                public static string Root => ScriptsPath + "/Game";
+                public static string UI_Panels => Root + "/UI/Panels";
+                /// <summary>游戏运行时存档结构（如 GameRuntimeData）</summary>
+                public static string Archive => Root + "/Archive";
+                /// <summary>Excel 导表生成的 *Container.cs 输出目录</summary>
+                public static string Config => Root + "/Config";
+            }
         }
     }
 }

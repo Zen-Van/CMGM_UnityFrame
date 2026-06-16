@@ -2,7 +2,7 @@
 
 > 本文档是框架化改造的长期参考（「北极星」）。  
 > 目标：将当前工程从「带 Demo 的原型项目」逐步改造为「可跨项目迁移的框架」。  
-> 最后更新：阶段 2.1b（M1 UI + Game asmdef）；下一步 **2.3** 迁游戏配表
+> 最后更新：阶段 2.3（游戏配表 + 路径 B 分层）；下一步 **2.3b M2** Data asmdef
 
 ---
 
@@ -37,12 +37,15 @@ Assets/_WorkSpace/
 └── Scripts/
     ├── Game/                游戏专属（2.1 ✅）
     │   ├── UI/Panels/
-    │   └── Data/            GameRuntimeData（2.2 ✅）
+    │   ├── Archive/         GameRuntimeData（2.2 ✅）
+    │   └── Config/          配表 Container（2.3 ✅）
     ├── Framework/           框架（2.1a ✅）
     │   ├── Core/            CMGM.Core asmdef、Consts.Paths
     │   └── Modules/
     │       ├── UI/          原 GameUI
-    │       ├── Data/        原 GameData
+    │       ├── Data/        原 GameData（内分 Archive / Config）
+    │       │   ├── Archive/ GameArchiveManager、I_Saveable
+    │       │   └── Config/  GameConfigManager、ExcelTool
     │       ├── Level/       原 GameLevel
     │       ├── Lua/         原 LuaCore
     │       ├── Audio/       原 AudioSystem
@@ -52,15 +55,17 @@ Assets/_WorkSpace/
     └── GameBattle/          占位（未纳入 Framework，按需处理）
 ```
 
-> **2.2 ✅**：`GameRuntimeData` 已迁至 `Scripts/Game/Data/`；`I_Saveable` 在 `CMGM.Core`。
+> **2.3 ✅**：`RoleInfoContainer` → `Scripts/Game/Config/`；**B** `Consts.Paths.Framework` / `.Game` 分层。
 
 ### 路径常量入口
 
 所有路径由 **`Consts.Paths`**（`Framework/Core/Consts.Paths.cs`）统一定义：
 
-- **`WorkSpace`** — 从 `CmgmFrameSettings.WORK_SPACE_ROOT` 读取（默认 `Assets/_WorkSpace`），其余路径由此派生
-- `HotRes` / `HotScene` / `Lua_Path` / `RhythmMap_Path` / UI、Scripts 等
-- `ARCHIVE_PATH`、`ConfigData` — 运行时路径（persistentDataPath / StreamingAssets）
+- **`WorkSpace`** — 从 `CmgmFrameSettings.WORK_SPACE_ROOT` 读取（默认 `Assets/_WorkSpace`）
+- **共享**：`HotRes`、`ARCHIVE_PATH`、`ConfigData` 等
+- **`Paths.Framework.*`** — 框架目录（`Core`、`Modules`）
+- **`Paths.Game.*`** — 游戏层（`UI_Panels`、`Archive`、`Config`）
+- **`Paths.Framework.DataModule.*`** — 框架 Data 模块（`Archive`、`Config`）
 
 换项目时：改 Settings 里的根路径即可，不必改代码里的字符串。
 
@@ -74,7 +79,7 @@ Assets/_WorkSpace/
 |------|------|----------|------|
 | **A** | 合并 `Consts` 为单文件，去掉 partial | 1.2b | ✅ |
 | **C** | `WorkSpace` 根路径迁入 `CmgmFrameSettings` | 1.2b | ✅ |
-| **B** | 拆 `FrameworkPaths`（Core）与 `GamePaths`（Game 层） | 2.2~2.3 | 待做 |
+| **B** | 拆 `Consts.Paths.Framework` 与 `Consts.Paths.Game` | 2.3 | ✅ |
 | **D** | Addressables 加载键独立为 `AssetAddresses` 或 Label 分组 | 2.4（ScenesManager 配置化同期） | 待做 |
 | **F** | 关键 Prefab/SO 改用 `AssetReference`，减少字符串路径 | 2.1 迁 Panel 后 / 7.x | 按需 |
 | **E** | 扫描 `HotRes/` 自动生成路径常量（代码生成） | 8.4 前后（Lua 懒加载、内容量上来后） | 远期 |
@@ -110,9 +115,9 @@ Assets/_WorkSpace/
 |------|------|--------|
 | `GameConfigManager` | 读取 `.cmgm` 二进制配表（反射 + 解密） | ★★★★ |
 | `ExcelTool`（Editor） | Excel → Container.cs + 二进制 | ★★★★ |
-| `RoleInfoContainer` 等 | ⚠ **游戏配表**，应迁到 Game 层 | — |
+| `RoleInfoContainer` 等 | 游戏配表（`Scripts/Game/Config/`，2.3 ✅） | — |
 | `GameArchiveManager` | 存档元数据 + 运行时数据读写 | ★★★ |
-| `GameRuntimeData` | 游戏存档结构（`Scripts/Game/Data/`，2.2 ✅） | — |
+| `GameRuntimeData` | 游戏存档结构（`Scripts/Game/Archive/`，2.2 ✅） | — |
 | `CipherTool` | 配表 / 存档加解密 | ★★★ |
 
 ### 3.4 Lua（现 `LuaCore/` → 2.1a 后 `Framework/Modules/Lua/`）
@@ -193,7 +198,7 @@ InitScene（GameInitializer.Awake）
 | 主界面 Panel | `ScenesManager.GoToMainScene()` → `MainPanel` | 硬编码游戏 UI；**现阶段保留** `ShowPanel<MainPanel>()`（泛型优先）。2.1b 曾用 `ShowPanel("MainPanel")` **仅为程序集解耦过渡**，正式方案见 **2.4 / 2.5** |
 | 主场景名 | `GoToMainScene()` → `"MainScene"` | 硬编码场景 |
 | 存档数据结构 | `GameRuntimeData`（博物、任务、背包…） | 游戏专属字段 |
-| 配表容器 | `RoleInfoContainer` | 某个 JRPG 的角色表 |
+| 配表容器 | `RoleInfo` 等（`Scripts/Game/Config/`，2.3 ✅） | 游戏专属表结构 |
 | Lua 桥接 | `LuaBridge.Talk` | 空实现，且写死在框架里 |
 | 第三方绑定 | Wwise / Odin / URP 直接引用 | 换音频 / RP 需改 Core |
 
@@ -237,14 +242,16 @@ Assets/_WorkSpace/
   Scripts/
     Game/                          游戏专属（Panel、RuntimeData、配表 Container…）
       UI/Panels/
-      Data/                        2.2
-      Config/                      2.3
+      Archive/                     2.2 运行时存档结构
+      Config/                      2.3 配表 Container
       Bootstrap/                   2.5 GameBootstrap
     Framework/
       Core/                        必选（原 GameCore 内容直接在此，无 GameCore 子目录）
       Modules/                     可选，按项目勾选（§6.1、§6.3）
         UI/                        原 GameUI
-        Data/                      原 GameData
+        Data/                      原 GameData（Archive + Config）
+          Archive/                 GameArchiveManager、I_Saveable
+          Config/                  GameConfigManager、ExcelTool
         Level/                     原 GameLevel
         Lua/                       原 LuaCore
         Audio/                     原 AudioSystem
@@ -372,7 +379,7 @@ Packages/（远期）
 ```
 2.1 ✅ 迁 Panel 至 Scripts/Game/
   → 2.1a  Framework 目录 + 重命名（§6.3）
-  → 2.1b  M1：CMGM.UI + CMGM.Game asmdef
+  → 2.1b  M1：CMGM.UI asmdef（Game 层不设框架级 asmdef，见 §7.4）
   → 2.2 …
 ```
 
@@ -396,10 +403,10 @@ Packages/（远期）
 | **1** 编译边界 | 1.3 路线图修订：采用「按模块闭环」；非 Core 的 asmdef 并入阶段 2 闭环步骤（§7.0） | ✅ |
 | **2** 框架/游戏分层 | **2.1** 新建 `Scripts/Game/`，迁移 `MainPanel`、`SamplePanel`、`zzzTextPanel` 等游戏 Panel | ✅ |
 | **2** 框架/游戏分层 | 2.1a 新建 `Framework/Core/`、`Framework/Modules/`；Runtime 迁入 + **§6.3 去 `Game*` 前缀** | ✅ |
-| **2** 框架/游戏分层 | 2.1b **M1 闭环**：`CMGM.UI` + `CMGM.Game` asmdef；`namespace CMGM.UI` / `CMGM.Game`；`CmgmApplication.Quit`。**2.1b 字符串 `ShowPanel` 仅为过渡，正式方案见 2.4/2.5** | ✅ |
-| **2** 框架/游戏分层 | 2.2 迁移 `GameRuntimeData` 及游戏专属存档字段至 `Scripts/Game/Data/` | ✅ |
-| **2** 框架/游戏分层 | 2.3 迁移游戏配表（如 `RoleInfoContainer`）至 `Scripts/Game/Config/`；**B** 路径分层（§2b） | **← 下一步** |
-| **2** 框架/游戏分层 | 2.3b **M2 闭环**：`Data` 模块 `CMGM.Data` asmdef | 待做 |
+| **2** 框架/游戏分层 | 2.1b **M1 闭环**：`CMGM.UI` + `.Editor` asmdef；`namespace CMGM.UI`；Game 层仅目录 + `CMGM.Game` namespace（**无框架级 Game asmdef**，§7.4）；`CmgmApplication.Quit` | ✅ |
+| **2** 框架/游戏分层 | 2.2 迁移 `GameRuntimeData` 等至 `Scripts/Game/Archive/` | ✅ |
+| **2** 框架/游戏分层 | 2.3 迁移游戏配表（如 `RoleInfoContainer`）至 `Scripts/Game/Config/`；**B** `Paths.Framework` / `Paths.Game` | ✅ |
+| **2** 框架/游戏分层 | 2.3b **M2 闭环**：`Data` 模块 `CMGM.Data` asmdef | **← 下一步** |
 | **2** 框架/游戏分层 | 2.4 `ScenesManager` 去硬编码；`IGameFlowConfig` / `GameBootstrap` 回调（Game 层仍用 `ShowPanel<T>()`）；**D** `AssetAddresses`（§2b） | 待做 |
 | **2** 框架/游戏分层 | 2.5 新建 `Scripts/Game/Bootstrap/GameBootstrap.cs`，游戏专属初始化从 `GameInitializer` 拆出 | 待做 |
 | **2** 框架/游戏分层 | 2.5b **M3 闭环**：`Level` 模块 `CMGM.Level` asmdef | 待做 |
@@ -448,11 +455,11 @@ Packages/（远期）
 | 编号 | 任务 | 详细内容 | 验收 |
 |------|------|----------|------|
 | **2.1** ✅ | 迁出游戏 Panel | `Scripts/Game/UI/Panels/` | 主界面 Play 正常 |
-| **2.1a** ✅ | Framework 目录 + 重命名 | §6.3 映射；`Consts.Paths.Framework_*` | 编译通过 |
-| **2.1b M1** ✅ | UI + Game 模块闭环 | `CMGM.UI`、`CMGM.UI.Editor`、`CMGM.Game` asmdef；`CmgmApplication.Quit`；Level 暂保留 `ShowPanel<MainPanel>()`（**2.1b 字符串写法仅为过渡，正式方案见 2.4/2.5**） | ShowPanel / HidePanel 正常 |
-| **2.2** ✅ | 迁出游戏存档结构 | `GameRuntimeData` → `Scripts/Game/Data/`；`I_Saveable` → `CMGM.Core`；`GameArchiveManager` 通用读写 | 读档 / 存档流程不变 |
-| **2.3** | 迁出游戏配表 | `RoleInfoContainer` 等 Excel 生成类 → `Scripts/Game/Config/`；**B** 拆 `FrameworkPaths` vs `GamePaths` | Excel 导出路径与 LoadTable 仍可用 |
-| **2.3b M2** | Data 模块闭环 | `CMGM.Data` + `.Editor` asmdef | 导表 + 读 `.cmgm` + 存档 |
+| **2.1a** ✅ | Framework 目录 + 重命名 | §6.3 映射；`Consts.Paths.Framework.*` | 编译通过 |
+| **2.1b M1** ✅ | UI 模块闭环 | `CMGM.UI`、`CMGM.UI.Editor` asmdef；`CmgmApplication.Quit`；Game 层 namespace 保留，**不建** `CMGM.Game` asmdef（§7.4） | ShowPanel / HidePanel 正常 |
+| **2.2** ✅ | 迁出游戏存档结构 | `GameRuntimeData` → `Scripts/Game/Archive/`；`I_Saveable` → `Framework/Modules/Data/Archive/`；`GameArchiveManager` 通用读写 | 读档 / 存档流程不变 |
+| **2.3** ✅ | 迁出游戏配表 | `RoleInfoContainer` → `Scripts/Game/Config/`；`ExcelTool` 输出至 `Paths.Game.Config`；生成类带 `namespace CMGM.Game` | Editor 导表 + `LoadTable<RoleInfo>()` 正常 |
+| **2.3b M2** | Data 模块闭环 | `CMGM.Data` + `.Editor` asmdef（`Archive/`、`Config/` 已在位，见 §7.4） | 导表 + 读 `.cmgm` + 存档 |
 | **2.4** | ScenesManager 配置化 | 主场景名、主 Panel 不再硬编码；`IGameFlowConfig` / `GameBootstrap` 注册回调（**Game 层仍用 `ShowPanel<T>()`**，Level 不引用 Game）；**D** `AssetAddresses` 或 Label | 换主场景 / 主 UI 不改框架源码 |
 | **2.5** | GameBootstrap | 新建 `Scripts/Game/Bootstrap/GameBootstrap.cs`；游戏专属 Init（注册主界面 Panel 展示、配表预载等）从 `GameInitializer` 拆出 | Init 流程清晰：框架 Init vs 游戏 Init |
 | **2.5b M3** | Level 模块闭环 | `CMGM.Level` asmdef | Logo → 各系统 Init → 主场景 全流程 |
@@ -536,7 +543,7 @@ Packages/（远期）
 
 | 闭环 | 对应步骤 | 内容 |
 |------|----------|------|
-| **M1** | 2.1b | UI（`CMGM.UI`）+ Game Panel asmdef |
+| **M1** | 2.1b | UI（`CMGM.UI`）；Game 层示例代码无 asmdef |
 | **M2** | 2.3b | Data（`CMGM.Data`） |
 | **M3** | 2.5b | Level（`CMGM.Level`） |
 | **M4** | 2.6 | Lua（`CMGM.Lua`） |
@@ -567,6 +574,15 @@ Packages/（远期）
 | **1.3**（有效） | 文档策略修订：改为「按模块闭环」，asmdef 写入阶段 2 的 2.1b~2.8 |
 | `*原1.3`（废止） | 旧计划：在分层前批量创建 GameUI / GameData / LuaCore 程序集 |
 
+**延后决策（非废止，勿提前执行）：**
+
+| 议题 | 当前做法 | 正式执行时机 | 说明 |
+|------|----------|--------------|------|
+| `I_Saveable` 归属 Archive 模块 | **已迁** `Framework/Modules/Data/Archive/I_Saveable.cs`（无 namespace）；**尚未**建 `CMGM.Data` asmdef | **2.3b M2** | 无 Game asmdef 时可仅做物理迁移；M2 再补程序集闭环 |
+| **`CMGM.Game` asmdef** | **框架不创建**；`Scripts/Game/` 示例代码进默认 `Assembly-CSharp`，保留 `namespace CMGM.Game` | **各游戏项目自定** | 框架主迭代 `Framework/*` 程序集；JRPG / SRPG 等可自建 Game asmdef |
+
+**记录时间：** 2026-06-15（`I_Saveable` 提前迁移尝试后回退；`CMGM.Game` asmdef 移除）
+
 ---
 
 ## 8. 关键约定
@@ -587,10 +603,21 @@ Excel（Excels/）
 ### 存档管线
 
 ```
-GameRuntimeData（I_Saveable）
-  → GameArchiveManager 序列化（当前 BinaryFormatter，待阶段 4 升级）
+GameRuntimeData（I_Saveable，Scripts/Game/Archive/）
+  → GameArchiveManager 序列化（Framework/Modules/Data/Archive/）
   → persistentDataPath/Archives/
 ```
+
+### Game 层目录约定（Archive / Config 并列）
+
+| 路径常量 | 目录 | 内容 |
+|----------|------|------|
+| `Paths.Game.Archive` | `Scripts/Game/Archive/` | 运行时存档结构（可变） |
+| `Paths.Game.Config` | `Scripts/Game/Config/` | Excel 导出的配表 Container（只读） |
+| `Paths.Framework.DataModule.Archive` | `Framework/Modules/Data/Archive/` | 存档框架（`GameArchiveManager`、`I_Saveable`） |
+| `Paths.Framework.DataModule.Config` | `Framework/Modules/Data/Config/` | 配表框架（`GameConfigManager`、`ExcelTool`） |
+
+**不**把 Config 嵌套在 Archive 下：二者生命周期不同（配表 vs 存档）。
 
 ### UI 管线
 
@@ -623,6 +650,4 @@ CmgmFrameSettings.ROOT_LUA_URI（如 main.lua.txt）
 
 ---
 
-*下一步：**2.3** — 迁出游戏配表（`RoleInfoContainer` 等）至 `Scripts/Game/Config/`。*
-
-*其后：**2.3b M2** Data 模块 asmdef。模块分级与跨项目勾选见 §6.1；manifest / 导入向导见 **7.5**、**8.7**。*
+*下一步：**2.3b M2** — `CMGM.Data` + `.Editor` asmdef（Save 侧 `I_Saveable` 归属见 §7.4）。*
