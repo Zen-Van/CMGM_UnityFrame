@@ -2,7 +2,7 @@
 
 > 本文档是框架化改造的长期参考（「北极星」）。  
 > 目标：将当前工程从「带 Demo 的原型项目」逐步改造为「可跨项目迁移的框架」。  
-> 最后更新：阶段 2.3b（M2 Data asmdef）；下一步 **2.4** ScenesManager 配置化
+> 最后更新：阶段 2.4（ScenesManager 配置化）；下一步 **2.5** GameBootstrap
 
 ---
 
@@ -177,9 +177,8 @@ InitScene（GameInitializer.Awake）
         _gameInitFinished = true
         │
         └─ ScenesManager.GoToMainScene()
-              ├─ ClearRuntimeData + ClearPanel
-              ├─ ShowPanel<MainPanel>()      ← ⚠ 硬编码（暂保留泛型；2.1b 字符串写法仅为过渡，见 2.4/2.5）
-              └─ LoadSceneAsync("MainScene") ← ⚠ 硬编码
+              ├─ ShowPanel(Settings.MAIN_PANEL_NAME)
+              └─ LoadSceneAsync(Settings.MAIN_SCENE_NAME)  ← 2.4 ✅
 ```
 
 ### 已知生命周期问题（待阶段 3 解决）
@@ -196,8 +195,8 @@ InitScene（GameInitializer.Awake）
 
 | 耦合点 | 位置 | 问题 |
 |--------|------|------|
-| 主界面 Panel | `ScenesManager.GoToMainScene()` → `MainPanel` | 硬编码游戏 UI；**现阶段保留** `ShowPanel<MainPanel>()`（泛型优先）。2.1b 曾用 `ShowPanel("MainPanel")` **仅为程序集解耦过渡**，正式方案见 **2.4 / 2.5** |
-| 主场景名 | `GoToMainScene()` → `"MainScene"` | 硬编码场景 |
+| 主界面 Panel | `CmgmFrameSettings.MAIN_PANEL_NAME` → `ShowPanel(name)`（2.4 ✅） | 换项目改 Settings |
+| 主场景名 | `CmgmFrameSettings.MAIN_SCENE_NAME`（2.4 ✅） | 换场景改 Settings |
 | 存档数据结构 | `GameRuntimeData`（博物、任务、背包…） | 游戏专属字段 |
 | 配表容器 | `RoleInfo` 等（`Scripts/Game/Config/`，2.3 ✅） | 游戏专属表结构 |
 | Lua 桥接 | `LuaBridge.Talk` | 空实现，且写死在框架里 |
@@ -409,8 +408,8 @@ Packages/（远期）
 | **2** 框架/游戏分层 | 2.2 迁移 `GameRuntimeData` 等至 `Scripts/Game/Archive/` | ✅ |
 | **2** 框架/游戏分层 | 2.3 迁移游戏配表（如 `RoleInfoContainer`）至 `Scripts/Game/Config/`；**B** `Paths.Framework` / `Paths.Game` | ✅ |
 | **2** 框架/游戏分层 | 2.3b **M2 闭环**：`CMGM.Data` + `CMGM.Data.Editor` asmdef | ✅ |
-| **2** 框架/游戏分层 | 2.4 `ScenesManager` 去硬编码；`IGameFlowConfig` / `GameBootstrap` 回调；**D** `AssetAddresses`（§2b） | **← 下一步** |
-| **2** 框架/游戏分层 | 2.5 新建 `Scripts/Game/Bootstrap/GameBootstrap.cs`，游戏专属初始化从 `GameInitializer` 拆出 | 待做 |
+| **2** 框架/游戏分层 | 2.4 `ScenesManager` 配置化；`MAIN_SCENE_NAME` + `MAIN_PANEL_NAME` | ✅ |
+| **2** 框架/游戏分层 | 2.5 新建 `GameBootstrap`；游戏 Init 从 `GameInitializer` 拆出 | **← 下一步** |
 | **2** 框架/游戏分层 | 2.5b **M3 闭环**：`Level` 模块 `CMGM.Level` asmdef | 待做 |
 | **2** 框架/游戏分层 | 2.6 **M4 闭环**：`Lua` 模块 `CMGM.Lua` asmdef（与 XLua Generate Code 同单） | 待做 |
 | **2** 框架/游戏分层 | 2.7 **M5 闭环**：`Audio` + `Input` 模块 asmdef | 待做 |
@@ -462,8 +461,8 @@ Packages/（远期）
 | **2.2** ✅ | 迁出游戏存档结构 | `GameRuntimeData` → `Scripts/Game/Archive/`；`I_Saveable` → `Framework/Modules/Data/Archive/`；`GameArchiveManager` 通用读写 | 读档 / 存档流程不变 |
 | **2.3** ✅ | 迁出游戏配表 | `RoleInfoContainer` → `Scripts/Game/Config/`；`ExcelTool` 输出至 `Paths.Game.Config`；生成类带 `namespace CMGM.Game` | Editor 导表 + `LoadTable<RoleInfo>()` 正常 |
 | **2.3b M2** ✅ | Data 模块闭环 | `CMGM.Data` + `CMGM.Data.Editor` asmdef；`namespace CMGM.Data` / `CMGM.Data.Editor`；Editor 收拢至 `Data/Editor/` | 编译 + 导表 + 存档 Init |
-| **2.4** | ScenesManager 配置化 | 主场景名、主 Panel 不再硬编码；`IGameFlowConfig` / `GameBootstrap` 注册回调（**Game 层仍用 `ShowPanel<T>()`**，Level 不引用 Game）；**D** `AssetAddresses` 或 Label | 换主场景 / 主 UI 不改框架源码 |
-| **2.5** | GameBootstrap | 新建 `Scripts/Game/Bootstrap/GameBootstrap.cs`；游戏专属 Init（注册主界面 Panel 展示、配表预载等）从 `GameInitializer` 拆出 | Init 流程清晰：框架 Init vs 游戏 Init |
+| **2.4** ✅ | ScenesManager 配置化 | `CmgmFrameSettings` 配置主场景 + 主 Panel；`GoToMainScene` 用字符串 `ShowPanel` / `LoadSceneAsync` | 换主 UI/主场景只改 Settings |
+| **2.5** | GameBootstrap | 配表预载等从 `GameInitializer` 拆至 `Scripts/Game/Bootstrap/` | Init：框架 vs 游戏清晰 |
 | **2.5b M3** | Level 模块闭环 | `CMGM.Level` asmdef | Logo → 各系统 Init → 主场景 全流程 |
 | **2.6 M4** | Lua 模块闭环 | `CMGM.Lua` + XLua 同单 | Lua 启动、`require`、C# 桥接无类型分裂错误 |
 | **2.7 M5** | Audio + Input 闭环 | `CMGM.Audio`、`CMGM.Input` asmdef | 音频事件、输入 map 正常 |
@@ -582,8 +581,9 @@ Packages/（远期）
 |------|----------|--------------|------|
 | `I_Saveable` 归属 Archive 模块 | **已迁** `Archive/I_Saveable.cs`（`namespace CMGM.Data`）；**已建** `CMGM.Data` asmdef | — | 2.3b ✅ |
 | **`CMGM.Game` asmdef** | **框架不创建**；`Scripts/Game/` 示例代码进默认 `Assembly-CSharp`，保留 `namespace CMGM.Game` | **各游戏项目自定** | 框架主迭代 `Framework/*` 程序集；JRPG / SRPG 等可自建 Game asmdef |
+| `IGameFlowHandler` / GameFlow | 曾尝试，**已废止**（2.4 改为 Settings 字符串） | — | — |
 
-**记录时间：** 2026-06-15（`I_Saveable` 提前迁移尝试后回退；`CMGM.Game` asmdef 移除）
+**记录时间：** 2026-06-15（`I_Saveable` 提前迁移；`CMGM.Game` asmdef 移除）；2026-06-16（2.4 废止 GameFlow，改 Settings 配置主 Panel/主场景）
 
 ---
 
@@ -629,8 +629,8 @@ ShowPanel<T>() → Addressables 加载 HotRes/UI/Panels/{T}.prefab
   → 挂到对应 E_UILayer 层 Canvas
 ```
 
-- **编码偏好**：能写泛型时优先 `ShowPanel<T>()`，避免框架层散落 Panel 名字符串。
-- **Level ↔ Game 解耦**：Level 未建 asmdef 前，`ScenesManager` 可继续 `ShowPanel<MainPanel>()`；**2.1b 字符串写法仅为过渡**，**2.5b** 建 `CMGM.Level` 前须在 **2.4 / 2.5** 用接口或 `GameBootstrap` 回调解耦（Game 层内部仍用泛型）。
+- **主界面 / 主场景（2.4 ✅）**：`CmgmFrameSettings.MAIN_PANEL_NAME`、`MAIN_SCENE_NAME`；`ScenesManager.GoToMainScene` 统一调用。游戏内其他 Panel 仍优先 `ShowPanel<T>()`。
+- **D（AssetAddresses）**：Settings 字符串已够用；Address 键集中管理留待后续按需做。
 
 ### Lua 管线
 
@@ -653,4 +653,4 @@ CmgmFrameSettings.ROOT_LUA_URI（如 main.lua.txt）
 
 ---
 
-*下一步：**2.4** — `ScenesManager` 配置化 + `GameBootstrap` 回调解耦（见 §8 UI 管线）。*
+*下一步：**2.5** — `GameBootstrap`：游戏专属 Init 从 `GameInitializer` 拆出。*

@@ -34,7 +34,7 @@ public class GameInitializer : MonoBehaviour
         UniTask.Void(async () =>
         {
             //将UI包载入内存随时准备使用
-            await AddressablesResMgr.Instance.PreloadAssetsAsync("MainScene");
+            await AddressablesResMgr.Instance.PreloadAssetsAsync(CmgmFrameSettings.Instance.MAIN_SCENE_NAME);
             //初始化UI管理器
             UIManager.Instance.Init();
 
