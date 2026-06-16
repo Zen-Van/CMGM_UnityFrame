@@ -31,7 +31,12 @@ namespace CMGM.Core
             public static string RhythmMap_Path => HotRes + "/RhythmMap";
 
             public static string ScriptsPath => WorkSpace + "/Scripts";
-            public static string Script_UI_Panel_Path => ScriptsPath + "/GameUI/Panels";
+            public static string Framework_Root => ScriptsPath + "/Framework";
+            public static string Framework_Core => Framework_Root + "/Core";
+            public static string Framework_Modules => Framework_Root + "/Modules";
+
+            public static string Script_UI_Panel_Path => ScriptsPath + "/Game/UI/Panels";
+            public static string Data_ExcelContainer => Framework_Modules + "/Data/GameConfig/ExcelContainer";
             public static string HotRes_UIPanel => WorkSpace + "/HotRes/UI/Panels";
 
             /// <summary>游戏存档目录（运行时路径）</summary>

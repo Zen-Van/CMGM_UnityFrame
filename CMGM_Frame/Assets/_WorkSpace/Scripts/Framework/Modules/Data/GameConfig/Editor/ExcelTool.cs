@@ -16,7 +16,7 @@ public class ExcelTool
     /// <summary>
     /// 数据容器脚本存储位置路径
     /// </summary>
-    public static string DATA_CONTAINER_PATH = Consts.Paths.ScriptsPath + "/GameData/GameConfig/ExcelContainer";
+    public static string DATA_CONTAINER_PATH = Consts.Paths.Data_ExcelContainer;
 
     /// <summary>
     /// 表格中数据信息开始的行号

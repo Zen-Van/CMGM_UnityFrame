@@ -17,6 +17,8 @@ public class Edt_ProjectPathCheck
         bool checkResult =
             CheckDirectory(Consts.Paths.WorkSpace) &&
             CheckDirectory(Consts.Paths.ScriptsPath) &&
+            CheckDirectory(Consts.Paths.Framework_Core) &&
+            CheckDirectory(Consts.Paths.Framework_Modules) &&
             CheckDirectory(Consts.Paths.Script_UI_Panel_Path) &&
             CheckDirectory(Edt_BaseUtils.EditorRoot);
 
