@@ -21,6 +21,7 @@ public class Edt_ProjectPathCheck
             CheckDirectory(Consts.Paths.Framework.Modules) &&
             CheckDirectory(Consts.Paths.Framework.DataModule.Archive) &&
             CheckDirectory(Consts.Paths.Framework.DataModule.Config) &&
+            CheckDirectory(Consts.Paths.Framework.DataModule.Editor) &&
             CheckDirectory(Consts.Paths.Game.UI_Panels) &&
             CheckDirectory(Consts.Paths.Game.Archive) &&
             CheckDirectory(Consts.Paths.Game.Config) &&

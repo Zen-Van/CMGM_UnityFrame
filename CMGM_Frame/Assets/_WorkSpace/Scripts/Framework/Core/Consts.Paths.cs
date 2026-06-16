@@ -52,6 +52,7 @@ namespace CMGM.Core
                     public static string Root => Modules + "/Data";
                     public static string Archive => Root + "/Archive";
                     public static string Config => Root + "/Config";
+                    public static string Editor => Root + "/Editor";
                 }
             }
 

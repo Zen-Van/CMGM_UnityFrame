@@ -1,0 +1,23 @@
+{
+    "name": "CMGM.Data.Editor",
+    "rootNamespace": "",
+    "references": [
+        "CMGM.Core",
+        "CMGM.Data",
+        "CMGM.Editor.Base"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [
+        "Excel.dll",
+        "ICSharpCode.SharpZipLib.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

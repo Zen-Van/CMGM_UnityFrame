@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 namespace CMGM.Game
 {
-public class SamplePanel : BasePanel
+public class TestPanel : BasePanel
 {
     protected override void Awake()
     {
@@ -18,7 +18,7 @@ public class SamplePanel : BasePanel
         switch(btnName)
         {
             case "btnBack":
-                UIManager.Instance.HidePanel<SamplePanel>();
+                UIManager.Instance.HidePanel<TestPanel>();
                 break;
             default:
                 break;

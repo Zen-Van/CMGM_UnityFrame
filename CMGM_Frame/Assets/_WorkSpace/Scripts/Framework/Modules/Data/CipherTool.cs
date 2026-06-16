@@ -3,8 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
-using UnityEngine.InputSystem;
-
 /// <summary>
 /// 加密器，静态类，只有两个接口，加密和解密
 /// </summary>

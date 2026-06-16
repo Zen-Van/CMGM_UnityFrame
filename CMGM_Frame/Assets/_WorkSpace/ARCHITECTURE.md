@@ -2,7 +2,7 @@
 
 > 本文档是框架化改造的长期参考（「北极星」）。  
 > 目标：将当前工程从「带 Demo 的原型项目」逐步改造为「可跨项目迁移的框架」。  
-> 最后更新：阶段 2.3（游戏配表 + 路径 B 分层）；下一步 **2.3b M2** Data asmdef
+> 最后更新：阶段 2.3b（M2 Data asmdef）；下一步 **2.4** ScenesManager 配置化
 
 ---
 
@@ -43,9 +43,10 @@ Assets/_WorkSpace/
     │   ├── Core/            CMGM.Core asmdef、Consts.Paths
     │   └── Modules/
     │       ├── UI/          原 GameUI
-    │       ├── Data/        原 GameData（内分 Archive / Config）
+    │       ├── Data/        原 GameData（CMGM.Data ✅）
     │       │   ├── Archive/ GameArchiveManager、I_Saveable
-    │       │   └── Config/  GameConfigManager、ExcelTool
+    │       │   ├── Config/  GameConfigManager
+    │       │   └── Editor/  ExcelTool、ArchiveEditor（CMGM.Data.Editor）
     │       ├── Level/       原 GameLevel
     │       ├── Lua/         原 LuaCore
     │       ├── Audio/       原 AudioSystem
@@ -249,9 +250,10 @@ Assets/_WorkSpace/
       Core/                        必选（原 GameCore 内容直接在此，无 GameCore 子目录）
       Modules/                     可选，按项目勾选（§6.1、§6.3）
         UI/                        原 GameUI
-        Data/                      原 GameData（Archive + Config）
+        Data/                      原 GameData（CMGM.Data）
           Archive/                 GameArchiveManager、I_Saveable
-          Config/                  GameConfigManager、ExcelTool
+          Config/                  GameConfigManager
+          Editor/                  ExcelTool、ArchiveEditor
         Level/                     原 GameLevel
         Lua/                       原 LuaCore
         Audio/                     原 AudioSystem
@@ -406,8 +408,8 @@ Packages/（远期）
 | **2** 框架/游戏分层 | 2.1b **M1 闭环**：`CMGM.UI` + `.Editor` asmdef；`namespace CMGM.UI`；Game 层仅目录 + `CMGM.Game` namespace（**无框架级 Game asmdef**，§7.4）；`CmgmApplication.Quit` | ✅ |
 | **2** 框架/游戏分层 | 2.2 迁移 `GameRuntimeData` 等至 `Scripts/Game/Archive/` | ✅ |
 | **2** 框架/游戏分层 | 2.3 迁移游戏配表（如 `RoleInfoContainer`）至 `Scripts/Game/Config/`；**B** `Paths.Framework` / `Paths.Game` | ✅ |
-| **2** 框架/游戏分层 | 2.3b **M2 闭环**：`Data` 模块 `CMGM.Data` asmdef | **← 下一步** |
-| **2** 框架/游戏分层 | 2.4 `ScenesManager` 去硬编码；`IGameFlowConfig` / `GameBootstrap` 回调（Game 层仍用 `ShowPanel<T>()`）；**D** `AssetAddresses`（§2b） | 待做 |
+| **2** 框架/游戏分层 | 2.3b **M2 闭环**：`CMGM.Data` + `CMGM.Data.Editor` asmdef | ✅ |
+| **2** 框架/游戏分层 | 2.4 `ScenesManager` 去硬编码；`IGameFlowConfig` / `GameBootstrap` 回调；**D** `AssetAddresses`（§2b） | **← 下一步** |
 | **2** 框架/游戏分层 | 2.5 新建 `Scripts/Game/Bootstrap/GameBootstrap.cs`，游戏专属初始化从 `GameInitializer` 拆出 | 待做 |
 | **2** 框架/游戏分层 | 2.5b **M3 闭环**：`Level` 模块 `CMGM.Level` asmdef | 待做 |
 | **2** 框架/游戏分层 | 2.6 **M4 闭环**：`Lua` 模块 `CMGM.Lua` asmdef（与 XLua Generate Code 同单） | 待做 |
@@ -459,7 +461,7 @@ Packages/（远期）
 | **2.1b M1** ✅ | UI 模块闭环 | `CMGM.UI`、`CMGM.UI.Editor` asmdef；`CmgmApplication.Quit`；Game 层 namespace 保留，**不建** `CMGM.Game` asmdef（§7.4） | ShowPanel / HidePanel 正常 |
 | **2.2** ✅ | 迁出游戏存档结构 | `GameRuntimeData` → `Scripts/Game/Archive/`；`I_Saveable` → `Framework/Modules/Data/Archive/`；`GameArchiveManager` 通用读写 | 读档 / 存档流程不变 |
 | **2.3** ✅ | 迁出游戏配表 | `RoleInfoContainer` → `Scripts/Game/Config/`；`ExcelTool` 输出至 `Paths.Game.Config`；生成类带 `namespace CMGM.Game` | Editor 导表 + `LoadTable<RoleInfo>()` 正常 |
-| **2.3b M2** | Data 模块闭环 | `CMGM.Data` + `.Editor` asmdef（`Archive/`、`Config/` 已在位，见 §7.4） | 导表 + 读 `.cmgm` + 存档 |
+| **2.3b M2** ✅ | Data 模块闭环 | `CMGM.Data` + `CMGM.Data.Editor` asmdef；Editor 收拢至 `Data/Editor/` | 编译 + 导表 + 存档 Init |
 | **2.4** | ScenesManager 配置化 | 主场景名、主 Panel 不再硬编码；`IGameFlowConfig` / `GameBootstrap` 注册回调（**Game 层仍用 `ShowPanel<T>()`**，Level 不引用 Game）；**D** `AssetAddresses` 或 Label | 换主场景 / 主 UI 不改框架源码 |
 | **2.5** | GameBootstrap | 新建 `Scripts/Game/Bootstrap/GameBootstrap.cs`；游戏专属 Init（注册主界面 Panel 展示、配表预载等）从 `GameInitializer` 拆出 | Init 流程清晰：框架 Init vs 游戏 Init |
 | **2.5b M3** | Level 模块闭环 | `CMGM.Level` asmdef | Logo → 各系统 Init → 主场景 全流程 |
@@ -578,7 +580,7 @@ Packages/（远期）
 
 | 议题 | 当前做法 | 正式执行时机 | 说明 |
 |------|----------|--------------|------|
-| `I_Saveable` 归属 Archive 模块 | **已迁** `Framework/Modules/Data/Archive/I_Saveable.cs`（无 namespace）；**尚未**建 `CMGM.Data` asmdef | **2.3b M2** | 无 Game asmdef 时可仅做物理迁移；M2 再补程序集闭环 |
+| `I_Saveable` 归属 Archive 模块 | **已迁** `Archive/I_Saveable.cs`；**已建** `CMGM.Data` asmdef | — | 2.3b ✅ |
 | **`CMGM.Game` asmdef** | **框架不创建**；`Scripts/Game/` 示例代码进默认 `Assembly-CSharp`，保留 `namespace CMGM.Game` | **各游戏项目自定** | 框架主迭代 `Framework/*` 程序集；JRPG / SRPG 等可自建 Game asmdef |
 
 **记录时间：** 2026-06-15（`I_Saveable` 提前迁移尝试后回退；`CMGM.Game` asmdef 移除）
@@ -615,7 +617,8 @@ GameRuntimeData（I_Saveable，Scripts/Game/Archive/）
 | `Paths.Game.Archive` | `Scripts/Game/Archive/` | 运行时存档结构（可变） |
 | `Paths.Game.Config` | `Scripts/Game/Config/` | Excel 导出的配表 Container（只读） |
 | `Paths.Framework.DataModule.Archive` | `Framework/Modules/Data/Archive/` | 存档框架（`GameArchiveManager`、`I_Saveable`） |
-| `Paths.Framework.DataModule.Config` | `Framework/Modules/Data/Config/` | 配表框架（`GameConfigManager`、`ExcelTool`） |
+| `Paths.Framework.DataModule.Config` | `Framework/Modules/Data/Config/` | 配表框架（`GameConfigManager`） |
+| `Paths.Framework.DataModule.Editor` | `Framework/Modules/Data/Editor/` | Data 模块 Editor（`ExcelTool`、`ArchiveEditor`） |
 
 **不**把 Config 嵌套在 Archive 下：二者生命周期不同（配表 vs 存档）。
 
@@ -650,4 +653,4 @@ CmgmFrameSettings.ROOT_LUA_URI（如 main.lua.txt）
 
 ---
 
-*下一步：**2.3b M2** — `CMGM.Data` + `.Editor` asmdef（Save 侧 `I_Saveable` 归属见 §7.4）。*
+*下一步：**2.4** — `ScenesManager` 配置化 + `GameBootstrap` 回调解耦（见 §8 UI 管线）。*
