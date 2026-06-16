@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using CMGM.Core;
+using CMGM.Data;
 using CMGM.UI;
 using Cysharp.Threading.Tasks;
 using UnityEngine;

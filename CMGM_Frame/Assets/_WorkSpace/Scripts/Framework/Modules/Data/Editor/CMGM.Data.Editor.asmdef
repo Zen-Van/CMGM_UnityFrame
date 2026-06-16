@@ -1,6 +1,6 @@
 {
     "name": "CMGM.Data.Editor",
-    "rootNamespace": "",
+    "rootNamespace": "CMGM.Data.Editor",
     "references": [
         "CMGM.Core",
         "CMGM.Data",

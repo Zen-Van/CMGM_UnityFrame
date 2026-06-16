@@ -3,11 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
+
+namespace CMGM.Data
+{
 /// <summary>
 /// 加密器，静态类，只有两个接口，加密和解密
 /// </summary>
-public static class CipherTool
-{
+public static class CipherTool{
     //重要！！：每次修改加密算法后必须清空本地存档文件，不然存档文件将会读出乱码。
     //可以通过编辑器窗口上方Tab栏中的【草木句萌】-->【清空所有存档数据】来清除
     //所有配置数据也必须重导
@@ -39,4 +41,5 @@ public static class CipherTool
         //    bytes[i] ^= passkey;
         //}
     }
+}
 }

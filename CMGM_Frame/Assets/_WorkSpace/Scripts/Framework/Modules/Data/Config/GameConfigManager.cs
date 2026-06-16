@@ -6,6 +6,8 @@ using System.Text;
 using CMGM.Core;
 using UnityEngine;
 
+namespace CMGM.Data
+{
 /// <summary>
 /// 游戏配置管理器，管理策划配置表中配置的数据的读取和转化
 /// </summary>
@@ -160,4 +162,5 @@ public class GameConfigManager : Singleton<GameConfigManager>
 
         return tableDic[tableName] as T;
     }
+}
 }

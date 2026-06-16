@@ -5,6 +5,8 @@ using CMGM.Core;
 using UnityEngine;
 using UnityEngine.Events;
 
+namespace CMGM.Data
+{
 /// <summary>
 /// 存档管理器，该管理器须在游戏初始化时预热
 /// </summary>
@@ -226,4 +228,5 @@ public class GameArchiveManager : Singleton<GameArchiveManager>
         return obj;
     }
     #endregion
+}
 }

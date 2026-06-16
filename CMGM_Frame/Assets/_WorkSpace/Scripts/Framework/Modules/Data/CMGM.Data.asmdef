@@ -1,6 +1,6 @@
 {
     "name": "CMGM.Data",
-    "rootNamespace": "",
+    "rootNamespace": "CMGM.Data",
     "references": [
         "CMGM.Core"
     ],

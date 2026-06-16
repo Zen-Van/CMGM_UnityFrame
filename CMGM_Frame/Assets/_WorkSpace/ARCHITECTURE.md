@@ -461,7 +461,7 @@ Packages/（远期）
 | **2.1b M1** ✅ | UI 模块闭环 | `CMGM.UI`、`CMGM.UI.Editor` asmdef；`CmgmApplication.Quit`；Game 层 namespace 保留，**不建** `CMGM.Game` asmdef（§7.4） | ShowPanel / HidePanel 正常 |
 | **2.2** ✅ | 迁出游戏存档结构 | `GameRuntimeData` → `Scripts/Game/Archive/`；`I_Saveable` → `Framework/Modules/Data/Archive/`；`GameArchiveManager` 通用读写 | 读档 / 存档流程不变 |
 | **2.3** ✅ | 迁出游戏配表 | `RoleInfoContainer` → `Scripts/Game/Config/`；`ExcelTool` 输出至 `Paths.Game.Config`；生成类带 `namespace CMGM.Game` | Editor 导表 + `LoadTable<RoleInfo>()` 正常 |
-| **2.3b M2** ✅ | Data 模块闭环 | `CMGM.Data` + `CMGM.Data.Editor` asmdef；Editor 收拢至 `Data/Editor/` | 编译 + 导表 + 存档 Init |
+| **2.3b M2** ✅ | Data 模块闭环 | `CMGM.Data` + `CMGM.Data.Editor` asmdef；`namespace CMGM.Data` / `CMGM.Data.Editor`；Editor 收拢至 `Data/Editor/` | 编译 + 导表 + 存档 Init |
 | **2.4** | ScenesManager 配置化 | 主场景名、主 Panel 不再硬编码；`IGameFlowConfig` / `GameBootstrap` 注册回调（**Game 层仍用 `ShowPanel<T>()`**，Level 不引用 Game）；**D** `AssetAddresses` 或 Label | 换主场景 / 主 UI 不改框架源码 |
 | **2.5** | GameBootstrap | 新建 `Scripts/Game/Bootstrap/GameBootstrap.cs`；游戏专属 Init（注册主界面 Panel 展示、配表预载等）从 `GameInitializer` 拆出 | Init 流程清晰：框架 Init vs 游戏 Init |
 | **2.5b M3** | Level 模块闭环 | `CMGM.Level` asmdef | Logo → 各系统 Init → 主场景 全流程 |
@@ -580,7 +580,7 @@ Packages/（远期）
 
 | 议题 | 当前做法 | 正式执行时机 | 说明 |
 |------|----------|--------------|------|
-| `I_Saveable` 归属 Archive 模块 | **已迁** `Archive/I_Saveable.cs`；**已建** `CMGM.Data` asmdef | — | 2.3b ✅ |
+| `I_Saveable` 归属 Archive 模块 | **已迁** `Archive/I_Saveable.cs`（`namespace CMGM.Data`）；**已建** `CMGM.Data` asmdef | — | 2.3b ✅ |
 | **`CMGM.Game` asmdef** | **框架不创建**；`Scripts/Game/` 示例代码进默认 `Assembly-CSharp`，保留 `namespace CMGM.Game` | **各游戏项目自定** | 框架主迭代 `Framework/*` 程序集；JRPG / SRPG 等可自建 Game asmdef |
 
 **记录时间：** 2026-06-15（`I_Saveable` 提前迁移尝试后回退；`CMGM.Game` asmdef 移除）

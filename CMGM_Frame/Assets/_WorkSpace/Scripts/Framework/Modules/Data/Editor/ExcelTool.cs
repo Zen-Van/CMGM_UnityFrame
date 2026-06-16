@@ -7,6 +7,8 @@ using System.IO;
 using System.Text;
 using UnityEditor;
 
+namespace CMGM.Data.Editor
+{
 public class ExcelTool
 {
     /// <summary>
@@ -305,6 +307,7 @@ public class ExcelTool
         AssetDatabase.Refresh();
     }
     #endregion
+}
 }
     
 

@@ -1,9 +1,10 @@
 using System.Collections.Generic;
+using CMGM.Data;
 
 namespace CMGM.Game
 {
     /// <summary>
-    /// 游戏运行时存档数据（仅在 <see cref="GameArchiveManager"/> 中持有唯一实例）。
+    /// 游戏运行时存档数据（仅在 <see cref="CMGM.Data.GameArchiveManager"/> 中持有唯一实例）。
     /// </summary>
     [System.Serializable]
     public class GameRuntimeData : I_Saveable
