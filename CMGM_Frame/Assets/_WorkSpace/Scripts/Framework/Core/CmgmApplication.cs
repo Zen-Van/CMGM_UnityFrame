@@ -1,7 +1,7 @@
 namespace CMGM.Core
 {
     /// <summary>
-    /// 跨模块可用的应用级操作（避免 Game / Level 程序集循环引用）。
+    /// 跨模块可用的应用级操作（避免 Game / Scene 程序集循环引用）。
     /// </summary>
     public static class CmgmApplication
     {

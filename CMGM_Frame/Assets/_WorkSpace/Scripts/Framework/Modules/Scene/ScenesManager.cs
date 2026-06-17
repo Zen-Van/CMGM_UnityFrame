@@ -6,6 +6,8 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.SceneManagement;
 
+namespace CMGM.Scene
+{
 public class ScenesManager : Singleton<ScenesManager>
 {
     private ScenesManager() { }
@@ -52,4 +54,5 @@ public class ScenesManager : Singleton<ScenesManager>
         //每次加载完场景都要设置UI摄像机重叠
         UIManager.Instance.SetUICameraOverlap(Camera.main);
     }
+}
 }

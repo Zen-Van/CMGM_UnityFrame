@@ -7,7 +7,7 @@ namespace CMGM.Game
     /// <summary>
     /// 游戏层「进游戏」入口：在 Loading 进度条阶段加载 gameplay 所需内容（2.5 定位修订）。
     /// <para>Logo → 主界面 仅走框架 <see cref="CmgmFrameBoot"/>，不在此预加载角色表等大资源。</para>
-    /// <para>进游戏 Loading 归属 Level 模块（ScenesManager），见 ARCHITECTURE 2.5c。</para>
+    /// <para>进游戏 Loading 归属 Scene 模块（ScenesManager），见 ARCHITECTURE 2.5c。</para>
     /// </summary>
     public static class GameBootstrap
     {
@@ -20,7 +20,7 @@ namespace CMGM.Game
             // TODO 2.5c：由 ScenesManager / LoadingPanel 展示进度并分段上报
             ConfigTableManager.Instance.LoadTable<RoleInfo>();
             // TODO 2.5c：预载关卡场景 / Addressables、Wwise Bank 等
-            CmgmLog.fPositive("进游戏内容加载完成（配表等；Loading 见 Level 2.5c）");
+            CmgmLog.fPositive("进游戏内容加载完成（配表等；Loading 见 Scene 2.5c）");
 
             await UniTask.CompletedTask;
         }

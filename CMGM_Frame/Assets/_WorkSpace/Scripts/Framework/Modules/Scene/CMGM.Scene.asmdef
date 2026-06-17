@@ -1,0 +1,22 @@
+{
+    "name": "CMGM.Scene",
+    "rootNamespace": "CMGM.Scene",
+    "references": [
+        "CMGM.Core",
+        "CMGM.Data",
+        "CMGM.UI",
+        "UniTask",
+        "UniTask.Addressables",
+        "Unity.Addressables",
+        "Unity.ResourceManager"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

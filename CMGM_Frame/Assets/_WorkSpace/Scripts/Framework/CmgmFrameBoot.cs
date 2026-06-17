@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
 using CMGM.Core;
 using CMGM.Data;
+using CMGM.Scene;
 using CMGM.UI;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 using UnityEngine.Video;
 
 public class CmgmFrameBoot : MonoBehaviour

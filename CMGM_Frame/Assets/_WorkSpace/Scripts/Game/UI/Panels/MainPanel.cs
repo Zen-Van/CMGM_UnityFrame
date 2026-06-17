@@ -36,7 +36,7 @@ public class MainPanel : BasePanel
     }
 
     /// <summary>
-    /// 主界面 → 进游戏（将来由 Level 模块 Loading 流程包一层进度条，见 2.5c）。
+    /// 主界面 → 进游戏（将来由 Scene 模块 Loading 流程包一层进度条，见 2.5c）。
     /// </summary>
     private async UniTaskVoid EnterGameplayAsync()
     {
