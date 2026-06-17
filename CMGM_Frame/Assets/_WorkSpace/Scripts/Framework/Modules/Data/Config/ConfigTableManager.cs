@@ -9,11 +9,11 @@ using UnityEngine;
 namespace CMGM.Data
 {
 /// <summary>
-/// 游戏配置管理器，管理策划配置表中配置的数据的读取和转化
+/// 配表管理器，管理策划配置表中数据的读取和转化
 /// </summary>
-public class GameConfigManager : Singleton<GameConfigManager>
+public class ConfigTableManager : Singleton<ConfigTableManager>
 {
-    private GameConfigManager() { }
+    private ConfigTableManager() { }
 
     /// <summary>
     /// 用于存储内存中所有Excel表数据的容器

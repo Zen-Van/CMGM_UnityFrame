@@ -18,7 +18,7 @@ public class ScenesManager : Singleton<ScenesManager>
         var settings = CmgmFrameSettings.Instance;
 
         //清空运行时档案
-        GameArchiveManager.Instance.ClearRuntimeData();
+        ArchiveManager.Instance.ClearRuntimeData();
         //清空所有UI面板
         UIManager.Instance.ClearPanel();
 

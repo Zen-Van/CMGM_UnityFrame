@@ -37,7 +37,7 @@ namespace CMGM.Core
             public static string ARCHIVE_PATH => Application.persistentDataPath + "/Archives";
 
             /// <summary>配表二进制输出目录（StreamingAssets）</summary>
-            public static string ConfigData => Application.streamingAssetsPath + "/GameConfig/";
+            public static string ConfigData => Application.streamingAssetsPath + "/TableConfig/";
 
             /// <summary>框架目录（Core + Modules）</summary>
             public static class Framework

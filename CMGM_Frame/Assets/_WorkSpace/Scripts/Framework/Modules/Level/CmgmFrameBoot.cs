@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.Video;
 
-public class GameInitializer : MonoBehaviour
+public class CmgmFrameBoot : MonoBehaviour
 {
     public bool SHOW_LOGO = true;
 
@@ -39,9 +39,9 @@ public class GameInitializer : MonoBehaviour
             UIManager.Instance.Init();
 
             //初始化存档管理器，载入存档元数据
-            GameArchiveManager.Instance.Init();
+            ArchiveManager.Instance.Init();
             CmgmLog.fPositive($"存档元数据载入完毕，" +
-                $"其中共检测到{GameArchiveManager.Instance.ArchiveMeta.dataSet.Count}个存档资料");
+                $"其中共检测到{ArchiveManager.Instance.ArchiveMeta.dataSet.Count}个存档资料");
 
             //初始化Lua管理器
             LuaManager.Instance.Init();

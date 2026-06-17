@@ -2,7 +2,7 @@
 
 > 本文档是框架化改造的长期参考（「北极星」）。  
 > 目标：将当前工程从「带 Demo 的原型项目」逐步改造为「可跨项目迁移的框架」。  
-> 最后更新：阶段 2.4（ScenesManager 配置化）；下一步 **2.5** GameBootstrap
+> 最后更新：阶段 2.5（GameBootstrap 定位 + 框架层去 Game 命名）；下一步 **2.5b** CMGM.Level asmdef
 
 ---
 
@@ -44,8 +44,8 @@ Assets/_WorkSpace/
     │   └── Modules/
     │       ├── UI/          原 GameUI
     │       ├── Data/        原 GameData（CMGM.Data ✅）
-    │       │   ├── Archive/ GameArchiveManager、I_Saveable
-    │       │   ├── Config/  GameConfigManager
+    │       │   ├── Archive/ ArchiveManager、I_Saveable
+    │       │   ├── Config/  ConfigTableManager
     │       │   └── Editor/  ExcelTool、ArchiveEditor（CMGM.Data.Editor）
     │       ├── Level/       原 GameLevel
     │       ├── Lua/         原 LuaCore
@@ -114,10 +114,10 @@ Assets/_WorkSpace/
 
 | 组件 | 职责 | 成熟度 |
 |------|------|--------|
-| `GameConfigManager` | 读取 `.cmgm` 二进制配表（反射 + 解密） | ★★★★ |
+| `ConfigTableManager` | 读取 `.cmgm` 二进制配表（反射 + 解密） | ★★★★ |
 | `ExcelTool`（Editor） | Excel → Container.cs + 二进制 | ★★★★ |
 | `RoleInfoContainer` 等 | 游戏配表（`Scripts/Game/Config/`，2.3 ✅） | — |
-| `GameArchiveManager` | 存档元数据 + 运行时数据读写 | ★★★ |
+| `ArchiveManager` | 存档元数据 + 运行时数据读写 | ★★★ |
 | `GameRuntimeData` | 游戏存档结构（`Scripts/Game/Archive/`，2.2 ✅） | — |
 | `CipherTool` | 配表 / 存档加解密 | ★★★ |
 
@@ -139,8 +139,11 @@ Assets/_WorkSpace/
 
 | 组件 | 职责 | 成熟度 |
 |------|------|--------|
-| `GameInitializer` | 启动 Logo + 各系统 Init + 进主界面 | ★★ |
-| `ScenesManager` | 场景切换、回主界面 | ★★ |
+| `CmgmFrameBoot` | 启动 Logo + **框架** Manager Init + 进主界面 | ★★ |
+| `ScenesManager` | 场景切换、回主界面；**进游戏 Loading** 进度与 `LoadSceneAsync` 协作（**2.5c**，不单独建 Modules） | ★★ |
+| `LoadingPanel` / 加载编排（规划 **2.5c**） | 进度条 UI、分段任务、对接 Addressables 进度；包装 `GameBootstrap.EnterGameplayAsync` | ☆ |
+
+> **术语：** 此处「模块」指**关卡/场景相关系统**，不是 `Framework/Modules/Loading/` 可选程序集。
 
 ### 3.6 可选模块
 
@@ -157,7 +160,7 @@ Assets/_WorkSpace/
 ## 4. 启动流程（当前）
 
 ```
-InitScene（GameInitializer.Awake）
+InitScene（CmgmFrameBoot.Awake）
     │
     ├─ 显示 Logo（Video / Texture）
     │
@@ -167,24 +170,36 @@ InitScene（GameInitializer.Awake）
         │
         ├─ AddressablesResMgr.PreloadAssetsAsync("MainScene")
         ├─ UIManager.Init()
-        ├─ GameArchiveManager.Init()        ← 构造函数已读存档元数据
+        ├─ ArchiveManager.Init()        ← 构造函数已读存档元数据
         ├─ LuaManager.Init()
         │     ├─ 注册 Loader 链
         │     ├─ [非热重载] LoadLuaMapper()
         │     └─ ExecuteLua(ROOT_LUA_URI)
-        └─ WwiseAudioManager.Init()
+        ├─ WwiseAudioManager.Init()           ← 框架：Init 宿主； gameplay Bank 进游戏再载（2.5c）
         │
         _gameInitFinished = true
         │
-        └─ ScenesManager.GoToMainScene()
+        └─ ScenesManager.GoToMainScene()      ← 主界面必要：主 Panel + 主场景
               ├─ ShowPanel(Settings.MAIN_PANEL_NAME)
-              └─ LoadSceneAsync(Settings.MAIN_SCENE_NAME)  ← 2.4 ✅
+              └─ LoadSceneAsync(Settings.MAIN_SCENE_NAME)
+
+主界面 → 进游戏（点击「开始」等，**非** Logo 链）：
+    MainPanel / GameState.MainMenu
+        └─ Level 模块 · 进游戏 Loading（2.5c：ScenesManager + LoadingPanel）
+              └─ GameBootstrap.EnterGameplayAsync()（游戏层加载清单）
+                    ├─ LoadTable<RoleInfo> 等配表
+                    ├─ 预载关卡场景 / Addressables
+                    └─ Wwise Bank 等
+        └─ 进入 Gameplay 场景 / GameState.Gameplay（5.3）
 ```
+
+> **资源分层（§8）**：Logo→主界面尽量轻；角色表、关卡资源、音频 Bank 在「进游戏 Loading」阶段加载。  
+> **待优化**：启动链中 `PreloadAssetsAsync(MAIN_SCENE_NAME)` 是否保留仅主界面体量，2.5c 落地后再收敛。
 
 ### 已知生命周期问题（待阶段 3 解决）
 
-- 部分 Manager 在**构造函数**里做重活（`UIManager`、`GameArchiveManager`），`Init()` 反而是空的
-- `LuaManager.Init()` 内部 fire-and-forget，`GameInitializer` 不 await Lua 真正就绪
+- 部分 Manager 在**构造函数**里做重活（`UIManager`、`ArchiveManager`），`Init()` 反而是空的
+- `LuaManager.Init()` 内部 fire-and-forget，`CmgmFrameBoot` 不 await Lua 真正就绪
 - 无统一模块注册 / 依赖顺序 / 失败回滚
 
 ---
@@ -207,7 +222,7 @@ InitScene（GameInitializer.Awake）
 | 问题 | 位置 | 计划阶段 |
 |------|------|----------|
 | namespace / asmdef | `GameCore` 已有 `CMGM.Core` + asmdef（1.1~1.3 ✅）；其余模块待阶段 2 模块闭环（2.1b~2.8） | 见 §7.1 |
-| `BinaryFormatter` 序列化 | `GameArchiveManager` | 阶段 4 |
+| `BinaryFormatter` 序列化 | `ArchiveManager` | 阶段 4 |
 | 无 GameState 状态机 | — | 阶段 5 |
 | 无事件总线 | `OptionalSystem/` | 阶段 6 |
 
@@ -219,7 +234,7 @@ InitScene（GameInitializer.Awake）
 ┌─────────────────────────────────────────────────┐
 │  YourGame.Runtime（每个项目独有）                  │
 │  GameRuntimeData / 配表 Container / Panel /       │
-│  ScenesManager 配置 / GameBootstrap 模块注册       │
+│  GameBootstrap.EnterGameplayAsync / Level·进游戏 Loading   │
 └───────────────────────┬─────────────────────────┘
                         │ 依赖
 ┌───────────────────────▼─────────────────────────┐
@@ -244,16 +259,16 @@ Assets/_WorkSpace/
       UI/Panels/
       Archive/                     2.2 运行时存档结构
       Config/                      2.3 配表 Container
-      Bootstrap/                   2.5 GameBootstrap
+      Bootstrap/                   2.5 GameBootstrap（进游戏加载入口）
     Framework/
       Core/                        必选（原 GameCore 内容直接在此，无 GameCore 子目录）
       Modules/                     可选，按项目勾选（§6.1、§6.3）
         UI/                        原 GameUI
         Data/                      原 GameData（CMGM.Data）
-          Archive/                 GameArchiveManager、I_Saveable
-          Config/                  GameConfigManager
+          Archive/                 ArchiveManager、I_Saveable
+          Config/                  ConfigTableManager
           Editor/                  ExcelTool、ArchiveEditor
-        Level/                     原 GameLevel
+        Level/                     原 GameLevel；CmgmFrameBoot、ScenesManager、进游戏 Loading（2.5c）
         Lua/                       原 LuaCore
         Audio/                     原 AudioSystem
         Input/                     原 GameInput
@@ -409,14 +424,15 @@ Packages/（远期）
 | **2** 框架/游戏分层 | 2.3 迁移游戏配表（如 `RoleInfoContainer`）至 `Scripts/Game/Config/`；**B** `Paths.Framework` / `Paths.Game` | ✅ |
 | **2** 框架/游戏分层 | 2.3b **M2 闭环**：`CMGM.Data` + `CMGM.Data.Editor` asmdef | ✅ |
 | **2** 框架/游戏分层 | 2.4 `ScenesManager` 配置化；`MAIN_SCENE_NAME` + `MAIN_PANEL_NAME` | ✅ |
-| **2** 框架/游戏分层 | 2.5 新建 `GameBootstrap`；游戏 Init 从 `GameInitializer` 拆出 | **← 下一步** |
-| **2** 框架/游戏分层 | 2.5b **M3 闭环**：`Level` 模块 `CMGM.Level` asmdef | 待做 |
+| **2** 框架/游戏分层 | 2.5 `GameBootstrap`：游戏**进游戏**加载入口（`EnterGameplayAsync`）；Logo 链不载大表 | ✅ |
+| **2** 框架/游戏分层 | 2.5b **M3 闭环**：`Level` 模块 `CMGM.Level` asmdef | **← 下一步** |
+| **2** 框架/游戏分层 | **2.5c** Level · **进游戏 Loading**（`ScenesManager` + LoadingPanel；**不**新建 `Modules/Loading`） | 待做 |
 | **2** 框架/游戏分层 | 2.6 **M4 闭环**：`Lua` 模块 `CMGM.Lua` asmdef（与 XLua Generate Code 同单） | 待做 |
 | **2** 框架/游戏分层 | 2.7 **M5 闭环**：`Audio` + `Input` 模块 asmdef | 待做 |
 | **2** 框架/游戏分层 | 2.8 **M6 闭环**：Editor namespace + asmdef | 待做 |
 | **3** Bootstrap | 3.1 定义 `IGameModule` + `CmgmInitContext` | 待做 |
 | **3** Bootstrap | 3.2~3.4 将各 Manager 改为 Module，构造函数不再做重活 | 待做 |
-| **3** Bootstrap | 3.5 `GameInitializer` 改为按 Order 依次 await 注册模块 | 待做 |
+| **3** Bootstrap | 3.5 `CmgmFrameBoot` 改为按 Order 依次 await 注册模块 | 待做 |
 | **3** Bootstrap | 3.6 游戏项目在 `GameBootstrap` 注册自己的 Module | 待做 |
 | **4** 存档升级 | 4.1~4.6 分块存档、`ISaveChunk`、版本头、替换 `BinaryFormatter`、迁移示例 | 待做 |
 | **5** GameState | 5.1~5.5 状态机基础态 + Pause/Cutscene/Battle 预留 | 待做 |
@@ -458,15 +474,17 @@ Packages/（远期）
 | **2.1** ✅ | 迁出游戏 Panel | `Scripts/Game/UI/Panels/` | 主界面 Play 正常 |
 | **2.1a** ✅ | Framework 目录 + 重命名 | §6.3 映射；`Consts.Paths.Framework.*` | 编译通过 |
 | **2.1b M1** ✅ | UI 模块闭环 | `CMGM.UI`、`CMGM.UI.Editor` asmdef；`CmgmApplication.Quit`；Game 层 namespace 保留，**不建** `CMGM.Game` asmdef（§7.4） | ShowPanel / HidePanel 正常 |
-| **2.2** ✅ | 迁出游戏存档结构 | `GameRuntimeData` → `Scripts/Game/Archive/`；`I_Saveable` → `Framework/Modules/Data/Archive/`；`GameArchiveManager` 通用读写 | 读档 / 存档流程不变 |
+| **2.2** ✅ | 迁出游戏存档结构 | `GameRuntimeData` → `Scripts/Game/Archive/`；`I_Saveable` → `Framework/Modules/Data/Archive/`；`ArchiveManager` 通用读写 | 读档 / 存档流程不变 |
 | **2.3** ✅ | 迁出游戏配表 | `RoleInfoContainer` → `Scripts/Game/Config/`；`ExcelTool` 输出至 `Paths.Game.Config`；生成类带 `namespace CMGM.Game` | Editor 导表 + `LoadTable<RoleInfo>()` 正常 |
 | **2.3b M2** ✅ | Data 模块闭环 | `CMGM.Data` + `CMGM.Data.Editor` asmdef；`namespace CMGM.Data` / `CMGM.Data.Editor`；Editor 收拢至 `Data/Editor/` | 编译 + 导表 + 存档 Init |
 | **2.4** ✅ | ScenesManager 配置化 | `CmgmFrameSettings` 配置主场景 + 主 Panel；`GoToMainScene` 用字符串 `ShowPanel` / `LoadSceneAsync` | 换主 UI/主场景只改 Settings |
-| **2.5** | GameBootstrap | 配表预载等从 `GameInitializer` 拆至 `Scripts/Game/Bootstrap/` | Init：框架 vs 游戏清晰 |
-| **2.5b M3** | Level 模块闭环 | `CMGM.Level` asmdef | Logo → 各系统 Init → 主场景 全流程 |
+| **2.5** ✅ | GameBootstrap | `EnterGameplayAsync`：主界面→进游戏时加载配表/资源/音频；**不在** Logo→主界面链 | MainPanel「开始」可触发 |
+| **2.5b M3** | Level 模块闭环 | `CMGM.Level` asmdef | Logo → 框架 Init → 主场景 |
+| **2.5c** | Level · 进游戏 Loading | `ScenesManager` 扩展 + LoadingPanel；编排 `EnterGameplayAsync`、Addressables/切场景进度 | 主界面→进游戏有进度条 |
 | **2.6 M4** | Lua 模块闭环 | `CMGM.Lua` + XLua 同单 | Lua 启动、`require`、C# 桥接无类型分裂错误 |
 | **2.7 M5** | Audio + Input 闭环 | `CMGM.Audio`、`CMGM.Input` asmdef | 音频事件、输入 map 正常 |
 | **2.8 M6** | Editor 模块闭环 | `_WorkSpace/Editor/` → `Framework/Editor/`；各 `Modules/*/Editor/` + `CMGM.Editor` asmdef（§6.2） | 路径检查、模板、导入向导可用 |
+| **2.5c** | Level · 进游戏 Loading | `Framework/Modules/Level/`：`ScenesManager` 扩展、LoadingPanel、分段加载；包装 `EnterGameplayAsync` | 主界面→进游戏有进度条；角色表等在此时加载 |
 
 #### 阶段 3 · Bootstrap 模块化
 
@@ -474,10 +492,10 @@ Packages/（远期）
 |------|------|----------|------|
 | 3.1 | 模块接口 | 定义 `IGameModule`（`Order`、`InitAsync(CmgmInitContext)`、`Shutdown` 等）与 `CmgmInitContext`（共享服务访问） | 接口文档 + 空实现可编译 |
 | 3.2 | UI / 资源 Module | `UIManager`、`AddressablesResMgr` 改为 Module；构造函数不做重活 | Init 只在 `InitAsync` |
-| 3.3 | 存档 / Lua Module | `GameArchiveManager`、`LuaManager` 同上 | Lua Init 可被 await |
+| 3.3 | 存档 / Lua Module | `ArchiveManager`、`LuaManager` 同上 | Lua Init 可被 await |
 | 3.4 | 音频 Module | `WwiseAudioManager`（及可选 Input）注册为 Module | 启动顺序可配置 |
-| 3.5 | 统一调度 | `GameInitializer` 收集 Module 列表，按 `Order` 依次 `await InitAsync`；失败可日志 / 中断策略 | 无 fire-and-forget 的 Init |
-| 3.6 | 游戏注册 | `GameBootstrap` 向框架注册游戏专属 Module（如配表预载、GameState 入口） | 新项目只改 Game 层注册 |
+| 3.5 | 统一调度 | `CmgmFrameBoot` 收集 Module 列表，按 `Order` 依次 `await InitAsync`；失败可日志 / 中断策略 | 无 fire-and-forget 的 Init |
+| 3.6 | 游戏注册 | `GameBootstrap` 向框架注册游戏专属 Module（进游戏加载清单、GameState 入口等） | 新项目只改 Game 层注册 |
 
 #### 阶段 4 · 存档升级
 
@@ -496,7 +514,7 @@ Packages/（远期）
 |------|------|----------|------|
 | 5.1 | 状态接口 | `IGameState`：`Enter` / `Exit` / `Update`（可选） | 基础态可切换 |
 | 5.2 | 状态机宿主 | `GameStateMachine`：Push / Pop / Replace | 日志可追踪栈 |
-| 5.3 | 基础态 | `Boot`、`MainMenu`、`Gameplay`、`Loading` | 与 ScenesManager 协作 |
+| 5.3 | 基础态 | `Boot`、`MainMenu`、`Gameplay`、**`Loading`**（态内调用 **Level·进游戏 Loading（2.5c）** + `GameBootstrap.EnterGameplayAsync`） | 与 ScenesManager 协作 |
 | 5.4 | 预留态 | `Pause`、`Cutscene`、`Battle` 空壳或最小实现 | JRPG / SRPG 可扩展 |
 | 5.5 | 与 UI / 输入 | 状态切换时 UI 层、输入 map 切换策略 | 暂停时输入正确 |
 
@@ -582,8 +600,10 @@ Packages/（远期）
 | `I_Saveable` 归属 Archive 模块 | **已迁** `Archive/I_Saveable.cs`（`namespace CMGM.Data`）；**已建** `CMGM.Data` asmdef | — | 2.3b ✅ |
 | **`CMGM.Game` asmdef** | **框架不创建**；`Scripts/Game/` 示例代码进默认 `Assembly-CSharp`，保留 `namespace CMGM.Game` | **各游戏项目自定** | 框架主迭代 `Framework/*` 程序集；JRPG / SRPG 等可自建 Game asmdef |
 | `IGameFlowHandler` / GameFlow | 曾尝试，**已废止**（2.4 改为 Settings 字符串） | — | — |
+| 独立 `Modules/Loading` + **2.9 M7** | 曾规划，**已废止**（2026-06-16） | — | 进游戏 Loading 并入 **Level 模块（2.5c）** |
+| 框架层 `Game*` 类名 | **2.5 起废止**新命名 | — | `CmgmFrameBoot`、`ArchiveManager`、`ConfigTableManager`；游戏层保留 `GameBootstrap` 等 |
 
-**记录时间：** 2026-06-15（`I_Saveable` 提前迁移；`CMGM.Game` asmdef 移除）；2026-06-16（2.4 废止 GameFlow，改 Settings 配置主 Panel/主场景）
+**记录时间：** 2026-06-15（`I_Saveable` 提前迁移；`CMGM.Game` asmdef 移除）；2026-06-16（2.4 废止 GameFlow；Loading 不单独建 Modules；框架层去 Game 命名）
 
 ---
 
@@ -595,18 +615,18 @@ Packages/（远期）
 Excel（Excels/）
   → ExcelTool 导出
   → *Container.cs（行类 *Row + 容器类 *）
-  → StreamingAssets/GameConfig/*.cmgm
-  → GameConfigManager.LoadTable<T>() / GetTable<T>()
+  → StreamingAssets/TableConfig/*.cmgm
+  → ConfigTableManager.LoadTable<T>() / GetTable<T>()
 ```
 
 - 容器类必须有 `Dictionary<K, VRow> dataDic` 字段
-- `GameConfigManager` 通过反射读 `dataDic` 泛型参数推断行类型
+- `ConfigTableManager` 通过反射读 `dataDic` 泛型参数推断行类型
 
 ### 存档管线
 
 ```
 GameRuntimeData（I_Saveable，Scripts/Game/Archive/）
-  → GameArchiveManager 序列化（Framework/Modules/Data/Archive/）
+  → ArchiveManager 序列化（Framework/Modules/Data/Archive/）
   → persistentDataPath/Archives/
 ```
 
@@ -616,8 +636,8 @@ GameRuntimeData（I_Saveable，Scripts/Game/Archive/）
 |----------|------|------|
 | `Paths.Game.Archive` | `Scripts/Game/Archive/` | 运行时存档结构（可变） |
 | `Paths.Game.Config` | `Scripts/Game/Config/` | Excel 导出的配表 Container（只读） |
-| `Paths.Framework.DataModule.Archive` | `Framework/Modules/Data/Archive/` | 存档框架（`GameArchiveManager`、`I_Saveable`） |
-| `Paths.Framework.DataModule.Config` | `Framework/Modules/Data/Config/` | 配表框架（`GameConfigManager`） |
+| `Paths.Framework.DataModule.Archive` | `Framework/Modules/Data/Archive/` | 存档框架（`ArchiveManager`、`I_Saveable`） |
+| `Paths.Framework.DataModule.Config` | `Framework/Modules/Data/Config/` | 配表框架（`ConfigTableManager`） |
 | `Paths.Framework.DataModule.Editor` | `Framework/Modules/Data/Editor/` | Data 模块 Editor（`ExcelTool`、`ArchiveEditor`） |
 
 **不**把 Config 嵌套在 Archive 下：二者生命周期不同（配表 vs 存档）。
@@ -631,6 +651,26 @@ ShowPanel<T>() → Addressables 加载 HotRes/UI/Panels/{T}.prefab
 
 - **主界面 / 主场景（2.4 ✅）**：`CmgmFrameSettings.MAIN_PANEL_NAME`、`MAIN_SCENE_NAME`；`ScenesManager.GoToMainScene` 统一调用。游戏内其他 Panel 仍优先 `ShowPanel<T>()`。
 - **D（AssetAddresses）**：Settings 字符串已够用；Address 键集中管理留待后续按需做。
+
+### 资源加载分层（主界面 vs 进游戏）
+
+| 阶段 | 负责 | 应加载 | 不应加载（示例） |
+|------|------|--------|------------------|
+| **Logo → 主界面** | `CmgmFrameBoot` + `ScenesManager.GoToMainScene` | 框架 Manager Init、主 Panel、主场景（轻量）、UI 包 | 角色配表、关卡场景、Wwise gameplay Bank |
+| **主界面 → 进游戏** | **Level·进游戏 Loading（2.5c）** + `GameBootstrap.EnterGameplayAsync` | `LoadTable`、关卡 Addressables、音频 Bank、Gameplay 场景 | — |
+| **运行时懒加载** | `GetTable` / Addressables 按需 | 非关键表、可选资源 | 已在 Loading 阶段声明的必需项 |
+
+- `ConfigTableManager.GetTable<T>()` 仍保留懒加载兜底，但**进游戏必需表**应在 Loading 阶段显式 `LoadTable`。
+- 换项目时在 `GameBootstrap.EnterGameplayAsync` 维护「进游戏加载清单」。
+
+### 框架 / 游戏层命名（2.5 起）
+
+| 侧 | 约定 | 示例 |
+|----|------|------|
+| **框架层**（`Framework/`） | 类型名**避免** `Game*` 前缀（与「游戏层」混淆）；可用 `Cmgm*`、`Archive*`、`ConfigTable*` 等 | `CmgmFrameBoot`、`ArchiveManager`、`ConfigTableManager` |
+| **游戏层**（`Scripts/Game/`，`namespace CMGM.Game`） | 保留 `Game*` 当业务语义需要时 | `GameBootstrap`、`GameRuntimeData` |
+| **Unity 引擎 API** | 不改动 | `GameObject`、`GamePlayActions`（Input 生成名） |
+| **StreamingAssets** | 配表输出目录 **`TableConfig/`**（原 `GameConfig/`） | `Consts.Paths.ConfigData` |
 
 ### Lua 管线
 
@@ -653,4 +693,4 @@ CmgmFrameSettings.ROOT_LUA_URI（如 main.lua.txt）
 
 ---
 
-*下一步：**2.5** — `GameBootstrap`：游戏专属 Init 从 `GameInitializer` 拆出。*
+*下一步：**2.5b** — `CMGM.Level` asmdef：Level 模块编译边界闭环。*

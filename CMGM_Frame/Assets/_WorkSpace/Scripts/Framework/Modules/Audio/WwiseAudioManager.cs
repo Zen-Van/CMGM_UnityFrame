@@ -114,9 +114,9 @@ public class WwiseAudioManager : SingletonAutoMono<WwiseAudioManager>
     }
     public uint PlayCommonBgm(string eventName, string bgmNameForEvtList = null, AkCallbackManager.EventCallback callbackFunc = null)
     {
-        MusicSyncTool.curGameBgmEventId = AkUnitySoundEngine.GetIDFromString(eventName);
+        MusicSyncTool.curBgmEventId = AkUnitySoundEngine.GetIDFromString(eventName);
 
-        MusicSyncTool.curGameBgmPlayingId = PlayWwiseEventWithCallback(eventName, gameObject,
+        MusicSyncTool.curBgmPlayingId = PlayWwiseEventWithCallback(eventName, gameObject,
             AkCallbackType.AK_EnableGetMusicPlayPosition | AkCallbackType.AK_EnableGetSourcePlayPosition | AkCallbackType.AK_MusicSyncAll,
             callbackFunc == null ? MusicSyncTool.MusicEventDefaultCallbackFunc : callbackFunc);
         
@@ -126,11 +126,11 @@ public class WwiseAudioManager : SingletonAutoMono<WwiseAudioManager>
         else
             MusicSyncTool.DisableMusicBeatSync();
 
-        return MusicSyncTool.curGameBgmPlayingId;
+        return MusicSyncTool.curBgmPlayingId;
     }
     public void StopCommonBgm(uint playingId)
     {
-        AkUnitySoundEngine.StopPlayingID(MusicSyncTool.curGameBgmPlayingId);
+        AkUnitySoundEngine.StopPlayingID(MusicSyncTool.curBgmPlayingId);
         MusicSyncTool.DisableMusicBeatSync();
     }
     #endregion

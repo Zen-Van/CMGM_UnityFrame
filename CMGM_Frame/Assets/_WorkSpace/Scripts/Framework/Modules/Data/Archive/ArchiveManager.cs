@@ -8,18 +8,18 @@ using UnityEngine.Events;
 namespace CMGM.Data
 {
 /// <summary>
-/// 存档管理器，该管理器须在游戏初始化时预热
+/// 存档管理器，该管理器须在框架启动时预热
 /// </summary>
-public class GameArchiveManager : Singleton<GameArchiveManager>
+public class ArchiveManager : Singleton<ArchiveManager>
 {
     /// <summary>
     /// 存档元数据名
     /// </summary>
     private static string ARCHIVE_META_NAME = "ArchiveMeta";
 
-    private GameArchiveManager()
+    private ArchiveManager()
     {
-        //每次游戏运行GameArchive初始化时，读取存档元数据
+        //每次 ArchiveManager 初始化时，读取存档元数据
         LoadArchiveMeta();
     }
     public ArchiveMetaDataSet ArchiveMeta { get; private set; }

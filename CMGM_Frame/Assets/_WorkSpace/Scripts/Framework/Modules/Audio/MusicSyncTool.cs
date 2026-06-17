@@ -8,8 +8,8 @@ using UnityEngine;
 public static class MusicSyncTool
 {
     #region 音乐播放数据
-    public static uint curGameBgmPlayingId = AkUnitySoundEngine.AK_INVALID_PLAYING_ID;
-    public static uint curGameBgmEventId = 0;
+    public static uint curBgmPlayingId = AkUnitySoundEngine.AK_INVALID_PLAYING_ID;
+    public static uint curBgmEventId = 0;
 
 
     /// <summary>
@@ -21,7 +21,7 @@ public static class MusicSyncTool
         get
         {
             int bgmPosition;
-            AkUnitySoundEngine.GetSourcePlayPosition(curGameBgmPlayingId, out bgmPosition);
+            AkUnitySoundEngine.GetSourcePlayPosition(curBgmPlayingId, out bgmPosition);
             return bgmPosition;
         }
     }
@@ -159,8 +159,8 @@ public static class MusicSyncTool
             case AkCallbackType.AK_MusicSyncEntry:
                 Debug.Log("【TestAudioCallback】 Received: AK_MusicSyncEntry");
                 CmgmLog.fNormal($"Play_TestMusic的EventId为：{AkUnitySoundEngine.GetIDFromString("Play_TestMusic")}\n" +
-                    $"当前播放的音乐的PlayingId为：{curGameBgmPlayingId}\n"+
-                    $"当前播放的音乐的EventId为：{AkUnitySoundEngine.GetEventIDFromPlayingID(curGameBgmPlayingId)}");
+                    $"当前播放的音乐的PlayingId为：{curBgmPlayingId}\n"+
+                    $"当前播放的音乐的EventId为：{AkUnitySoundEngine.GetEventIDFromPlayingID(curBgmPlayingId)}");
 
                 break;
             case AkCallbackType.AK_MusicSyncExit:
