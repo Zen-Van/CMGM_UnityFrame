@@ -1,4 +1,4 @@
-﻿using CMGM.Core;
+using CMGM.Core;
 using Excel;
 using System;
 using System.Collections.Generic;

@@ -1,19 +1,25 @@
-﻿using CMGM.Core;
+using CMGM.Core;
 using CMGM.Data;
 using CMGM.UI;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 using UnityEngine.SceneManagement;
 
 namespace CMGM.Scene
 {
+/// <summary>
+/// 场景 / 流程临时宿主（2.5c 决策后）：
+/// <para>· 场景加载原语已下沉至 <see cref="AddressablesResMgr.LoadSceneAsync"/>（Core）。</para>
+/// <para>· <see cref="GoToMainScene"/> / <see cref="QuitGame"/> 属「流程控制」，待 **阶段 5 GameState** 接管。</para>
+/// <para>· Scene 不再是独立 asmdef 模块；若未来需要 Additive / 流式 / 场景持久化，再扩为完整 Scene 模块。</para>
+/// </summary>
 public class ScenesManager : Singleton<ScenesManager>
 {
     private ScenesManager() { }
 
     /// <summary>
     /// 回到主界面：主 Panel / 主场景名见 <see cref="CmgmFrameSettings"/>。
+    /// <para>TODO（阶段 5）：迁入 GameState 的 MainMenu 态。</para>
     /// </summary>
     public async UniTask GoToMainScene()
     {
@@ -26,31 +32,23 @@ public class ScenesManager : Singleton<ScenesManager>
 
         //切回主界面（Panel / 场景名见 Settings）
         await UIManager.Instance.ShowPanel(settings.MAIN_PANEL_NAME);
-        await LoadSceneAsync(settings.MAIN_SCENE_NAME, false);
+        await LoadSceneAsync(settings.MAIN_SCENE_NAME);
     }
 
     /// <summary>
-    /// 退出游戏的方法
+    /// 退出游戏的方法。
+    /// <para>TODO（阶段 5）：迁入 GameState。</para>
     /// </summary>
     public void QuitGame() => CmgmApplication.Quit();
 
     /// <summary>
-    /// 场景切换
+    /// 场景切换：调用 Core 资源原语加载，并处理 UI 摄像机叠加（UI 相关留在此处，不下沉 Core）。
     /// </summary>
     /// <param name="sceneName">场景名</param>
     /// <param name="loadSceneMode">加载模式</param>
-    public async UniTask LoadSceneAsync(string sceneName, bool needLoadingPanel = true, LoadSceneMode loadSceneMode = LoadSceneMode.Single)
+    public async UniTask LoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode = LoadSceneMode.Single)
     {
-        //加载场景
-        await Addressables.LoadSceneAsync($"{Consts.Paths.HotScene}/{sceneName}.unity", loadSceneMode);
-        //待补充进度提示相关代码
-        if (needLoadingPanel)
-        {
-            //先独立显示UI界面
-            UIManager.Instance.SetUICameraOverlap(null);
-            //然后打开加载界面
-
-        }
+        await AddressablesResMgr.Instance.LoadSceneAsync(sceneName, loadSceneMode);
         //每次加载完场景都要设置UI摄像机重叠
         UIManager.Instance.SetUICameraOverlap(Camera.main);
     }

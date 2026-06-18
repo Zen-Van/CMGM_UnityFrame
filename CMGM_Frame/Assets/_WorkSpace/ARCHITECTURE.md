@@ -2,7 +2,7 @@
 
 > 本文档是框架化改造的长期参考（「北极星」）。  
 > 目标：将当前工程从「带 Demo 的原型项目」逐步改造为「可跨项目迁移的框架」。  
-> 最后更新：Level 模块重命名为 **Scene**（`CMGM.Scene`）；下一步 **2.5c** Scene · 进游戏 Loading
+> 最后更新：2026-06-19 决策（§7.5）：`LoadSceneAsync` 下沉 Core、撤销 `CMGM.Scene` asmdef；Loading 复活为独立模块（L1~L5）。§7.1 主路线图整体重排讨论中。
 
 ---
 
@@ -679,10 +679,47 @@ Bootstrap ──► Core + Modules   ✅ 组合根例外：允许「知道一切
 | `I_Saveable` 归属 Archive 模块 | **已迁** `Archive/I_Saveable.cs`（`namespace CMGM.Data`）；**已建** `CMGM.Data` asmdef | — | 2.3b ✅ |
 | **`CMGM.Game` asmdef** | **框架不创建**；`Scripts/Game/` 示例代码进默认 `Assembly-CSharp`，保留 `namespace CMGM.Game` | **各游戏项目自定** | 框架主迭代 `Framework/*` 程序集；JRPG / SRPG 等可自建 Game asmdef |
 | `IGameFlowHandler` / GameFlow | 曾尝试，**已废止**（2.4 改为 Settings 字符串） | — | — |
-| 独立 `Modules/Loading` + **2.9 M7** | 曾规划，**已废止**（2026-06-16） | — | 进游戏 Loading 并入 **Scene 模块（2.5c）** |
+| ~~独立 `Modules/Loading` + 2.9 M7~~（**已复活**，见下 2026-06-19） | — | — | — |
 | 框架层 `Game*` 类名 | **2.5 起废止**新命名 | — | `CmgmFrameBoot`、`ArchiveManager`、`ConfigTableManager`；游戏层保留 `GameBootstrap` 等 |
 
 **记录时间：** 2026-06-15（`I_Saveable` 提前迁移；`CMGM.Game` asmdef 移除）；2026-06-16（2.4 废止 GameFlow；Loading 不单独建 Modules；框架层去 Game 命名）
+
+---
+
+### 7.5 决策记录 · 2026-06-19（Loading / Scene 重定位）
+
+> 这两条已与用户确认；**§7.1 主路线图的整体重排另行讨论**（迭代结构「主干线性 + 枝叶并行」议题进行中），此处先固化结论防止遗失。
+
+**决策 1：Scene 不再作为独立 asmdef 模块（撤销 `CMGM.Scene`）**
+
+| 内容 | 去向 |
+|------|------|
+| 场景加载原语 `LoadSceneAsync` | **下沉 Core**：`AddressablesResMgr.LoadSceneAsync(sceneName, mode, progress)`（与 `LoadAssetAsync` 并列，纯资源原语，不碰 UI） |
+| `ScenesManager.GoToMainScene` / `QuitGame` | **流程控制**，待 **阶段 5 GameState** 接管；当前临时留在 `Modules/Scene/ScenesManager.cs`（默认程序集），UI 摄像机叠加逻辑留此 |
+| `CMGM.Scene.asmdef` | **已删除**；`ScenesManager` 回默认 `Assembly-CSharp` |
+| 未来扩展位 | 若需 **Additive 多场景 / 流式分块 / 场景持久化 / 转场动画**，再扩为完整 Scene 模块（YAGNI：现在不预建） |
+
+> 之前「Level→Scene 重命名 + `CMGM.Scene` 闭环（2.5b）」的程序集部分**就此回退**；命名 Scene 仍保留为目录/namespace。
+
+**决策 2：Loading 复活为独立模块 `Modules/Loading`（`CMGM.Loading`），分步迭代**
+
+定位：**通用加载服务**——任意位置可调用，可选「显示全屏面板 / 后台静默」，聚合多源进度。横切 UI / 资源 / 音频等，属编排层（不进 Core）。
+
+迭代计划（**不一次做完**，每步可编译可跑；可作为「枝叶」独立于主干推进）：
+
+| 子步 | 内容 | 学习点 |
+|------|------|--------|
+| **L1** | 模块骨架：`LoadingManager.Run(tasks)` + 一根进度条面板；先跑通「执行一组任务并显示进度」 | 模块 asmdef、接口基础 |
+| **L2** | `ILoadTask`（加载步骤抽象）+ 加权进度聚合（`权重 × 段内进度`，无内部进度的任务直接跳段） | 接口/多态、进度算法 |
+| **L3** | 接通「进游戏」加载点：替代 MainPanel 直接 await，由 Loading 编排 `GameBootstrap` 回调 | 模块协作、回调注入（Loading 不引用 Game） |
+| **L4** | 加载点 Profile（每加载点一个 ScriptableObject 静态清单）+ 程序化动态补充任务 | 数据驱动、策划友好 |
+| **L5+** | 后台静默加载、转场动画、动态拼任务（按敌人 ID 等） | 进阶 |
+
+**进度模型（L2 起）：** 每个 `ILoadTask` 带 `Weight`；总进度 = `Σ(已完成权重) + 当前任务权重 × 当前任务内部进度`。Addressables/场景用真实 `PercentComplete`；Bank/Init 等无中间进度者完成即跳段（必要时加假进度补间防卡顿感）。显示推荐「单条 + 当前阶段文案」，不展示多条并行子进度。
+
+**配置形态（L4）：** 不做全局大表；**每个加载点一个 `.asset`（ScriptableObject）** 配静态资源，运行时按上下文（敌人 ID 等）程序化追加 `ILoadTask`。统一的是「执行器」，分散的是「清单」。
+
+**记录时间：** 2026-06-19（Scene asmdef 撤销 + `LoadSceneAsync` 下沉 Core；Loading 复活为独立模块，定 L1~L5 分步计划）
 
 ---
 

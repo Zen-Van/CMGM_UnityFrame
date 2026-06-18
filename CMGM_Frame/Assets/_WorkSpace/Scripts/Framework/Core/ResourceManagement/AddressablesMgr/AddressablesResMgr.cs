@@ -8,6 +8,7 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.ResourceManagement.ResourceLocations;
+using UnityEngine.SceneManagement;
 
 namespace CMGM.Core
 {
@@ -186,6 +187,34 @@ public class AddressablesResMgr : Singleton<AddressablesResMgr>
 
         // 可选：等待一帧确保资源释放完成
         await UniTask.Yield();
+    }
+
+    /// <summary>
+    /// 通过 Addressables 加载场景（资源加载原语，不涉及 UI / 流程编排）。
+    /// </summary>
+    /// <param name="sceneName">场景名（HotRes/Scenes 下，不含路径与后缀）</param>
+    /// <param name="loadSceneMode">加载模式</param>
+    /// <param name="progress">可选进度回调（0~1）</param>
+    public async UniTask LoadSceneAsync(string sceneName,
+        LoadSceneMode loadSceneMode = LoadSceneMode.Single,
+        IProgress<float> progress = null)
+    {
+        string sceneKey = $"{Consts.Paths.HotScene}/{sceneName}.unity";
+        var handle = Addressables.LoadSceneAsync(sceneKey, loadSceneMode);
+
+        while (!handle.IsDone)
+        {
+            progress?.Report(handle.PercentComplete);
+            await UniTask.Yield();
+        }
+        await handle.Task;
+
+        if (handle.Status != AsyncOperationStatus.Succeeded)
+        {
+            CmgmLog.fError($"场景加载失败：{sceneKey}，{handle.OperationException}");
+            return;
+        }
+        progress?.Report(1f);
     }
 
     public async UniTask<IList<IResourceLocation>> LoadResourceLocationsAsync(string label,Type type = null)

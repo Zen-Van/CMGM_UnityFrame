@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using CMGM.Core;
 using CMGM.Data;
 using CMGM.Scene;

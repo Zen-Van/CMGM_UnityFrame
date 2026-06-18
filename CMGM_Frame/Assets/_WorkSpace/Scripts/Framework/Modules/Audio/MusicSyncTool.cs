@@ -1,4 +1,4 @@
-﻿using CMGM.Core;
+using CMGM.Core;
 using Sirenix.OdinInspector;
 using System.Collections.Generic;
 using System.Data;
