@@ -122,12 +122,15 @@ Assets/_WorkSpace/
 | `GameRuntimeData` | 游戏存档结构（`Scripts/Game/Archive/`）✅ | — |
 | `CipherTool` | 配表 / 存档加解密 | ★★★ |
 
-### 3.4 Lua（`Framework/Modules/Lua/`，待「编译边界2.6」建 `CMGM.Lua`）
+### 3.4 Lua（契约 `Core/ILuaService`；实现 `Framework/Integrations/Lua/`）
 
-| 组件 | 职责 | 成熟度 |
-|------|------|--------|
-| `LuaManager` | LuaEnv 生命周期、Loader 链、脚本执行 | ★★★ |
-| `LuaBridge` | C# ↔ Lua 桥接（Talk / Wait / DebugLog） | ★★ |
+| 组件 | 职责 | 程序集 | 成熟度 |
+|------|------|--------|--------|
+| `ILuaService` | Lua 服务契约（执行脚本 / 桥接注册等） | `CMGM.Core`（asmdef） | 规划 |
+| `LuaManager` | LuaEnv 生命周期、Loader 链、脚本执行；实现 `ILuaService` | `Assembly-CSharp` | ★★★ |
+| `LuaBridge` | C# ↔ Lua 桥接（Talk / Wait / DebugLog）；保留全局 namespace（`main.lua` 调 `CS.LuaBridge`） | `Assembly-CSharp` | ★★ |
+
+> **现状（2026-06-19 决策，见 §7.5）：** Lua **不单独建 asmdef**。XLua 退回官方 master（无 asmdef、待在 `Assembly-CSharp`）；契约 `ILuaService` 放 `CMGM.Core`，实现放 `Framework/Integrations/Lua/`（框架级第三方桥接，随 XLua 落 `Assembly-CSharp`）；`CmgmFrameBoot` 创建 `LuaManager` 并注册为 `ILuaService`。被 asmdef 封装的 Module 只依赖契约，不碰 XLua（依赖倒置）。
 
 **Lua 加载策略：**
 
@@ -287,7 +290,8 @@ Assets/_WorkSpace/
     Framework/
       CmgmFrameBoot.cs             过渡：无 asmdef；启动组合根3.x → Bootstrap/
       Core/                        必选（原 GameCore 内容直接在此，无 GameCore 子目录）
-      Modules/                     可选，按项目勾选（§6.1、§6.3）
+        …/ILuaService.cs           Lua 服务契约（实现在 Integrations/Lua）
+      Modules/                     可选，按项目勾选（§6.1、§6.3）；每个子目录 = 一个 asmdef 封装包
         UI/                        原 GameUI
         Data/                      原 GameData（CMGM.Data）
           Archive/                 ArchiveManager、I_Saveable
@@ -296,11 +300,12 @@ Assets/_WorkSpace/
         Bootstrap/                 启动组合根；`CmgmFrameBoot`（§6.5）
         Scene/                     ScenesManager（asmdef 已撤销）；**不含** Boot / 玩法工具
         Loading/                   支线「Loading系统」：CMGM.Loading
-        Lua/                       原 LuaCore
         Audio/                     原 AudioSystem
         Input/                     原 GameInput
         Optional/                  原 OptionalSystem（事件总线等）
         Utils/
+      Integrations/                框架级第三方桥接：无 asmdef，随第三方库落 Assembly-CSharp（§7.5）
+        Lua/                       LuaManager / LuaBridge（XLua 官方 master，原 LuaCore）
       Editor/                      框架级 Editor（编译边界2.8）；路径检查、模板、模块导入向导
   Resources/CmgmFrameSettings.asset
 
@@ -318,7 +323,7 @@ Packages/（远期）
 | **Modules** | `…/Data/` | `Data` | 推荐 | 原 `GameData/`；`CMGM.Data` ✅ |
 | **Modules** | `…/Scene/` | `Scene` | 推荐 | 原 `GameLevel/`；曾用 `CMGM.Scene`（asmdef 已撤销，§7.5） |
 | **Modules** | `…/Loading/` | `Loading` | 可选 | 支线「Loading系统」；`CMGM.Loading` |
-| **Modules** | `…/Lua/` | `Lua` | 可选 | 原 `LuaCore/`；`CMGM.Lua`（编译边界2.6） |
+| **Integrations** | `Framework/Integrations/Lua/` | `Lua` | 可选 | 原 `LuaCore/`；**不建 asmdef**，契约 `ILuaService` 入 Core、实现随 XLua(master) 落 `Assembly-CSharp`（§7.5） |
 | **Modules** | `…/Audio/` | `Audio` | 可选 | 原 `AudioSystem/`；`CMGM.Audio`（编译边界2.7） |
 | **Modules** | `…/Input/` | `Input` | 可选 | 原 `GameInput/`；`CMGM.Input`（编译边界2.7） |
 | **Modules** | `…/Optional/` | `Optional` | 可选 | 原 `OptionalSystem/`；事件总线等 |
@@ -447,7 +452,7 @@ Bootstrap ──► Core + Modules   ✅ 组合根例外：允许「知道一切
 | 其余模块后建 asmdef | 不在分层完成前给混合目录建程序集 |
 | 禁止为修编译改业务 | 不得删改 Panel 按钮逻辑、场景跳转等；边界问题用迁移 / 接口 / 引用解决 |
 | 动功能前先确认 | 任何可能影响运行时行为的改法，先与用户确认 |
-| XLua 与 asmdef 同单 | 若给 XLua 建 asmdef，须同时把 `Gen/` 纳入同一程序集或重配 Generate Code，禁止 Runtime 与 Gen 分裂 |
+| XLua 不建 asmdef | 官方 `feature/asmdef` 已被回滚（PR#1067 加、PR#1068 删），XLua 留官方 master、待在 `Assembly-CSharp`；Lua 模块改走「契约入 Core / 实现入 `Integrations`」，不给 XLua 套 asmdef（§7.5） |
 | 小步验证 | 每模块闭环后编译 + 主流程 Play 一次，再开下一模块 |
 
 > 主线「编译边界2.6~2.8」即按此四步推进。
@@ -462,6 +467,7 @@ Bootstrap ──► Core + Modules   ✅ 组合根例外：允许「知道一切
 | Data 模块 | `CMGM.Data` + `CMGM.Data.Editor` 闭环；存档结构 / 游戏配表迁 `Scripts/Game` |
 | 进游戏入口 | `ScenesManager` 配置化（`MAIN_SCENE_NAME` / `MAIN_PANEL_NAME`）；`GameBootstrap.EnterGameplayAsync` |
 | 场景加载下沉 | `LoadSceneAsync` 下沉 `Core`（`AddressablesResMgr`）；**撤销** `CMGM.Scene` asmdef，`ScenesManager` 回默认程序集（2026-06-19 决策，见 §7.5） |
+| Lua 收口（编译边界2.6） | XLua 退官方 master（核心回 `Assembly-CSharp`）；`ILuaService` 入 Core；`LuaManager`/`LuaBridge` 迁 `Integrations/Lua`（方案 C，见 §7.5） |
 
 > 完整的旧线性步骤、验收表与废止记录见 `ARCHITECTURE_DEPRECATED.md`。
 
@@ -469,7 +475,7 @@ Bootstrap ──► Core + Modules   ✅ 组合根例外：允许「知道一切
 
 | 步骤编号 | 名称 | 解锁条件 | 状态 |
 |----------|------|----------|------|
-| **编译边界2.6** | Lua 模块闭环（`CMGM.Lua` asmdef + XLua Generate Code 同单） | 已完成基线 ✅ | **可做（下一步候选）** |
+| **编译边界2.6** | Lua 模块收口（**方案 C**）：XLua 退官方 master；Core 加 `ILuaService` 契约；`LuaManager` 实现 `ILuaService`；`LuaManager`/`LuaBridge` 迁 `Framework/Integrations/Lua`（`Assembly-CSharp`）。注：`CMGM.Lua` asmdef 随 XLua 回退已消失；服务**注册/注入**留待 启动组合根3.1（当前 Boot 仍直接 `LuaManager.Instance`） | 已完成基线 ✅ | **完成 ✅（2026-06-19，Unity 编译 + Play 验证通过）** |
 | **编译边界2.7** | Audio + Input 模块闭环（`CMGM.Audio`、`CMGM.Input`） | 编译边界2.6 完成 | 🔒 |
 | **编译边界2.8** | Editor 闭环（`_WorkSpace/Editor` → `Framework/Editor`，`CMGM.Editor`） | 编译边界2.7 完成 | 🔒 |
 | **启动组合根3.1** | `IGameModule` + `CmgmInitContext`（Core）；各 Manager 改 Module（构造函数不做重活）；`CmgmFrameBoot` → `Framework/Bootstrap`（`CMGM.Bootstrap`），按 Order await | 编译边界2.8 完成 | 🔒 |
@@ -483,7 +489,7 @@ Bootstrap ──► Core + Modules   ✅ 组合根例外：允许「知道一切
 |----------|----------|----------|------|--------|
 | **Loading系统** | Loading系统1.1 | Core ✅ + UI ✅ | **已解锁** | 通用加载服务：任意处可调、可选面板/后台、聚合多源进度 |
 | **存档升级系统** | 存档升级系统1.1 | Data ✅ | **已解锁** | 版本头 + 分块 + 替换 `BinaryFormatter` + 迁移 |
-| **Lua系统** | Lua系统1.1 | 编译边界2.6 完成 | 🔒 | 桥接注册、懒加载、路径生成 |
+| **Lua系统** | Lua系统1.1 | 编译边界2.6 完成 ✅ | **已解锁** | 桥接注册、懒加载、路径生成 |
 | **Audio系统** | Audio系统1.1 | 编译边界2.7 完成 | 🔒 | 节拍工具、Bank 加载策略、`IAudioService` 抽象 |
 | **GameState系统** | GameState系统1.1 | 启动组合根3.1 完成 | 🔒 | 状态机基础态；接管 `GoToMainScene` / `QuitGame` |
 | **事件总线系统** | 事件总线系统1.1 | 启动组合根3.1 完成 | 🔒 | `IEventBus` 落地 Optional 模块 |
@@ -519,7 +525,7 @@ Bootstrap ──► Core + Modules   ✅ 组合根例外：允许「知道一切
 | **存档升级系统1.5** | 运行时 API：`SaveSlot` / 异步写盘 / 校验 | 多存档槽正常 |
 | **存档升级系统1.6** | 示例与文档：演示新增字段如何加 chunk | 策划 / 程序可查 |
 
-#### Lua系统（🔒 编译边界2.6 后）
+#### Lua系统（已解锁）
 
 | 子步 | 内容 | 验收 |
 |------|------|------|
@@ -611,6 +617,19 @@ Bootstrap ──► Core + Modules   ✅ 组合根例外：允许「知道一切
 | **Loading 复活为独立模块** | `Modules/Loading`（`CMGM.Loading`）作为通用加载服务，分步迭代（见 §7.4 Loading系统1.1~1.5+）。之前「Loading 不单独建 Modules」的延后结论就此推翻。 |
 
 > 旧的「Level→Scene 重命名 + `CMGM.Scene` 闭环」程序集部分已回退；相关旧编号映射见 `ARCHITECTURE_DEPRECATED.md`。
+
+**设计决策记录 · 2026-06-19（XLua / Lua 模块定位，编译边界2.6）**
+
+| 项 | 结论 |
+|------|------|
+| **背景** | 此前接入的是 XLua 官方 `feature/asmdef` 分支（`Xlua.Core.asmdef`），但该分支在官方已被 **Revert**（PR#1067 加入、PR#1068/commit d919198 撤销）。原因非运行时不稳定，而是「Gen 代码须与核心同程序集」「hotfix 须核心在 `Assembly-CSharp`」两条约束与 asmdef 冲突，官方放弃维护（Issue #1174 至今 open）。 |
+| **结论：方案 C** | Lua **不单独建 asmdef**。① XLua 退回官方 **master**（无 asmdef，回 `Assembly-CSharp`）；② 契约 `ILuaService` 放 `CMGM.Core/Services/`（仅暴露 XLua 无关成员，不含 `LuaEnv`）；③ 实现 `LuaManager`/`LuaBridge` 迁 `Framework/Integrations/Lua/`，随 XLua 落 `Assembly-CSharp`，`LuaManager` 实现 `ILuaService`；④ 服务**注册/注入**留待主线「启动组合根3.1」随 `IGameModule` 体系接入——当前框架仍是 `Singleton.Instance` 模式，Boot 直接调 `LuaManager.Instance`；⑤ `CMGM.Lua` / `CMGM.Lua.Editor` asmdef 已随 XLua 回退一并消失，无需另删。 |
+| **为何不放 GameKit** | 按**职责**分类：Lua 是**框架基础设施**（所有用 Lua 的项目都要），非业务玩法工具；GameKit 专放业务层小工具（角色控制器 / 触发器 / 相机）。故另设 `Integrations/`（框架级第三方桥接，因第三方约束不能封装、随库落 `Assembly-CSharp`），与 `CmgmFrameBoot` 同类。 |
+| **取舍** | 放弃「Lua 独立 asmdef 封装包」的强制边界（现阶段几乎用不上：依赖方向多为 Boot→Lua、Lua→业务），换回**官方主线可升级 + hotfix 之门重开 + wrap 生成走 happy-path**，消除「绑死回滚版本」长期风险。被封装 Module 仍通过 `ILuaService` 契约保持分层与可迁移性。 |
+| **正交提醒** | XLua **交互模式**（反射 codeless ↔ 生成 wrap）与程序集归属无关：反射模式的性能/GC、IL2CPP 裁剪问题，**出包前**仍需以 `link.xml` / `[ReflectionUse]` 或生成 wrap 处理；本决策与之独立。 |
+| **hotfix** | 维持**关闭**；核心回 `Assembly-CSharp` 后门已重开，真要 C# 级热更（远期网游化）时在 XLua Hotfix / HybridCLR 间再评估（单机 JRPG/SRPG 阶段不需要）。 |
+
+> 旧「编译边界2.6 = `CMGM.Lua` asmdef + XLua Gen 同单」及相关 asmdef 文件已废弃，迁入 `ARCHITECTURE_DEPRECATED.md`。
 
 ---
 

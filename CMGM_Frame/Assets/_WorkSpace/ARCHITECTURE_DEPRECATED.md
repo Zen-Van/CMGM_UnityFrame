@@ -12,6 +12,7 @@
 |--------|--------|----------|-------------------|
 | A. 旧线性路线图（0→9） | 原 `ARCHITECTURE.md` §7.0b / §7.1 / §7.2 | 改为「主线任务 + 支线任务」并行模型 | 2026-06-19 04:28 |
 | B. 废止计划附录（`*原1.x` 等） | 原 `ARCHITECTURE.md` §7.4 | 随旧路线图一并归档（本就是废弃记录） | 2026-06-19 04:28 |
+| C. Lua 独立 asmdef 方案（`CMGM.Lua` + XLua asmdef 版） | 原 `ARCHITECTURE.md` §3.4 / §7.0 / §7.2「编译边界2.6」 | XLua 官方 `feature/asmdef` 已被 Revert；改方案 C：Lua 不建 asmdef、契约入 Core、实现入 `Integrations`、XLua 退官方 master | 2026-06-19 06:09 |
 
 > **说明：** 原 §7.5（2026-06-19 Loading/Scene 决策）**未废弃**，其结论已并入新 `ARCHITECTURE.md` 的主线/支线计划，故不归档于此。
 
@@ -245,3 +246,24 @@
 | 框架层 `Game*` 类名 | **2.5 起废止**新命名 | — | `CmgmFrameBoot`、`ArchiveManager`、`ConfigTableManager`；游戏层保留 `GameBootstrap` 等 |
 
 **记录时间：** 2026-06-15（`I_Saveable` 提前迁移；`CMGM.Game` asmdef 移除）；2026-06-16（2.4 废止 GameFlow；Loading 不单独建 Modules；框架层去 Game 命名）
+
+---
+
+# 归档块 C · Lua 独立 asmdef 方案（`CMGM.Lua` + XLua asmdef 版）
+
+> **废弃时间：2026-06-19 06:09（UTC+8）**
+> 被新 `ARCHITECTURE.md` §7.5「XLua / Lua 模块定位」决策（方案 C）取代。
+
+**曾经的做法（已废弃）：**
+
+| 项 | 旧方案 |
+|------|--------|
+| XLua 版本 | 官方 `feature/asmdef` 分支（含 `Xlua.Core.asmdef` / `Xlua.Core.Editor.asmdef`） |
+| Lua 模块程序集 | 新建 `CMGM.Lua.asmdef`（references `CMGM.Core`、`Xlua.Core`）+ `CMGM.Lua.Editor.asmdef` |
+| 命名空间 | `LuaManager` → `namespace CMGM.Lua`；`Edt_LuaSuffConverter` → `CMGM.Lua.Editor`；`LuaBridge` 保留全局 |
+| 旧「编译边界2.6」定义 | 「`CMGM.Lua` asmdef + XLua Generate Code 同单」 |
+| 旧 §7.0 约定 | 「XLua 与 asmdef 同单：若给 XLua 建 asmdef，须把 `Gen/` 纳入同一程序集或重配 Generate Code」 |
+
+**废弃原因：** XLua 官方 `feature/asmdef` 提交已被 Revert（PR#1067 加入、PR#1068/commit d919198 撤销），master 不再含这些 asmdef。继续用等于绑死「官方已回滚版本」，且后续 hotfix / wrap 生成受 asmdef 约束。改为**方案 C**：Lua 不建 asmdef，契约 `ILuaService` 入 `CMGM.Core`，实现入 `Framework/Integrations/Lua/`（随 XLua master 落 `Assembly-CSharp`）。详见 `ARCHITECTURE.md` §3.4 / §7.5。
+
+> 待执行的代码迁移：删除 `CMGM.Lua` / `CMGM.Lua.Editor` 两个 asmdef；`LuaManager`/`LuaBridge` 迁出 `Modules/Lua` 至 `Integrations/Lua`；Core 加 `ILuaService`；Boot 注册。
