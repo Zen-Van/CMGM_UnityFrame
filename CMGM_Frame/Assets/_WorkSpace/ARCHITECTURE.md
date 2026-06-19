@@ -492,8 +492,8 @@ Bootstrap ──► Core + Modules   ✅ 组合根例外：允许「知道一切
 | 步骤编号 | 名称 | 解锁条件 | 状态 |
 |----------|------|----------|------|
 | **编译边界2.6** | Lua 模块收口（**方案 C**）：XLua 退官方 master；Core 加 `ILuaService` 契约；`LuaManager` 实现 `ILuaService`；`LuaManager`/`LuaBridge` 迁 `Framework/Integrations/Lua`（`Assembly-CSharp`）。注：`CMGM.Lua` asmdef 随 XLua 回退已消失；服务**注册/注入**留待 启动组合根3.1（当前 Boot 仍直接 `LuaManager.Instance`） | 已完成基线 ✅ | **完成 ✅（2026-06-19，Unity 编译 + Play 验证通过）** |
-| **编译边界2.7** | Audio 模块解耦与闭环（拆 2.7a/b/c，见 §7.2a）：先把音游节拍剥离到 `CmgmGameKits/MusicGame`，再给纯净 Audio 上 `CMGM.Audio` | 编译边界2.6 完成 ✅ | **可做** |
-| **编译边界2.8** | Input 模块闭环（`CMGM.Input`）；附带体检音游输入是否需剥离、`Input→UI` 跨模块依赖处理 | 编译边界2.7 完成 | 🔒 |
+| **编译边界2.7** ✅ | Audio 模块解耦与闭环（拆 2.7a/b/c，见 §7.2a）：先把音游节拍剥离到 `CmgmGameKits/MusicGame`，再给纯净 Audio 上 `CMGM.Audio` | 编译边界2.6 完成 ✅ | **已完成** |
+| **编译边界2.8** | Input 模块闭环（`CMGM.Input`）；附带体检音游输入是否需剥离、`Input→UI` 跨模块依赖处理 | 编译边界2.7 完成 ✅ | **可做** |
 | **编译边界2.9** | Editor 闭环（`_WorkSpace/Editor` → `Framework/Editor`，`CMGM.Editor`） | 编译边界2.8 完成 | 🔒 |
 | **启动组合根3.1** | `IGameModule` + `CmgmInitContext`（Core）；各 Manager 改 Module（构造函数不做重活）；`CmgmFrameBoot` → `Framework/Bootstrap`（`CMGM.Bootstrap`），按 Order await | 编译边界2.9 完成 | 🔒 |
 | **启动组合根3.2** | 模块清单 `CmgmModuleManifest`（模块 id / Core·Modules 分级 / 依赖链 / 默认勾选）；游戏层在 `GameBootstrap` 注册自有 Module | 启动组合根3.1 完成 | 🔒 |
@@ -508,7 +508,7 @@ Bootstrap ──► Core + Modules   ✅ 组合根例外：允许「知道一切
 |------|--------|----------|------|--------|
 | **编译边界2.7a** | 断循环依赖（文件不挪位置） | ① 判定窗口 `good/great/perfectWindow` 从 `WwiseAudioManager` 移入 `MusicSyncTool` 自持；② `PlayCommonBgm` 改纯播放、管理器**自存** `CurBgmPlayingId`，`StopCommonBgm` 停自己的 id，删除对 `MusicSyncTool` 的所有引用；③ 音游"带节拍同步播放"逻辑暂置 `MusicSyncTool.PlayBgmWithBeatSync`（内部调通用原语 `PlayWwiseEventWithCallback` + `ActiveMusicBeatSync`）；④ 改 `SimpleTest.cs` | 编译 + Play；依赖变单向 `MusicSyncTool → WwiseAudioManager` | 打破循环依赖、原语 vs 组合 |
 | **编译边界2.7b** | 音游剥离到 GameKit | ① `MusicSyncTool` / `BeatEvtListData` / `Editor/DefaultRhythmMapGenerator` + 播放助手 迁 `CmgmGameKits/MusicGame/BeatSync/`（暂 `Assembly-CSharp`，asmdef 留 GameKits1.x）；② `Consts.Paths.RhythmMap_Path` 从 Core 迁到该包 | 编译 + Play；依赖 `MusicGame → CMGM.Audio` 单向合法 | 框架/工具包边界、`GameKit → Module` 合法方向 |
-| **编译边界2.7c** | Audio 模块闭环（asmdef） | 瘦身后 Audio 加 `namespace CMGM.Audio` + `CMGM.Audio.asmdef`（references `CMGM.Core` + Wwise 程序集 + Odin）；处理第三方引用与可能的 `*.Editor` 子程序集 | 编译 + Play | asmdef 第三方引用（Wwise/Odin） |
+| **编译边界2.7c** ✅ | Audio 模块闭环（asmdef） | 瘦身后 Audio 加 `namespace CMGM.Audio` + `CMGM.Audio.asmdef`（references `CMGM.Core` + `AK.Wwise.Unity.API` + `AK.Wwise.Unity.API.WwiseTypes`；2.7a 已去 Odin 故无需引用；`Audio/Editor` 已空，无 `*.Editor` 子程序集）；调用方 `CmgmFrameBoot` / `MusicSyncTool` 补 `using CMGM.Audio;` | 编译 + Play | asmdef 第三方引用（Wwise 有 asmdef 故可引用，区别于 XLua） |
 
 > 完成 2.7c 后：Audio = 只含通用音频的干净可选模块；音游节拍以 `MusicGame/BeatSync` 工具包独立存在（谁做音游谁勾）。
 
@@ -523,6 +523,7 @@ Bootstrap ──► Core + Modules   ✅ 组合根例外：允许「知道一切
 | **GameState系统** | GameState系统1.1 | 启动组合根3.1 完成 | 🔒 | 状态机基础态；接管 `GoToMainScene` / `QuitGame` |
 | **事件总线系统** | 事件总线系统1.1 | 启动组合根3.1 完成 | 🔒 | `IEventBus` 落地 Optional 模块 |
 | **依赖抽象系统** | 依赖抽象系统1.1 | 编译边界2.8 完成（程序集边界稳定后再解耦第三方） | 🔒 | 去 Odin 硬依赖、URP/RP 抽象（音频/Lua 抽象见各自支线） |
+| **常量与配置体系** | 常量体系1.1 | 编译边界2.9 完成（程序集/Editor 边界稳定后再统一入口） | 🔒 | 统一常量入口；厘清 框架/游戏、Editor/runtime 常量归属（治理 `Consts` 与 `MusicGameConsts` 等分散） |
 | **GameKits** | GameKits1.1 | 建议启动组合根3.1 后（按需） | 🔒 | RoleControl / MapTriggers / Camera 模板（§6.4） |
 | **网游预埋** | 网游预埋1.1 | 存档升级系统 + GameState系统 完成 | 🔒（远期） | LocalSave/ServerSync、网络层、重放、Cloud save |
 
@@ -628,6 +629,17 @@ Bootstrap ──► Core + Modules   ✅ 组合根例外：允许「知道一切
 | **网游预埋1.2** | 网络层：连接 / 心跳 / 消息编解码占位 | 可 mock 服务器 |
 | **网游预埋1.3** | 战斗重放：输入序列 + 确定性 tick 记录 | 回放一致 |
 | **网游预埋1.4** | Cloud save：与存档格式兼容的上传 / 合并策略 | 文档 + 伪代码 |
+
+#### 常量与配置体系（🔒 编译边界2.9 后）
+
+> **动因（2026-06-19 用户提出）：** 常量入口分散（`Core.Consts.Paths` 与 `MusicGameConsts` 等），且未厘清「框架 vs 游戏」「Editor vs runtime」的归属。目标：统一入口、明确新增常量的落点规则，让常量用起来不再到处找。
+
+| 子步 | 内容 | 验收 |
+|------|------|------|
+| **常量体系1.1** | 盘点与分类：列出现有常量（`Consts.Paths` / `MusicGameConsts` / 各处散落字符串），按「框架 vs 游戏」「Core / Module / GameKit」「Editor vs runtime」三维归类 | 产出分类清单 |
+| **常量体系1.2** | 入口与归属规范：定义框架常量入口（`Core.Consts`）与模块/包私有常量的边界；Game 层新增常量的归属（如 `Game.Consts`）；减少散落 | 新增常量有唯一规范落点 |
+| **常量体系1.3** | Editor / runtime 区分：runtime 路径与 Editor-only 路径（导表 / 生成器输出等）分离，配合 asmdef Editor 边界 | runtime 程序集不含 Editor-only 常量 |
+| **常量体系1.4**（按需） | 路径自动生成 / 校验：扫描 `HotRes` 生成路径常量、缺失目录检查（与 Lua系统1.3 / 内容扩展 **E** 衔接，避免重复造轮子） | 路径不手写、缺失可报 |
 
 ### 7.5 跨线解锁关系 + 设计决策
 

@@ -1,0 +1,18 @@
+{
+    "name": "CMGM.Audio",
+    "rootNamespace": "CMGM.Audio",
+    "references": [
+        "CMGM.Core",
+        "AK.Wwise.Unity.API",
+        "AK.Wwise.Unity.API.WwiseTypes"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

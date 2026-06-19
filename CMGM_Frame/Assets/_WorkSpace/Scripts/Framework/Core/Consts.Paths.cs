@@ -30,7 +30,6 @@ namespace CMGM.Core
             public static string HotRes => WorkSpace + "/HotRes";
             public static string HotScene => HotRes + "/Scenes";
             public static string Lua_Path => HotRes + "/Lua";
-            public static string RhythmMap_Path => HotRes + "/RhythmMap";
             public static string HotRes_UIPanel => WorkSpace + "/HotRes/UI/Panels";
 
             /// <summary>游戏存档目录（运行时路径）</summary>

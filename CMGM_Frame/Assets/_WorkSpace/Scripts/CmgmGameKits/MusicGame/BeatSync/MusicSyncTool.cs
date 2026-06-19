@@ -1,3 +1,4 @@
+using CMGM.Audio;
 using CMGM.Core;
 using Sirenix.OdinInspector;
 using System.Collections.Generic;
@@ -170,7 +171,7 @@ public static class MusicSyncTool
             callbackFunc == null ? MusicEventDefaultCallbackFunc : callbackFunc);
 
         if (beatMapName != null)
-            ActiveMusicBeatSync(Consts.Paths.RhythmMap_Path + $"/{beatMapName}/{beatMapName}_BeatEvtList.json");
+            ActiveMusicBeatSync(MusicGameConsts.RhythmMap_Path + $"/{beatMapName}/{beatMapName}_BeatEvtList.json");
         else
             DisableMusicBeatSync();
 

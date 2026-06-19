@@ -68,13 +68,13 @@ public class DefaultRhythmMapGenerator : EditorWindow
 
         string json = JsonUtility.ToJson(data, true);
 
-        if(!Directory.Exists(Consts.Paths.RhythmMap_Path))
+        if(!Directory.Exists(MusicGameConsts.RhythmMap_Path))
         {
-            Directory.CreateDirectory(Consts.Paths.RhythmMap_Path);
+            Directory.CreateDirectory(MusicGameConsts.RhythmMap_Path);
         }
-        if(!Directory.Exists(Consts.Paths.RhythmMap_Path + $"/{selectedClip.name}"))
+        if(!Directory.Exists(MusicGameConsts.RhythmMap_Path + $"/{selectedClip.name}"))
         {
-            Directory.CreateDirectory(Consts.Paths.RhythmMap_Path + $"/{selectedClip.name}");
+            Directory.CreateDirectory(MusicGameConsts.RhythmMap_Path + $"/{selectedClip.name}");
         }
 
         AssetDatabase.Refresh();
@@ -82,7 +82,7 @@ public class DefaultRhythmMapGenerator : EditorWindow
         // 保存文件
         string path = EditorUtility.SaveFilePanel(
             "保存节奏映射数据",
-            Consts.Paths.RhythmMap_Path + $"/{selectedClip.name}",
+            MusicGameConsts.RhythmMap_Path + $"/{selectedClip.name}",
             $"{selectedClip.name}_BeatEvtList.json",
             "json");
 

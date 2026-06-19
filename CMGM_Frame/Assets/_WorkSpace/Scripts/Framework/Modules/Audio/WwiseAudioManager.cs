@@ -5,6 +5,9 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Serialization;
 
+namespace CMGM.Audio
+{
+
 /// <summary>
 /// Wwise音频管理器（须手动绑在初始化场景的WwiseGlobal上）
 /// </summary>
@@ -129,4 +132,5 @@ public class WwiseAudioManager : SingletonAutoMono<WwiseAudioManager>
     public void SetSfxVolume(float value)=>AkUnitySoundEngine.SetRTPCValue(sfxVolumeRtpcName,value);
     public void SetVoiceVolume(float value) => AkUnitySoundEngine.SetRTPCValue(voiceVolumeRtpcName, value);
     #endregion
+}
 }
