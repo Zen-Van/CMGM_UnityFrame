@@ -267,3 +267,20 @@
 **废弃原因：** XLua 官方 `feature/asmdef` 提交已被 Revert（PR#1067 加入、PR#1068/commit d919198 撤销），master 不再含这些 asmdef。继续用等于绑死「官方已回滚版本」，且后续 hotfix / wrap 生成受 asmdef 约束。改为**方案 C**：Lua 不建 asmdef，契约 `ILuaService` 入 `CMGM.Core`，实现入 `Framework/Integrations/Lua/`（随 XLua master 落 `Assembly-CSharp`）。详见 `ARCHITECTURE.md` §3.4 / §7.5。
 
 > 待执行的代码迁移：删除 `CMGM.Lua` / `CMGM.Lua.Editor` 两个 asmdef；`LuaManager`/`LuaBridge` 迁出 `Modules/Lua` 至 `Integrations/Lua`；Core 加 `ILuaService`；Boot 注册。
+
+---
+
+# 归档块 D · 独立支线「常量与配置体系」
+
+> **废止时间：2026-06-19（并入「项目脚手架与包体迁移」）**
+
+**原支线编号与去向：**
+
+| 原编号 | 内容 | 并入 |
+|--------|------|------|
+| 常量体系1.1 | 盘点与分类（框架/游戏/GameKit、Editor/runtime） | **项目脚手架1.1** |
+| 常量体系1.2 | 入口与归属规范 | **项目脚手架1.4**（与 Package 根路径一次性收口） |
+| 常量体系1.3 | Editor / runtime 分离 | **项目脚手架1.4** |
+| 常量体系1.4 | 路径自动生成 / 校验 | **项目脚手架1.7**（与 Lua系统1.3 / §2b E 衔接） |
+
+**废止原因：** 常量路径改动与 `CmgmUnityPackages` 物理搬迁、`Consts.Paths` 收口同一时期完成，分两线易重复改路径。详见 `ARCHITECTURE.md` §7.4「项目脚手架与包体迁移」、§7.5 设计决策记录。
