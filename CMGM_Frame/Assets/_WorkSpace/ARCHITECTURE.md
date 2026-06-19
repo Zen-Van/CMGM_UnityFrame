@@ -34,7 +34,7 @@ Assets/_WorkSpace/
 │   ├── CmgmFrameSettings.asset
 │   ├── UI/UICamera.prefab
 │   └── BeforeGame/logos/    启动 Logo
-├── Editor/                  ⚠ 待「编译边界2.8」迁入 `Framework/Editor/`（非 Core 内，见 §6.2）
+├── Editor/                  ✅ 已迁入 `Framework/Editor/`（编译边界2.9，`CMGM.Editor`）
 └── Scripts/
     ├── Game/                游戏专属（已分层 ✅）
     │   ├── UI/Panels/
@@ -65,7 +65,7 @@ Assets/_WorkSpace/
 
 - **`WorkSpace`** — 从 `CmgmFrameSettings.WORK_SPACE_ROOT` 读取（默认 `Assets/_WorkSpace`）
 - **共享**：`HotRes`、`ARCHIVE_PATH`、`ConfigData` 等
-- **`Paths.Framework.*`** — 框架目录（`Core`、`Modules`）
+- **`Paths.Framework.*`** — 框架目录（`Core`、`Modules`、`Editor`）
 - **`Paths.Game.*`** — 游戏层（`UI_Panels`、`Archive`、`Config`）
 - **`Paths.Framework.DataModule.*`** — 框架 Data 模块（`Archive`、`Config`）
 
@@ -235,7 +235,7 @@ InitScene（CmgmFrameBoot.Awake）
 
 | 问题 | 位置 | 计划归属 |
 |------|------|----------|
-| namespace / asmdef | `GameCore`/`UI`/`Data` 已闭环；`Lua`/`Audio`/`Input`/`Editor` 待主线「编译边界2.6~2.8」 | §7.2 |
+| namespace / asmdef | `GameCore`/`UI`/`Data`/`Audio`/`Input`/`Editor` 已闭环；Lua 在 Integrations（`Assembly-CSharp`） | §7.2 |
 | `BinaryFormatter` 序列化 | `ArchiveManager` | 支线「存档升级系统」 |
 | 无 GameState 状态机 | — | 支线「GameState系统」 |
 | 无事件总线 | `OptionalSystem/` | 支线「事件总线系统」 |
@@ -334,7 +334,7 @@ Packages/（远期）
 | 归属 | 内容 |
 |------|------|
 | **已完成基线** | 物理目录 + 去 `Game*` 前缀；UI / Data asmdef 闭环 |
-| **主线 编译边界2.6~2.8** | Lua / Audio / Input / Editor 各模块 asmdef |
+| **主线 编译边界2.6~2.9** | Lua / Audio / Input / Editor 各模块 asmdef |
 | **主线 启动组合根3.2** | `CmgmModuleManifest`（声明模块 id、依赖链、是否必选） |
 | **内容扩展支线** | Editor「新项目 / 模块导入」向导：勾选 Modules，生成 asmdef 引用与目录检查清单 |
 
@@ -347,7 +347,7 @@ Packages/（远期）
 |------|------|------|------|
 | `Framework/Core/` | Runtime | 已完成基线 | 原 `Scripts/GameCore/` 内容；**不含** Editor；`CMGM.Core` |
 | `Framework/Modules/*/Editor/` | 模块 Editor | 各模块闭环 | 如 `ExcelTool`→Data、`Edt_CreateUIPanelAction`→UI |
-| `Framework/Editor/` | 框架级 Editor | **编译边界2.8** | 由原 `_WorkSpace/Editor/` 迁入：路径检查、通用模板、导入向导 |
+| `Framework/Editor/` | 框架级 Editor | **编译边界2.9 ✅** | 由原 `_WorkSpace/Editor/` 迁入：路径检查、通用模板、导入向导 |
 | `Scripts/Game/Editor/` | 游戏 Editor（按需） | 远期 | 仅本项目策划/关卡工具，不随框架复制 |
 
 **为何不放进 `Framework/Core/`？**
@@ -494,8 +494,8 @@ Bootstrap ──► Core + Modules   ✅ 组合根例外：允许「知道一切
 | **编译边界2.6** | Lua 模块收口（**方案 C**）：XLua 退官方 master；Core 加 `ILuaService` 契约；`LuaManager` 实现 `ILuaService`；`LuaManager`/`LuaBridge` 迁 `Framework/Integrations/Lua`（`Assembly-CSharp`）。注：`CMGM.Lua` asmdef 随 XLua 回退已消失；服务**注册/注入**留待 启动组合根3.1（当前 Boot 仍直接 `LuaManager.Instance`） | 已完成基线 ✅ | **完成 ✅（2026-06-19，Unity 编译 + Play 验证通过）** |
 | **编译边界2.7** ✅ | Audio 模块解耦与闭环（拆 2.7a/b/c，见 §7.2a）：先把音游节拍剥离到 `CmgmGameKits/MusicGame`，再给纯净 Audio 上 `CMGM.Audio` | 编译边界2.6 完成 ✅ | **已完成** |
 | **编译边界2.8** ✅ | Input 模块闭环（`CMGM.Input`）；`InputActions_Main` 迁入 `Modules/Input`；`Input→UI` 解耦（Cancel 注册移至 `UIManager.Init`）；确认无音游专属 action map（音游输入留 `MusicGame/RhythmInput`） | 编译边界2.7 完成 ✅ | **已完成** |
-| **编译边界2.9** | Editor 闭环（`_WorkSpace/Editor` → `Framework/Editor`，`CMGM.Editor`） | 编译边界2.8 完成 ✅ | **可做** |
-| **启动组合根3.1** | `IGameModule` + `CmgmInitContext`（Core）；各 Manager 改 Module（构造函数不做重活）；`CmgmFrameBoot` → `Framework/Bootstrap`（`CMGM.Bootstrap`），按 Order await | 编译边界2.9 完成 | 🔒 |
+| **编译边界2.9** ✅ | Editor 闭环（`_WorkSpace/Editor` → `Framework/Editor`，`CMGM.Editor`）；`CMGM.Editor.Base` 合并为 `CMGM.Editor`；`Consts.Paths.Framework.Editor` + `EditorRoot` 更新 | 编译边界2.8 完成 ✅ | **已完成** |
+| **启动组合根3.1** | `IGameModule` + `CmgmInitContext`（Core）；各 Manager 改 Module（构造函数不做重活）；`CmgmFrameBoot` → `Framework/Bootstrap`（`CMGM.Bootstrap`），按 Order await | 编译边界2.9 完成 ✅ | **可做** |
 | **启动组合根3.2** | 模块清单 `CmgmModuleManifest`（模块 id / Core·Modules 分级 / 依赖链 / 默认勾选）；游戏层在 `GameBootstrap` 注册自有 Module | 启动组合根3.1 完成 | 🔒 |
 
 > 主线推到 **启动组合根3.2**，框架地基冻结（契约不再大改），支线可放心并行。
@@ -523,7 +523,7 @@ Bootstrap ──► Core + Modules   ✅ 组合根例外：允许「知道一切
 | **GameState系统** | GameState系统1.1 | 启动组合根3.1 完成 | 🔒 | 状态机基础态；接管 `GoToMainScene` / `QuitGame` |
 | **事件总线系统** | 事件总线系统1.1 | 启动组合根3.1 完成 | 🔒 | `IEventBus` 落地 Optional 模块 |
 | **依赖抽象系统** | 依赖抽象系统1.1 | 编译边界2.8 完成 ✅ | **已解锁** | 去 Odin 硬依赖、URP/RP 抽象（音频/Lua 抽象见各自支线） |
-| **常量与配置体系** | 常量体系1.1 | 编译边界2.9 完成（程序集/Editor 边界稳定后再统一入口） | 🔒 | 统一常量入口；厘清 框架/游戏、Editor/runtime 常量归属（治理 `Consts` 与 `MusicGameConsts` 等分散） |
+| **常量与配置体系** | 常量体系1.1 | 编译边界2.9 完成 ✅ | **已解锁** | 统一常量入口；厘清 框架/游戏、Editor/runtime 常量归属（治理 `Consts` 与 `MusicGameConsts` 等分散） |
 | **GameKits** | GameKits1.1 | 建议启动组合根3.1 后（按需） | 🔒 | RoleControl / MapTriggers / Camera 模板（§6.4） |
 | **网游预埋** | 网游预埋1.1 | 存档升级系统 + GameState系统 完成 | 🔒（远期） | LocalSave/ServerSync、网络层、重放、Cloud save |
 
@@ -725,6 +725,7 @@ GameRuntimeData（I_Saveable，Scripts/Game/Archive/）
 | `Paths.Framework.DataModule.Archive` | `Framework/Modules/Data/Archive/` | 存档框架（`ArchiveManager`、`I_Saveable`） |
 | `Paths.Framework.DataModule.Config` | `Framework/Modules/Data/Config/` | 配表框架（`ConfigTableManager`） |
 | `Paths.Framework.DataModule.Editor` | `Framework/Modules/Data/Editor/` | Data 模块 Editor（`ExcelTool`、`ArchiveEditor`） |
+| `Paths.Framework.Editor` | `Framework/Editor/` | 框架级 Editor（`Edt_ProjectPathCheck`、通用模板、`TMPTools`） |
 
 **不**把 Config 嵌套在 Archive 下：二者生命周期不同（配表 vs 存档）。
 

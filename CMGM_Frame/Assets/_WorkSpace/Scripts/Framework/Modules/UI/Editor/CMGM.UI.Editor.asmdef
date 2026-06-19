@@ -3,7 +3,7 @@
     "rootNamespace": "CMGM.UI.Editor",
     "references": [
         "CMGM.Core",
-        "CMGM.Editor.Base",
+        "CMGM.Editor",
         "CMGM.UI"
     ],
     "includePlatforms": [

@@ -4,7 +4,7 @@
     "references": [
         "CMGM.Core",
         "CMGM.Data",
-        "CMGM.Editor.Base"
+        "CMGM.Editor"
     ],
     "includePlatforms": [
         "Editor"

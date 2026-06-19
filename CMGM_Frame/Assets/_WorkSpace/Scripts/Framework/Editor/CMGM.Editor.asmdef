@@ -1,8 +1,9 @@
 {
-    "name": "CMGM.Editor.Base",
-    "rootNamespace": "",
+    "name": "CMGM.Editor",
+    "rootNamespace": "CMGM.Editor",
     "references": [
-        "CMGM.Core"
+        "CMGM.Core",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [
         "Editor"

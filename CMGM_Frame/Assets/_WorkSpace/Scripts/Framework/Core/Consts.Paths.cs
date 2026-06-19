@@ -44,6 +44,8 @@ namespace CMGM.Core
                 public static string Root => ScriptsPath + "/Framework";
                 public static string Core => Root + "/Core";
                 public static string Modules => Root + "/Modules";
+                /// <summary>框架级 Editor（路径检查、通用模板等，编译边界2.9）</summary>
+                public static string Editor => Root + "/Editor";
 
                 /// <summary>Framework/Modules/Data/ 模块（Archive 存档管线 + Config 配表管线）</summary>
                 public static class DataModule
