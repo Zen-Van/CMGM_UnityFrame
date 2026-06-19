@@ -1,15 +1,9 @@
 {
-    "name": "CMGM.UI",
-    "rootNamespace": "CMGM.UI",
+    "name": "CMGM.Input",
+    "rootNamespace": "CMGM.Input",
     "references": [
         "CMGM.Core",
-        "CMGM.Input",
-        "UniTask",
-        "UniTask.Addressables",
-        "Unity.Addressables",
-        "Unity.ResourceManager",
-        "Unity.RenderPipelines.Universal.Runtime",
-        "Unity.TextMeshPro"
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -165,7 +165,7 @@ Assets/_WorkSpace/
 |------|------|--------|
 | `WwiseAudioManager` | Wwise 通用音频（Bank / 播放 / 音量）；**编译边界2.7a 起去节拍化** | ★★★ |
 | ~~`MusicSyncTool`~~ | MUG 节拍同步——**编译边界2.7b 迁出**至 `CmgmGameKits/MusicGame/BeatSync`（不再属 Audio 模块） | ★★★ |
-| `InputManager` | Input System 封装（GamePlay / UI 两套 action map；含 `Input→UI` 依赖，见 2.8） | ★★ |
+| `InputManager` | Input System 封装（GamePlay / UI 两套 action map）；**编译边界2.8** 上 `CMGM.Input`；Cancel→HidePanel 已迁至 `UIManager.Init`（UI→Input 单向） | ★★ |
 | `OptionalSystem/EventSystem` | **未实现**（仅 .meta；支线「事件总线系统」落地） | ☆ |
 | `OptionalSystem/CommandSystem` | **未实现**（仅 .meta） | ☆ |
 
@@ -325,7 +325,7 @@ Packages/（远期）
 | **Modules** | `…/Loading/` | `Loading` | 可选 | 支线「Loading系统」；`CMGM.Loading` |
 | **Integrations** | `Framework/Integrations/Lua/` | `Lua` | 可选 | 原 `LuaCore/`；**不建 asmdef**，契约 `ILuaService` 入 Core、实现随 XLua(master) 落 `Assembly-CSharp`（§7.5） |
 | **Modules** | `…/Audio/` | `Audio` | 可选 | 原 `AudioSystem/`；`CMGM.Audio`（编译边界2.7） |
-| **Modules** | `…/Input/` | `Input` | 可选 | 原 `GameInput/`；`CMGM.Input`（编译边界2.7） |
+| **Modules** | `…/Input/` | `Input` | 可选 | 原 `GameInput/`；`CMGM.Input`（编译边界2.8） |
 | **Modules** | `…/Optional/` | `Optional` | 可选 | 原 `OptionalSystem/`；事件总线等 |
 | **Modules** | `…/Utils/` | `Utils` | 按需 | 通用工具 |
 
@@ -370,7 +370,7 @@ Packages/（远期）
 | `GameLevel/` | `Framework/Modules/Scene/` | 曾 `CMGM.Scene`（已撤销） |
 | `LuaCore/` | `Framework/Modules/Lua/` | `CMGM.Lua`（编译边界2.6） |
 | `AudioSystem/` | `Framework/Modules/Audio/` | `CMGM.Audio`（编译边界2.7） |
-| `GameInput/` | `Framework/Modules/Input/` | `CMGM.Input`（编译边界2.7） |
+| `GameInput/` | `Framework/Modules/Input/` | `CMGM.Input`（编译边界2.8） |
 | `OptionalSystem/` | `Framework/Modules/Optional/` | `CMGM.Optional` |
 | `Utils/` | `Framework/Modules/Utils/` | 随模块闭环 |
 
@@ -493,8 +493,8 @@ Bootstrap ──► Core + Modules   ✅ 组合根例外：允许「知道一切
 |----------|------|----------|------|
 | **编译边界2.6** | Lua 模块收口（**方案 C**）：XLua 退官方 master；Core 加 `ILuaService` 契约；`LuaManager` 实现 `ILuaService`；`LuaManager`/`LuaBridge` 迁 `Framework/Integrations/Lua`（`Assembly-CSharp`）。注：`CMGM.Lua` asmdef 随 XLua 回退已消失；服务**注册/注入**留待 启动组合根3.1（当前 Boot 仍直接 `LuaManager.Instance`） | 已完成基线 ✅ | **完成 ✅（2026-06-19，Unity 编译 + Play 验证通过）** |
 | **编译边界2.7** ✅ | Audio 模块解耦与闭环（拆 2.7a/b/c，见 §7.2a）：先把音游节拍剥离到 `CmgmGameKits/MusicGame`，再给纯净 Audio 上 `CMGM.Audio` | 编译边界2.6 完成 ✅ | **已完成** |
-| **编译边界2.8** | Input 模块闭环（`CMGM.Input`）；附带体检音游输入是否需剥离、`Input→UI` 跨模块依赖处理 | 编译边界2.7 完成 ✅ | **可做** |
-| **编译边界2.9** | Editor 闭环（`_WorkSpace/Editor` → `Framework/Editor`，`CMGM.Editor`） | 编译边界2.8 完成 | 🔒 |
+| **编译边界2.8** ✅ | Input 模块闭环（`CMGM.Input`）；`InputActions_Main` 迁入 `Modules/Input`；`Input→UI` 解耦（Cancel 注册移至 `UIManager.Init`）；确认无音游专属 action map（音游输入留 `MusicGame/RhythmInput`） | 编译边界2.7 完成 ✅ | **已完成** |
+| **编译边界2.9** | Editor 闭环（`_WorkSpace/Editor` → `Framework/Editor`，`CMGM.Editor`） | 编译边界2.8 完成 ✅ | **可做** |
 | **启动组合根3.1** | `IGameModule` + `CmgmInitContext`（Core）；各 Manager 改 Module（构造函数不做重活）；`CmgmFrameBoot` → `Framework/Bootstrap`（`CMGM.Bootstrap`），按 Order await | 编译边界2.9 完成 | 🔒 |
 | **启动组合根3.2** | 模块清单 `CmgmModuleManifest`（模块 id / Core·Modules 分级 / 依赖链 / 默认勾选）；游戏层在 `GameBootstrap` 注册自有 Module | 启动组合根3.1 完成 | 🔒 |
 
@@ -519,10 +519,10 @@ Bootstrap ──► Core + Modules   ✅ 组合根例外：允许「知道一切
 | **Loading系统** | Loading系统1.1 | Core ✅ + UI ✅ | **已解锁** | 通用加载服务：任意处可调、可选面板/后台、聚合多源进度 |
 | **存档升级系统** | 存档升级系统1.1 | Data ✅ | **已解锁** | 版本头 + 分块 + 替换 `BinaryFormatter` + 迁移 |
 | **Lua系统** | Lua系统1.1 | 编译边界2.6 完成 ✅ | **已解锁** | 桥接注册、懒加载、路径生成 |
-| **Audio系统** | Audio系统1.1 | 编译边界2.7 完成 | 🔒 | 通用音频：Bank 加载策略、`IAudioService` 抽象（节拍/音游归 GameKit MusicGame） |
+| **Audio系统** | Audio系统1.1 | 编译边界2.7 完成 ✅ | **已解锁** | 通用音频：Bank 加载策略、`IAudioService` 抽象（节拍/音游归 GameKit MusicGame） |
 | **GameState系统** | GameState系统1.1 | 启动组合根3.1 完成 | 🔒 | 状态机基础态；接管 `GoToMainScene` / `QuitGame` |
 | **事件总线系统** | 事件总线系统1.1 | 启动组合根3.1 完成 | 🔒 | `IEventBus` 落地 Optional 模块 |
-| **依赖抽象系统** | 依赖抽象系统1.1 | 编译边界2.8 完成（程序集边界稳定后再解耦第三方） | 🔒 | 去 Odin 硬依赖、URP/RP 抽象（音频/Lua 抽象见各自支线） |
+| **依赖抽象系统** | 依赖抽象系统1.1 | 编译边界2.8 完成 ✅ | **已解锁** | 去 Odin 硬依赖、URP/RP 抽象（音频/Lua 抽象见各自支线） |
 | **常量与配置体系** | 常量体系1.1 | 编译边界2.9 完成（程序集/Editor 边界稳定后再统一入口） | 🔒 | 统一常量入口；厘清 框架/游戏、Editor/runtime 常量归属（治理 `Consts` 与 `MusicGameConsts` 等分散） |
 | **GameKits** | GameKits1.1 | 建议启动组合根3.1 后（按需） | 🔒 | RoleControl / MapTriggers / Camera 模板（§6.4） |
 | **网游预埋** | 网游预埋1.1 | 存档升级系统 + GameState系统 完成 | 🔒（远期） | LocalSave/ServerSync、网络层、重放、Cloud save |
@@ -682,7 +682,7 @@ Bootstrap ──► Core + Modules   ✅ 组合根例外：允许「知道一切
 | **Audio 解耦动因** | `WwiseAudioManager`（通用）与 `MusicSyncTool`（音游）循环依赖；判定窗口误置于通用管理器（原作者注释已自承）。必须先断依赖，否则剥离会导致框架反向依赖 GameKit（违反 §6.4）。 |
 | **音游归属** | 节拍/判定/谱面等音游能力 = **GameKit `CmgmGameKits/MusicGame`**（非框架 Audio 模块、非 Audio系统支线）。MusicGame 下按子模块分层（§6.4a：`BeatSync`(now)/`Beatmap`/`Judgement`/`Note`/`AudioVisualization`/`RhythmInput`）。Audio系统支线只保留通用音频（Bank / `IAudioService`），原 `Audio系统1.3 MUG` 移出。 |
 | **RhythmMap_Path** | 从 `Core/Consts.Paths` 迁至 MusicGame 包（2.7b），Core 不再持音游路径。 |
-| **Input 待办（2.8）** | Input 当前干净（仅 `InputManager`）；2.8 需复检 `InputActions_Main` 无音游专属 action map，并处理 `InputManager → CMGM.UI` 跨模块依赖。 |
+| **Input 2.8 决策** | `InputActions_Main` 从 `Assets/Settings/InputSystem/` 迁入 `Modules/Input/`（asmdef 不能引用 `Assembly-CSharp`）；`Input→UI` 解耦为 `UI→Input`（Cancel 注册在 `UIManager.Init`）；`InputActions_Main` 仅含 GamePlay/UI map，无音游专属 map（音游输入归 `MusicGame/RhythmInput`）。 |
 | **「Input系统」支线** | **暂不立支线**（YAGNI）；音游输入归 `MusicGame/RhythmInput`。列入下方「潜在完善候选」，待框架成熟后主动提醒。 |
 
 **潜在完善候选（backlog，未立支线；当用户问「还能怎样进一步完善框架」时主动提醒）**

@@ -1,5 +1,6 @@
 using Cysharp.Threading.Tasks;
 using CMGM.Core;
+using CMGM.Input;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -70,6 +71,22 @@ public class UIManager : Singleton<UIManager>
         middleLayer = uiCanvas.transform.Find("Middle");
         topLayer = uiCanvas.transform.Find("Top");
         systemLayer = uiCanvas.transform.Find("System");
+    }
+
+    public override void Init()
+    {
+        base.Init();
+        RegisterSystemInputBindings();
+    }
+
+    private void RegisterSystemInputBindings()
+    {
+        InputManager.Instance.BindUiCancel(() =>
+        {
+            BasePanel topPanel = GetTopDynamicPanel();
+            if (topPanel != null)
+                HidePanel(topPanel.name, false);
+        });
     }
 
     private Camera uiCamera;
@@ -292,8 +309,9 @@ public class UIManager : Singleton<UIManager>
 
         //并重新赋值panelObj
         panelObj = GameObject.Instantiate(panelObj, GetLayerNode(layer), false);
-        //如果对象上没有脚本，自动绑一下，避免UI同学忘了，我真贴心
-        if (panelObj.GetComponent(Type.GetType(panelName)) == null) panelObj.AddComponent(Type.GetType(panelName));
+        //如果对象上没有脚本，可以自动绑一下
+        //二编：不花性能处理这种逻辑，让Bug报出来好定位深层原因（后续：已在创建面板时期新增自动化绑定逻辑，几乎不会发生该问题了）
+        //if (panelObj.GetComponent(Type.GetType(panelName)) == null) panelObj.AddComponent(Type.GetType(panelName));
 
         //将panel存进字典
         BasePanel panel = panelObj.GetComponent<BasePanel>();

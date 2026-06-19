@@ -1,6 +1,10 @@
 using CMGM.Core;
-using CMGM.UI;
+using System;
 using UnityEngine;
+using UnityEngine.InputSystem;
+
+namespace CMGM.Input
+{
 
 public class InputManager : SingletonAutoMono<InputManager>
 {
@@ -8,18 +12,8 @@ public class InputManager : SingletonAutoMono<InputManager>
     {
         base.Awake();
 
-        //初始化inputActions
         inputActions = new InputActions_Main();
         inputActions.Enable();
-
-        #region 初始化输入系统时就注册的游戏输入事件(系统输入事件)
-        //顶层UI隐藏事件（当输入UI取消按钮时，隐藏顶层面板）
-        UI.Cancel.started += (ctx) =>
-        {
-            if (UIManager.Instance.GetTopDynamicPanel() != null)
-                UIManager.Instance.HidePanel(UIManager.Instance.GetTopDynamicPanel().name, false);
-        };
-        #endregion
     }
 
     private InputActions_Main inputActions;
@@ -27,4 +21,11 @@ public class InputManager : SingletonAutoMono<InputManager>
     public InputActions_Main.GamePlayActions Gameplay => inputActions.GamePlay;
     /// <summary> 所有UI输入集 </summary>
     public InputActions_Main.UIActions UI => inputActions.UI;
+
+    /// <summary>绑定 UI Cancel 输入（屏蔽 Unity.InputSystem 类型，避免调用方程序集引用 Input System）。</summary>
+    public void BindUiCancel(Action callback)
+    {
+        UI.Cancel.started += _ => callback();
+    }
+}
 }

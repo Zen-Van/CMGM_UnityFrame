@@ -221,7 +221,13 @@ public abstract class BasePanel : MonoBehaviour
     /// <returns></returns>
     private T[] GetArray<T>() where T : UIBehaviour
     {
-        return _cache.TryGetValue(typeof(T), out var arr) ? (T[])arr : new T[0];
+        if (!_cache.TryGetValue(typeof(T), out var arr) || arr == null || arr.Length == 0)
+            return System.Array.Empty<T>();
+
+        var result = new T[arr.Length];
+        for (int i = 0; i < arr.Length; i++)
+            result[i] = arr[i] as T;
+        return result;
     }
     #endregion
     /// <summary>面板显示时调用</summary>
