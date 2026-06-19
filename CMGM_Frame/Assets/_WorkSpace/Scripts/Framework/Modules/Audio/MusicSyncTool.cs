@@ -29,6 +29,12 @@ public static class MusicSyncTool
     #endregion
 
     #region 节拍同步判定
+    // 节拍判定窗口（单位：毫秒）。原在 WwiseAudioManager，编译边界2.7a 迁入音游侧自持。
+    // TODO: 后续可改为按 BPM 自适应 / ScriptableObject 配置。
+    public static int goodWindow = 150;
+    public static int greatWindow = 100;
+    public static int perfectWindow = 50;
+
     public enum BeatInputState { miss = 0, good = 1, great = 2, perfect = 3 }
     public static BeatInputState curBeatInputState = BeatInputState.miss;
     /// <summary>据下一拍的时长</summary>
@@ -42,7 +48,7 @@ public static class MusicSyncTool
     private static void RefreshCurBeatState()
     {
         //如果音乐指针在最后一个事件判定之后，则重置判定角标
-        if (CurBgmPosition >= evtTimeList[evtTimeList.Count-1] + WwiseAudioManager.Instance.goodWindow)
+        if (CurBgmPosition >= evtTimeList[evtTimeList.Count-1] + goodWindow)
         {
             judgeIndex = 0;
             BeatPercent = 0;
@@ -59,27 +65,27 @@ public static class MusicSyncTool
         //按区域判定节拍状态
         if (evtTimeList.Count == 0) return;
         int judgeEvtTime = evtTimeList[judgeIndex];
-        if (CurBgmPosition < judgeEvtTime - WwiseAudioManager.Instance.goodWindow)
+        if (CurBgmPosition < judgeEvtTime - goodWindow)
         {
             curBeatInputState = BeatInputState.miss;
         }
-        else if (CurBgmPosition < judgeEvtTime - WwiseAudioManager.Instance.greatWindow)//从左侧进入good区域
+        else if (CurBgmPosition < judgeEvtTime - greatWindow)//从左侧进入good区域
         {
             curBeatInputState = BeatInputState.good;
         }
-        else if (CurBgmPosition < judgeEvtTime - WwiseAudioManager.Instance.perfectWindow)//从左侧进入great区域
+        else if (CurBgmPosition < judgeEvtTime - perfectWindow)//从左侧进入great区域
         {
             curBeatInputState = BeatInputState.great;
         }
-        else if (CurBgmPosition < judgeEvtTime + WwiseAudioManager.Instance.perfectWindow)//从左侧进入perfect区域
+        else if (CurBgmPosition < judgeEvtTime + perfectWindow)//从左侧进入perfect区域
         {
             curBeatInputState = BeatInputState.perfect;
         }
-        else if (CurBgmPosition < judgeEvtTime + WwiseAudioManager.Instance.greatWindow)//从右侧离开perfect区域
+        else if (CurBgmPosition < judgeEvtTime + greatWindow)//从右侧离开perfect区域
         {
             curBeatInputState = BeatInputState.great;
         }
-        else if (CurBgmPosition < judgeEvtTime + WwiseAudioManager.Instance.goodWindow)//从右侧离开great区域
+        else if (CurBgmPosition < judgeEvtTime + goodWindow)//从右侧离开great区域
         {
             curBeatInputState = BeatInputState.good;
         }
@@ -144,6 +150,39 @@ public static class MusicSyncTool
         return evtTimeList;
     }
 
+    #endregion
+
+
+    #region 带节拍同步的 BGM 播放（音游：组合通用音频原语 + 节拍同步）
+    /// <summary>
+    /// 播放 BGM 并开启节拍同步（音游用）。组合 WwiseAudioManager 的通用播放原语 + 本工具的节拍同步。
+    /// </summary>
+    /// <param name="eventName">Wwise 事件名</param>
+    /// <param name="beatMapName">节拍图名（null 则只播放、不开节拍同步）</param>
+    /// <param name="callbackFunc">自定义回调（null 用默认 MusicEventDefaultCallbackFunc）</param>
+    public static uint PlayBgmWithBeatSync(string eventName, string beatMapName = null, AkCallbackManager.EventCallback callbackFunc = null)
+    {
+        curBgmEventId = AkUnitySoundEngine.GetIDFromString(eventName);
+
+        curBgmPlayingId = WwiseAudioManager.Instance.PlayWwiseEventWithCallback(
+            eventName, WwiseAudioManager.Instance.gameObject,
+            AkCallbackType.AK_EnableGetMusicPlayPosition | AkCallbackType.AK_EnableGetSourcePlayPosition | AkCallbackType.AK_MusicSyncAll,
+            callbackFunc == null ? MusicEventDefaultCallbackFunc : callbackFunc);
+
+        if (beatMapName != null)
+            ActiveMusicBeatSync(Consts.Paths.RhythmMap_Path + $"/{beatMapName}/{beatMapName}_BeatEvtList.json");
+        else
+            DisableMusicBeatSync();
+
+        return curBgmPlayingId;
+    }
+
+    /// <summary>停止带节拍同步的 BGM 并关闭节拍同步。</summary>
+    public static void StopBgmWithBeatSync()
+    {
+        AkUnitySoundEngine.StopPlayingID(curBgmPlayingId);
+        DisableMusicBeatSync();
+    }
     #endregion
 
 

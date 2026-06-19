@@ -22,7 +22,7 @@ public class SimpleTest : MonoBehaviour
         Instantiate(cube, Vector3.zero, Quaternion.identity);
 
 
-        WwiseAudioManager.Instance.PlayCommonBgm("Play_AlienLoveSong", "AlienLoveSong");
+        MusicSyncTool.PlayBgmWithBeatSync("Play_AlienLoveSong", "AlienLoveSong");
     }
 
     private void Start()

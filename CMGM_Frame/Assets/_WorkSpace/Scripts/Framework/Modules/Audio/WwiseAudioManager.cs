@@ -1,6 +1,5 @@
 
 using CMGM.Core;
-using Sirenix.OdinInspector;
 using System;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -31,14 +30,6 @@ public class WwiseAudioManager : SingletonAutoMono<WwiseAudioManager>
     [Header("Wwise Banks")]
     private string mainBankName = "DefaultBank";
     private bool loadBankOnAwake = true;
-
-    #region 方便调试的音频数据
-    //应当写到节拍输入的脚本中（输入控制器中设置窗口而非音频系统中设置窗口）
-    //最好设置成根据歌曲的bpm而适应变化的，现在这个数值在bpm超过180的时候可能不适用
-    [BoxGroup("节拍判定窗口（单位：毫秒）")] public int goodWindow = 150;
-    [BoxGroup("节拍判定窗口（单位：毫秒）")] public int greatWindow = 100;
-    [BoxGroup("节拍判定窗口（单位：毫秒）")] public int perfectWindow = 50;
-    #endregion
 
     #region Bank管理接口
     public void LoadBank(AK.Wwise.Bank bank)
@@ -112,26 +103,23 @@ public class WwiseAudioManager : SingletonAutoMono<WwiseAudioManager>
     {
         return PlayWwiseEvent(eventName, emitter);
     }
-    public uint PlayCommonBgm(string eventName, string bgmNameForEvtList = null, AkCallbackManager.EventCallback callbackFunc = null)
+
+    /// <summary>当前由 PlayCommonBgm 播放的 BGM 的 PlayingId。</summary>
+    public uint CurBgmPlayingId { get; private set; } = AkUnitySoundEngine.AK_INVALID_PLAYING_ID;
+
+    /// <summary>
+    /// 播放通用 BGM（纯播放，不含节拍同步）。
+    /// 需要节拍同步的音游场景请用 MusicGame 的 <c>MusicSyncTool.PlayBgmWithBeatSync</c>。
+    /// </summary>
+    public uint PlayCommonBgm(string eventName, GameObject emitter = null)
     {
-        MusicSyncTool.curBgmEventId = AkUnitySoundEngine.GetIDFromString(eventName);
-
-        MusicSyncTool.curBgmPlayingId = PlayWwiseEventWithCallback(eventName, gameObject,
-            AkCallbackType.AK_EnableGetMusicPlayPosition | AkCallbackType.AK_EnableGetSourcePlayPosition | AkCallbackType.AK_MusicSyncAll,
-            callbackFunc == null ? MusicSyncTool.MusicEventDefaultCallbackFunc : callbackFunc);
-        
-        //是否开启音乐节拍计算
-        if(bgmNameForEvtList != null)
-            MusicSyncTool.ActiveMusicBeatSync(Consts.Paths.RhythmMap_Path + $"/{bgmNameForEvtList}/{bgmNameForEvtList}_BeatEvtList.json");
-        else
-            MusicSyncTool.DisableMusicBeatSync();
-
-        return MusicSyncTool.curBgmPlayingId;
+        CurBgmPlayingId = PlayWwiseEvent(eventName, emitter);
+        return CurBgmPlayingId;
     }
-    public void StopCommonBgm(uint playingId)
+    public void StopCommonBgm()
     {
-        AkUnitySoundEngine.StopPlayingID(MusicSyncTool.curBgmPlayingId);
-        MusicSyncTool.DisableMusicBeatSync();
+        AkUnitySoundEngine.StopPlayingID(CurBgmPlayingId);
+        CurBgmPlayingId = AkUnitySoundEngine.AK_INVALID_PLAYING_ID;
     }
     #endregion
 

@@ -163,9 +163,9 @@ Assets/_WorkSpace/
 
 | 组件 | 职责 | 成熟度 |
 |------|------|--------|
-| `WwiseAudioManager` | Wwise 音频 + 节拍事件 | ★★★ |
-| `MusicSyncTool` | MUG 节拍同步 | ★★★ |
-| `InputManager` | Input System 封装 | ★★ |
+| `WwiseAudioManager` | Wwise 通用音频（Bank / 播放 / 音量）；**编译边界2.7a 起去节拍化** | ★★★ |
+| ~~`MusicSyncTool`~~ | MUG 节拍同步——**编译边界2.7b 迁出**至 `CmgmGameKits/MusicGame/BeatSync`（不再属 Audio 模块） | ★★★ |
+| `InputManager` | Input System 封装（GamePlay / UI 两套 action map；含 `Input→UI` 依赖，见 2.8） | ★★ |
 | `OptionalSystem/EventSystem` | **未实现**（仅 .meta；支线「事件总线系统」落地） | ☆ |
 | `OptionalSystem/CommandSystem` | **未实现**（仅 .meta） | ☆ |
 
@@ -384,13 +384,29 @@ Packages/（远期）
 |----|------|
 | **目录** | `Scripts/CmgmGameKits/`（与 `Scripts/Game/`、`Scripts/Framework/` 同级） |
 | **定位** | 跨项目可复用的**游戏层工具模板**（比框架 Modules 更贴近玩法，比 `Scripts/Game/` 更通用） |
-| **示例内容** | `RoleControl/`（2D/3D 角色控制器）、`MapTriggers/`（场景触发器）、`Camera/`（相机控制，规划） |
+| **示例内容** | `RoleControl/`（2D/3D 角色控制器）、`MapTriggers/`（场景触发器）、`Camera/`（相机控制，规划）、`MusicGame/`（音游工具包，下设 `BeatSync/` 等子模块，见 §6.4a） |
 | **依赖** | 引用已选 Framework Modules（UI、Scene、Input 等）；**框架不反向依赖 GameKits** |
 | **与 `Scripts/Game/`** | `Game/` = 本项目独有（`MainPanel`、`RoleInfo`…）；GameKits = 可抄可删的模板库 |
 | **asmdef** | 远期 `CMGM.GameKits`（支线「GameKits」，见 §7.3/§7.4）；框架主线完成后独立推进 |
 | **优先级** | **低**；与框架主线**解耦**，框架可单独发布，GameKits **最后补充** |
 
-> **记录：** 2026-06-16 用户新建 `CmgmGameKits/`，自原 `Level/` 占位迁出 `RoleControl/`、`MapTriggers/`。
+> **记录：** 2026-06-16 用户新建 `CmgmGameKits/`，自原 `Level/` 占位迁出 `RoleControl/`、`MapTriggers/`。  
+> **记录：** 2026-06-19 新建 `CmgmGameKits/MusicGame/`，承接编译边界2.7b 从 Audio 剥离的音游节拍代码。
+
+#### 6.4a MusicGame 子模块规划（音游工具包内部分层）
+
+`MusicGame/` 不是单一工具，而是一组音游能力，**在其下按子模块再分文件夹**（当前仅 `BeatSync` 落地，其余为规划占位，按需再做）：
+
+| 子模块 | 职责 | 状态 |
+|--------|------|------|
+| **BeatSync/** | 节拍同步与判定窗口、节拍图（`BeatEvtList`）加载、判定状态机；含 `Editor/` 节拍图生成器 | 编译边界2.7b 落地 |
+| **Beatmap/** | 正式谱面数据格式、解析、加载（当前 `BeatEvtList` 是其简化前身）；谱面编辑器 | 规划 |
+| **Judgement/** | 命中判定、连击、分数、评级（现混在 `BeatSync` 内，后续可独立） | 规划 |
+| **Note/**（或 Track/） | 音符 / 轨道的可视与生命周期（下落式 / 点击式） | 规划 |
+| **AudioVisualization/** | 频谱 / 波形 / 律动特效 | 规划 |
+| **RhythmInput/** | 音游输入采集与判定窗口接入（呼应"窗口应放输入侧"的注释） | 规划 |
+
+> **依赖方向：** 以上子模块均可引用 Framework Modules（如 `CMGM.Audio`、`CMGM.Input`），**框架不反向依赖 MusicGame**。整包随框架发布、可整体删除。
 
 ### 6.5 Bootstrap 与组合根（`CmgmFrameBoot` 放哪）
 
@@ -476,12 +492,25 @@ Bootstrap ──► Core + Modules   ✅ 组合根例外：允许「知道一切
 | 步骤编号 | 名称 | 解锁条件 | 状态 |
 |----------|------|----------|------|
 | **编译边界2.6** | Lua 模块收口（**方案 C**）：XLua 退官方 master；Core 加 `ILuaService` 契约；`LuaManager` 实现 `ILuaService`；`LuaManager`/`LuaBridge` 迁 `Framework/Integrations/Lua`（`Assembly-CSharp`）。注：`CMGM.Lua` asmdef 随 XLua 回退已消失；服务**注册/注入**留待 启动组合根3.1（当前 Boot 仍直接 `LuaManager.Instance`） | 已完成基线 ✅ | **完成 ✅（2026-06-19，Unity 编译 + Play 验证通过）** |
-| **编译边界2.7** | Audio + Input 模块闭环（`CMGM.Audio`、`CMGM.Input`） | 编译边界2.6 完成 | 🔒 |
-| **编译边界2.8** | Editor 闭环（`_WorkSpace/Editor` → `Framework/Editor`，`CMGM.Editor`） | 编译边界2.7 完成 | 🔒 |
-| **启动组合根3.1** | `IGameModule` + `CmgmInitContext`（Core）；各 Manager 改 Module（构造函数不做重活）；`CmgmFrameBoot` → `Framework/Bootstrap`（`CMGM.Bootstrap`），按 Order await | 编译边界2.8 完成 | 🔒 |
+| **编译边界2.7** | Audio 模块解耦与闭环（拆 2.7a/b/c，见 §7.2a）：先把音游节拍剥离到 `CmgmGameKits/MusicGame`，再给纯净 Audio 上 `CMGM.Audio` | 编译边界2.6 完成 ✅ | **可做** |
+| **编译边界2.8** | Input 模块闭环（`CMGM.Input`）；附带体检音游输入是否需剥离、`Input→UI` 跨模块依赖处理 | 编译边界2.7 完成 | 🔒 |
+| **编译边界2.9** | Editor 闭环（`_WorkSpace/Editor` → `Framework/Editor`，`CMGM.Editor`） | 编译边界2.8 完成 | 🔒 |
+| **启动组合根3.1** | `IGameModule` + `CmgmInitContext`（Core）；各 Manager 改 Module（构造函数不做重活）；`CmgmFrameBoot` → `Framework/Bootstrap`（`CMGM.Bootstrap`），按 Order await | 编译边界2.9 完成 | 🔒 |
 | **启动组合根3.2** | 模块清单 `CmgmModuleManifest`（模块 id / Core·Modules 分级 / 依赖链 / 默认勾选）；游戏层在 `GameBootstrap` 注册自有 Module | 启动组合根3.1 完成 | 🔒 |
 
 > 主线推到 **启动组合根3.2**，框架地基冻结（契约不再大改），支线可放心并行。
+
+#### 7.2a 编译边界2.7 展开（Audio 解耦三步：先断依赖 → 再挪位置 → 后上 asmdef）
+
+> **背景：** 当前 `WwiseAudioManager`（通用音频）与 `MusicSyncTool`（音游节拍）**循环依赖**——管理器的 `PlayCommonBgm/StopCommonBgm` 调节拍工具，节拍工具又反向读管理器的 `good/great/perfectWindow`。直接挪文件会让**框架反向依赖 GameKit**（违反 §6.4）。故必须先断依赖。唯一外部调用者是 `_TestSpace/SimpleTest.cs`（测试），业务影响极小。
+
+| 子步 | 做什么 | 关键动作 | 验收 | 学习点 |
+|------|--------|----------|------|--------|
+| **编译边界2.7a** | 断循环依赖（文件不挪位置） | ① 判定窗口 `good/great/perfectWindow` 从 `WwiseAudioManager` 移入 `MusicSyncTool` 自持；② `PlayCommonBgm` 改纯播放、管理器**自存** `CurBgmPlayingId`，`StopCommonBgm` 停自己的 id，删除对 `MusicSyncTool` 的所有引用；③ 音游"带节拍同步播放"逻辑暂置 `MusicSyncTool.PlayBgmWithBeatSync`（内部调通用原语 `PlayWwiseEventWithCallback` + `ActiveMusicBeatSync`）；④ 改 `SimpleTest.cs` | 编译 + Play；依赖变单向 `MusicSyncTool → WwiseAudioManager` | 打破循环依赖、原语 vs 组合 |
+| **编译边界2.7b** | 音游剥离到 GameKit | ① `MusicSyncTool` / `BeatEvtListData` / `Editor/DefaultRhythmMapGenerator` + 播放助手 迁 `CmgmGameKits/MusicGame/BeatSync/`（暂 `Assembly-CSharp`，asmdef 留 GameKits1.x）；② `Consts.Paths.RhythmMap_Path` 从 Core 迁到该包 | 编译 + Play；依赖 `MusicGame → CMGM.Audio` 单向合法 | 框架/工具包边界、`GameKit → Module` 合法方向 |
+| **编译边界2.7c** | Audio 模块闭环（asmdef） | 瘦身后 Audio 加 `namespace CMGM.Audio` + `CMGM.Audio.asmdef`（references `CMGM.Core` + Wwise 程序集 + Odin）；处理第三方引用与可能的 `*.Editor` 子程序集 | 编译 + Play | asmdef 第三方引用（Wwise/Odin） |
+
+> 完成 2.7c 后：Audio = 只含通用音频的干净可选模块；音游节拍以 `MusicGame/BeatSync` 工具包独立存在（谁做音游谁勾）。
 
 ### 7.3 支线任务（功能，解锁后并行 / 按需）
 
@@ -490,7 +519,7 @@ Bootstrap ──► Core + Modules   ✅ 组合根例外：允许「知道一切
 | **Loading系统** | Loading系统1.1 | Core ✅ + UI ✅ | **已解锁** | 通用加载服务：任意处可调、可选面板/后台、聚合多源进度 |
 | **存档升级系统** | 存档升级系统1.1 | Data ✅ | **已解锁** | 版本头 + 分块 + 替换 `BinaryFormatter` + 迁移 |
 | **Lua系统** | Lua系统1.1 | 编译边界2.6 完成 ✅ | **已解锁** | 桥接注册、懒加载、路径生成 |
-| **Audio系统** | Audio系统1.1 | 编译边界2.7 完成 | 🔒 | 节拍工具、Bank 加载策略、`IAudioService` 抽象 |
+| **Audio系统** | Audio系统1.1 | 编译边界2.7 完成 | 🔒 | 通用音频：Bank 加载策略、`IAudioService` 抽象（节拍/音游归 GameKit MusicGame） |
 | **GameState系统** | GameState系统1.1 | 启动组合根3.1 完成 | 🔒 | 状态机基础态；接管 `GoToMainScene` / `QuitGame` |
 | **事件总线系统** | 事件总线系统1.1 | 启动组合根3.1 完成 | 🔒 | `IEventBus` 落地 Optional 模块 |
 | **依赖抽象系统** | 依赖抽象系统1.1 | 编译边界2.8 完成（程序集边界稳定后再解耦第三方） | 🔒 | 去 Odin 硬依赖、URP/RP 抽象（音频/Lua 抽象见各自支线） |
@@ -539,7 +568,7 @@ Bootstrap ──► Core + Modules   ✅ 组合根例外：允许「知道一切
 |------|------|------|
 | **Audio系统1.1** | `IAudioService` 包装 Wwise；Core / Modules 不直接引用 Wwise API（承接旧「依赖抽象·音频」） | 换音频后端只改 Extension |
 | **Audio系统1.2** | Bank 加载 / 卸载策略：gameplay Bank 进游戏按需载、退出卸载 | gameplay Bank 不进启动链 |
-| **Audio系统1.3** | 节拍 / 判定 / 谱面与 `MusicSyncTool` 整合（MUG 基础，承接旧 8.5） | 一曲可跑节拍判定 |
+| ~~Audio系统1.3~~ | **已移出本支线**：节拍 / 判定 / 谱面（MUG）归 GameKit `MusicGame`（编译边界2.7b 起 `BeatSync` 落地，后续 `Beatmap/Judgement` 见 §6.4a） | — |
 
 #### GameState系统（🔒 启动组合根3.1 后）
 
@@ -578,7 +607,7 @@ Bootstrap ──► Core + Modules   ✅ 组合根例外：允许「知道一切
 | **内容扩展1.4** | SRPG 接口：网格 / 回合 / 技能预留（与 GameState Battle 衔接） | 与 Battle 态衔接 |
 | **内容扩展1.5** | Editor 模块导入向导：勾选 `Framework/Modules/*`，输出依赖报告 + 缺失 asmdef 提示（依赖 启动组合根3.2 Manifest） | 复制到新工程可裁剪 |
 
-> **去向说明：** 旧 8.4「Lua 懒加载」已移至 **Lua系统1.2**；旧 8.5「MUG」已移至 **Audio系统1.3**（避免重复）。
+> **去向说明：** 旧 8.4「Lua 懒加载」已移至 **Lua系统1.2**；旧 8.5「MUG」节拍部分改入 GameKit **`MusicGame/BeatSync`**（编译边界2.7b 起），Audio系统支线只保留通用音频（Bank / `IAudioService`）。
 
 #### GameKits（🔒 建议启动组合根3.1 后，低优先级）
 
@@ -589,6 +618,7 @@ Bootstrap ──► Core + Modules   ✅ 组合根例外：允许「知道一切
 | **GameKits1.3** | MapTriggers：可继承的场景触发器基类 + 常用变体 | 与 `ScenesManager` 切场景无耦合 |
 | **GameKits1.4** | Camera：跟随 / 边界等相机控制（按需） | 可选 |
 | **GameKits1.5** | 发布：与框架同仓库或同 UPM 包组；新项目可整包删除 | 文档 §6.4 |
+| **GameKits1.6** | MusicGame：音游工具包（`BeatSync` 已由编译边界2.7b 落地为 `Assembly-CSharp` 代码；本步将其纳入 `CMGM.GameKits` asmdef + namespace，并按 §6.4a 扩展 `Beatmap/Judgement/Note/AudioVisualization/RhythmInput`） | 节拍判定可跑；与 Audio 模块单向依赖 |
 
 #### 网游预埋（🔒 远期，存档升级 + GameState 完成后）
 
@@ -630,6 +660,24 @@ Bootstrap ──► Core + Modules   ✅ 组合根例外：允许「知道一切
 | **hotfix** | 维持**关闭**；核心回 `Assembly-CSharp` 后门已重开，真要 C# 级热更（远期网游化）时在 XLua Hotfix / HybridCLR 间再评估（单机 JRPG/SRPG 阶段不需要）。 |
 
 > 旧「编译边界2.6 = `CMGM.Lua` asmdef + XLua Gen 同单」及相关 asmdef 文件已废弃，迁入 `ARCHITECTURE_DEPRECATED.md`。
+
+**设计决策记录 · 2026-06-19（编译边界章节重排 + Audio 解耦 + MusicGame 工具包）**
+
+| 项 | 结论 |
+|------|------|
+| **编译边界拆细** | 原 2.7（Audio+Input）+ 2.8（Editor）重排为 **2.7 Audio / 2.8 Input / 2.9 Editor**；`启动组合根3.1` 解锁条件顺延至「2.9 完成」。 |
+| **2.7 再拆三步** | `2.7a 断循环依赖 → 2.7b 音游剥离 → 2.7c Audio 上 asmdef`（见 §7.2a），遵循「先断依赖、再挪位置、后 asmdef」原则。 |
+| **Audio 解耦动因** | `WwiseAudioManager`（通用）与 `MusicSyncTool`（音游）循环依赖；判定窗口误置于通用管理器（原作者注释已自承）。必须先断依赖，否则剥离会导致框架反向依赖 GameKit（违反 §6.4）。 |
+| **音游归属** | 节拍/判定/谱面等音游能力 = **GameKit `CmgmGameKits/MusicGame`**（非框架 Audio 模块、非 Audio系统支线）。MusicGame 下按子模块分层（§6.4a：`BeatSync`(now)/`Beatmap`/`Judgement`/`Note`/`AudioVisualization`/`RhythmInput`）。Audio系统支线只保留通用音频（Bank / `IAudioService`），原 `Audio系统1.3 MUG` 移出。 |
+| **RhythmMap_Path** | 从 `Core/Consts.Paths` 迁至 MusicGame 包（2.7b），Core 不再持音游路径。 |
+| **Input 待办（2.8）** | Input 当前干净（仅 `InputManager`）；2.8 需复检 `InputActions_Main` 无音游专属 action map，并处理 `InputManager → CMGM.UI` 跨模块依赖。 |
+| **「Input系统」支线** | **暂不立支线**（YAGNI）；音游输入归 `MusicGame/RhythmInput`。列入下方「潜在完善候选」，待框架成熟后主动提醒。 |
+
+**潜在完善候选（backlog，未立支线；当用户问「还能怎样进一步完善框架」时主动提醒）**
+
+| 候选 | 方向 | 触发时机 |
+|------|------|----------|
+| **Input系统拓展** | 键位重绑定、键鼠/手柄/触屏设备切换、输入缓冲、`InputManager→UI` 解耦（走事件总线） | 主线/主要支线收尾、框架趋于稳定时 |
 
 ---
 
