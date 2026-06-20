@@ -11,7 +11,7 @@ namespace CMGM.Data
 /// <summary>
 /// 配表管理器，管理策划配置表中数据的读取和转化
 /// </summary>
-public class ConfigTableManager : Singleton<ConfigTableManager>
+public class ConfigTableManager : LazySingleton<ConfigTableManager>
 {
     private ConfigTableManager() { }
 

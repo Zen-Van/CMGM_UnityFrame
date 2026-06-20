@@ -38,11 +38,13 @@ public enum E_UILayer : byte
 /// <summary>
 /// UI管理器，该管理器须在游戏初始化时预热
 /// </summary>
-public class UIManager : Singleton<UIManager>
+public class UIManager : BootSingleton<UIManager>
 {
     #region UI管理器基础部分
-    //因为管理器初始化时执行的同步方法和操作逻辑较多，所以要在GameStart的时候初始化该管理器
-    private UIManager()
+    //因为管理器初始化时执行的同步方法和操作逻辑较多，所以须在框架 Boot 中 await InitAsync() 预热
+    private UIManager() { }
+
+    protected override UniTask OnInitAsync()
     {
         //创建UI摄像机
         uiCamera = GameObject.Instantiate
@@ -51,7 +53,6 @@ public class UIManager : Singleton<UIManager>
         GameObject.DontDestroyOnLoad(uiCamera.gameObject);
         //将UI摄像机挂在主相机上
         SetUICameraOverlap(Camera.main);
-
 
         //创建UI面板
         uiCanvas = GameObject.Instantiate
@@ -71,12 +72,9 @@ public class UIManager : Singleton<UIManager>
         middleLayer = uiCanvas.transform.Find("Middle");
         topLayer = uiCanvas.transform.Find("Top");
         systemLayer = uiCanvas.transform.Find("System");
-    }
 
-    public override void Init()
-    {
-        base.Init();
         RegisterSystemInputBindings();
+        return UniTask.CompletedTask;
     }
 
     private void RegisterSystemInputBindings()

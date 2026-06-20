@@ -1,11 +1,11 @@
-﻿using System.Threading;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Events;
 
 namespace CMGM.Core
 {
-    public class ResourcesResMgr : Singleton<ResourcesResMgr>
+    public class ResourcesResMgr : LazySingleton<ResourcesResMgr>
     {
         private ResourcesResMgr() { }
 

@@ -1,4 +1,4 @@
-﻿using Cysharp.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace CMGM.Core
 {
-    public class PoolManager : Singleton<PoolManager>
+    public class PoolManager : LazySingleton<PoolManager>
     {
         // 对象池数据结构
         Dictionary<string, PoolStack> poolDic = new Dictionary<string, PoolStack>();
@@ -25,7 +25,9 @@ namespace CMGM.Core
     #endif
 
         private GameObject objPoolRoot;
-        private PoolManager()
+        private PoolManager() { }
+
+        protected override void OnLazyInitialize()
         {
             if (!AUTO_LAYOUT_IN_HIERACHY) return;
             if (objPoolRoot == null) objPoolRoot = new GameObject("Pools");

@@ -36,18 +36,13 @@ public class CmgmFrameBoot : MonoBehaviour
         {
             //将UI包载入内存随时准备使用
             await AddressablesResMgr.Instance.PreloadAssetsAsync(CmgmFrameSettings.Instance.MAIN_SCENE_NAME);
-            //初始化UI管理器
-            UIManager.Instance.Init();
-
-            //初始化存档管理器，载入存档元数据
-            ArchiveManager.Instance.Init();
+            await UIManager.InitAsync();
+            await ArchiveManager.InitAsync();
             CmgmLog.fPositive($"存档元数据载入完毕，" +
                 $"其中共检测到{ArchiveManager.Instance.ArchiveMeta.dataSet.Count}个存档资料");
+            await LuaManager.InitAsync();
 
-            //初始化Lua管理器
-            LuaManager.Instance.Init();
-
-            //初始化音频管理器
+            // 音频：维持现状，Audio 支线再定 Boot 策略
             WwiseAudioManager.Instance.Init();
 
             //逻辑层初始化完成

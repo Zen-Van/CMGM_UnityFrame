@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
+using Cysharp.Threading.Tasks;
 using CMGM.Core;
 using UnityEngine;
 using UnityEngine.Events;
@@ -10,17 +11,19 @@ namespace CMGM.Data
 /// <summary>
 /// 存档管理器，该管理器须在框架启动时预热
 /// </summary>
-public class ArchiveManager : Singleton<ArchiveManager>
+public class ArchiveManager : BootSingleton<ArchiveManager>
 {
     /// <summary>
     /// 存档元数据名
     /// </summary>
     private static string ARCHIVE_META_NAME = "ArchiveMeta";
 
-    private ArchiveManager()
+    private ArchiveManager() { }
+
+    protected override UniTask OnInitAsync()
     {
-        //每次 ArchiveManager 初始化时，读取存档元数据
         LoadArchiveMeta();
+        return UniTask.CompletedTask;
     }
     public ArchiveMetaDataSet ArchiveMeta { get; private set; }
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,7 +26,7 @@ public class AddressablesResInfo
 }
 
 
-public class AddressablesResMgr : Singleton<AddressablesResMgr>
+public class AddressablesResMgr : LazySingleton<AddressablesResMgr>
 {
     private AddressablesResMgr() { }
     // 资源缓存

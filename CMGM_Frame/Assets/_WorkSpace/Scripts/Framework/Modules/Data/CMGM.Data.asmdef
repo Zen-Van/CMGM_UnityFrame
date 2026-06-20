@@ -2,7 +2,8 @@
     "name": "CMGM.Data",
     "rootNamespace": "CMGM.Data",
     "references": [
-        "CMGM.Core"
+        "CMGM.Core",
+        "UniTask"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

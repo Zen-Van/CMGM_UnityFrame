@@ -13,7 +13,7 @@ namespace CMGM.Scene
 /// <para>· <see cref="GoToMainScene"/> / <see cref="QuitGame"/> 属「流程控制」，待 **阶段 5 GameState** 接管。</para>
 /// <para>· Scene 不再是独立 asmdef 模块；若未来需要 Additive / 流式 / 场景持久化，再扩为完整 Scene 模块。</para>
 /// </summary>
-public class ScenesManager : Singleton<ScenesManager>
+public class ScenesManager : LazySingleton<ScenesManager>
 {
     private ScenesManager() { }
 

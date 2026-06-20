@@ -1,4 +1,4 @@
-﻿using Cysharp.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using CMGM.Core;
 using System;
 using System.Collections;
@@ -11,25 +11,24 @@ using XLua;
 using XLua.TemplateEngine;
 
 /// <summary>
-/// Lua管理器，使用前需要用Init()方法手动初始化
+/// Lua管理器，Boot 型单例：框架 Boot 中 await InitAsync()。
 /// </summary>
-public class LuaManager : Singleton<LuaManager>, ILuaService
+public class LuaManager : BootSingleton<LuaManager>, ILuaService
 {
     /// <summary> 是否在editor中调试时热加载lua（可以不重启游戏进行编辑）</summary>
     private bool IS_HOT_LUA = Application.isEditor && CmgmFrameSettings.Instance.IS_HOT_LUA;
-
 
     #region 关于热重载和非热重载的路径说明
     /*
     ┌─────────────────────────────────────────────────────────┐
     │  热重载（Editor + IS_HOT_LUA）                           │
-    │  Init → 跳过 LoadLuaMapper                               │
+    │  InitAsync → 跳过 LoadLuaMapper                          │
     │  require / ExecuteLua → Loader 1 / GetLuaContent 读磁盘  │
     └─────────────────────────────────────────────────────────┘
 
     ┌─────────────────────────────────────────────────────────┐
     │  正式包体（非热重载）                                    │
-    │  Init → LoadLuaMapper 预加载全部 Lua                     │
+    │  InitAsync → LoadLuaMapper 预加载全部 Lua                │
     │  require → Loader 3 查 luaMapper                        │
     │  ExecuteLua → GetLuaContent 查 luaMapper                │
     └─────────────────────────────────────────────────────────┘
@@ -41,16 +40,13 @@ public class LuaManager : Singleton<LuaManager>, ILuaService
     private LuaManager() { }
     public LuaEnv LuaEnv { get; private set; }
 
-
-    public bool IsInited { get; private set; } = false;
+    public bool IsInited => IsReady;
 
     /// <summary>
     /// 创建luaEnv，设置luaEnv路径重定向，将所有lua脚本载入内存，执行lua根脚本
     /// </summary>
-    public override void Init()
+    protected override async UniTask OnInitAsync()
     {
-        if (IsInited) return;
-
         LuaEnv = new LuaEnv();
 
         //重定向指在lua脚本中require时加载的相对路径
@@ -83,25 +79,20 @@ public class LuaManager : Singleton<LuaManager>, ILuaService
         });
 
         //Lua管理器初始化的时候，就把所有lua脚本载入内存，并且把main执行了
-        UniTask.Void(async () =>
-        {
-            // 正式包体：预加载全部 Lua 到 luaMapper；热重载：跳过，运行时直读磁盘
-            // 热重载真正读脚本还是靠 Loader 1 / GetLuaContent 读磁盘，不靠luaMapper
-            if (!IS_HOT_LUA)
-                await LoadLuaMapper();
-            //执行lua根文件
-            await ExecuteLua(ROOT_FILE_URI);
-            //都完成了才初始化完成
-            IsInited = true;
-        });
-
+        // 正式包体：预加载全部 Lua 到 luaMapper；热重载：跳过，运行时直读磁盘
+        // 热重载真正读脚本还是靠 Loader 1 / GetLuaContent 读磁盘，不靠luaMapper
+        if (!IS_HOT_LUA)
+            await LoadLuaMapper();
+        //执行lua根文件
+        await ExecuteLua(ROOT_FILE_URI);
     }
+
     /// <summary>
     /// 清空Lua数据和缓存，清空c#和lua互转数据，删除luaEnv
     /// </summary>
     public void Clear()
     {
-        IsInited = false;
+        ResetBootState();
 
         //释放lua解释器
         if (LuaEnv != null)

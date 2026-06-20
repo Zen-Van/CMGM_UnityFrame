@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using UnityEngine;
@@ -11,13 +11,14 @@ namespace CMGM.Core
     /// 2.可以提供给外部添加协程的方法
     /// 3.提供自动添加tag的方法
     /// </summary>
-    public class MonoMgr : Singleton<MonoMgr>
+    public class MonoMgr : LazySingleton<MonoMgr>
     {
         private MonoController controller; 
 
-        private MonoMgr()
+        private MonoMgr() { }
+
+        protected override void OnLazyInitialize()
         {
-            //保证了MonoController对象的唯一性
             GameObject obj = new GameObject("MonoController");
             controller = obj.AddComponent<MonoController>();
         }

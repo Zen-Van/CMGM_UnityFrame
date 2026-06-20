@@ -1,4 +1,4 @@
-﻿using CMGM.Core;
+using CMGM.Core;
 using UnityEngine;
 using UnityEditor;
 using System.IO;

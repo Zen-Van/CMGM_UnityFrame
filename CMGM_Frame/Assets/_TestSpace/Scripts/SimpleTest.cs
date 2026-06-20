@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
@@ -16,7 +16,7 @@ public class SimpleTest : MonoBehaviour
     {
         CmgmLog.fNormal("SimpleTest Awake");
 
-        ResourcesResMgr.Instance.Init();
+        _ = ResourcesResMgr.Instance;
 
         GameObject cube = await AddressablesResMgr.Instance.LoadAssetAsync<GameObject>("LevelPrefabs/Cube.prefab");
         Instantiate(cube, Vector3.zero, Quaternion.identity);
