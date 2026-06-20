@@ -2,7 +2,7 @@
 
 > 本文档是框架化改造的长期参考（「北极星」）。  
 > 目标：将当前工程从「带 Demo 的原型项目」逐步改造为「可跨项目迁移的框架」。  
-> 最后更新：2026-06-19 — 游戏层路径：`Paths.WorkSpaceScripts`（取消 `Scripts/Game` 中间层）；`_WorkSpace` = 游戏层，`_TestSpace` = 测试层。
+> 最后更新：2026-06-19 — **CmgmFramework** 三分：`Resources` + `Editor` + `Runtime`（代码收拢 ✅）。
 
 ---
 
@@ -25,23 +25,29 @@
 ```
 Assets/
 ├── CmgmUnityPackages/              随框架复制/更新；框架仓改动贴回此 subtree
-│   ├── CmgmFramework/              Core / Modules / Integrations / Editor / Bootstrap
-│   └── CmgmGameKits/               2.7b 音游暂存等（GameKits 功能【仅作参考】§6.4）
-├── _WorkSpace/                     **游戏层**：脚本、资源、Settings、Excels
-├── _TestSpace/                     **测试层**：测试脚本与场景（不进包）
-└── …（Wwise、XLua、Addressables 等第三方）
+│   ├── CmgmFramework/
+│   │   ├── Resources/              Settings、UI、Logo、字体
+│   │   ├── Editor/                 框架 Editor、脚手架
+│   │   └── Runtime/                运行时代码 ✅
+│   │       ├── Core/
+│   │       ├── Modules/
+│   │       ├── Integrations/
+│   │       └── Bootstrap/
+│   └── CmgmGameKits/
+├── _WorkSpace/                     **游戏层**：脚本、HotRes、Excels（无 Resources）
+├── _TestSpace/                     **测试层**
+└── …（第三方）
 
 Assets/_WorkSpace/                  （游戏层）
+├── GAME_WORKSPACE.md
 ├── Excels/
 ├── HotRes/
 │   ├── Lua/
 │   ├── Scenes/
 │   ├── UI/Panels/
-│   └── RhythmMap/
-├── Resources/
-│   └── CmgmFrameSettings.asset
-└── Scripts/                        游戏层 C#（无 Game 中间目录）
-    ├── Bootstrap/                  GameBootstrap
+│   └── RhythmMap/                  Demo 专有
+└── Scripts/
+    ├── Bootstrap/
     ├── UI/Panels/
     ├── Archive/
     └── Config/
@@ -51,14 +57,12 @@ Assets/_TestSpace/                  （测试层）
 └── Scenes/
 ```
 
-> **三层划分：** `CmgmUnityPackages` = 框架与拓展包；`_WorkSpace` = 游戏层；`_TestSpace` = 测试层。  
-> **路径常量：** `Paths.WorkSpaceScripts.*` 对应 `_WorkSpace/Scripts/` 子目录；`namespace CMGM.Game` 仍用于游戏层类型名，与目录无关。
+> **三层划分：** `CmgmUnityPackages` = 框架与拓展包（含 **Resources 内置**）；`_WorkSpace` = 游戏层增量；`_TestSpace` = 测试层。  
+> **CmgmFramework 三分：** `Resources/`（内置 asset）+ `Editor/` + `Runtime/`（Core / Modules / Integrations / Bootstrap）。**`Templates/`**（main.lua、MainPanel 种子）远期另议。
 
 ### 2.2 远期（按需）
 
 ```
-_WorkSpace/
-  GAME_WORKSPACE.md                 游戏层约定（项目脚手架1.3；非 ARCHITECTURE）
 Packages/（项目脚手架1.6 远期 UPM）
   com.cmgm.core/
   com.cmgm.modules.*/
@@ -66,15 +70,15 @@ Packages/（项目脚手架1.6 远期 UPM）
 
 ### 路径常量入口
 
-所有路径由 **`Consts.Paths`**（`CmgmUnityPackages/CmgmFramework/Core/Consts.Paths.cs`）统一定义：
+所有路径由 **`Consts.Paths`**（`CmgmUnityPackages/CmgmFramework/Runtime/Core/Consts.Paths.cs`）统一定义：
 
 - **`WorkSpace`** — 游戏层根（`CmgmFrameSettings.WORK_SPACE_ROOT`，默认 `Assets/_WorkSpace`）
 - **`TestSpace`** — 测试层根（`Assets/_TestSpace`）
 - **`ScriptsPath`** / **`TestScriptsPath`** — 各层脚本根
 - **共享**：`HotRes`、`ARCHIVE_PATH`、`ConfigData` 等
 - **`Paths.Package.*`** — `CmgmUnityPackages` 包根（`Framework`、`GameKits`）
-- **`Paths.Framework.*`** — 框架目录（派生自 `Paths.Package.Framework`）
-- **`Paths.WorkSpaceScripts.*`** — 游戏层脚本子目录（`Bootstrap`、`UI_Panels`、`Archive`、`Config`）
+- **`Paths.Framework.*`** — 框架目录（`Resources`、`Editor`、**`Runtime`**、`Core`、`Modules`…）
+- **`Paths.WorkSpaceScripts.*`** — 游戏层脚本子目录
 - **`Paths.Framework.DataModule.*`** — 框架 Data 模块（`Archive`、`Config`）
 
 > **文档分工：** `ARCHITECTURE.md` 随**框架**（将来随 CmgmFramework 或框架仓库）；`GAME_WORKSPACE.md` 随**每个游戏项目**的 `_WorkSpace`。
@@ -100,7 +104,7 @@ Packages/（项目脚手架1.6 远期 UPM）
 
 ## 3. 模块清单
 
-### 3.1 核心模块（`Framework/Core/`，`CMGM.Core`）
+### 3.1 核心模块（`Runtime/Core/`，`CMGM.Core`）
 
 | 组件 | 文件 | 职责 | 成熟度 |
 |------|------|------|--------|
@@ -112,7 +116,7 @@ Packages/（项目脚手架1.6 远期 UPM）
 | 日志 | `CoreUtils/CmgmLog` | 分级日志；Error 不受 LOG 开关影响 | ★★★ |
 | Mono 调度 | `MonoManager/` | Update 委托挂载 | ★★ |
 
-### 3.2 UI（`Framework/Modules/UI/`，`CMGM.UI`）
+### 3.2 UI（`Runtime/Modules/UI/`，`CMGM.UI`）
 
 | 组件 | 职责 | 成熟度 |
 |------|------|--------|
@@ -121,7 +125,7 @@ Packages/（项目脚手架1.6 远期 UPM）
 | `Panels/MainPanel` 等 | `_WorkSpace/Scripts/UI/Panels/` ✅ | — |
 | Editor 工具 | Panel 模板创建、快速搜索 | ★★★ |
 
-### 3.3 数据（`Framework/Modules/Data/`，`CMGM.Data`）
+### 3.3 数据（`Runtime/Modules/Data/`，`CMGM.Data`）
 
 | 组件 | 职责 | 成熟度 |
 |------|------|--------|
@@ -132,7 +136,7 @@ Packages/（项目脚手架1.6 远期 UPM）
 | `GameRuntimeData` | 游戏存档结构（`_WorkSpace/Scripts/Archive/`）✅ | — |
 | `CipherTool` | 配表 / 存档加解密 | ★★★ |
 
-### 3.4 Lua（契约 `Core/ILuaService`；实现 `Framework/Integrations/Lua/`）
+### 3.4 Lua（契约 `Runtime/Core/ILuaService`；实现 `Runtime/Integrations/Lua/`）
 
 | 组件 | 职责 | 程序集 | 成熟度 |
 |------|------|--------|--------|
@@ -140,7 +144,7 @@ Packages/（项目脚手架1.6 远期 UPM）
 | `LuaManager` | LuaEnv 生命周期、Loader 链、脚本执行；实现 `ILuaService` | `Assembly-CSharp` | ★★★ |
 | `LuaBridge` | C# ↔ Lua 桥接（Talk / Wait / DebugLog）；保留全局 namespace（`main.lua` 调 `CS.LuaBridge`） | `Assembly-CSharp` | ★★ |
 
-> **现状（2026-06-19 决策，见 §7.5）：** Lua **不单独建 asmdef**。XLua 退回官方 master（无 asmdef、待在 `Assembly-CSharp`）；契约 `ILuaService` 放 `CMGM.Core`，实现放 `Framework/Integrations/Lua/`；Boot **显式** `await LuaManager.InitAsync()`（§6.5）。被 asmdef 封装的 Module 只依赖契约，不碰 XLua（依赖倒置）。
+> **现状（2026-06-19 决策，见 §7.5）：** Lua **不单独建 asmdef**。XLua 退回官方 master（无 asmdef、待在 `Assembly-CSharp`）；契约 `ILuaService` 放 `CMGM.Core`，实现放 `Runtime/Integrations/Lua/`；Boot **显式** `await LuaManager.InitAsync()`（§6.5）。被 asmdef 封装的 Module 只依赖契约，不碰 XLua（依赖倒置）。
 
 **Lua 加载策略：**
 
@@ -157,7 +161,7 @@ Packages/（项目脚手架1.6 远期 UPM）
 | `GameBootstrap` | **游戏组合根**（`_WorkSpace/Scripts/Bootstrap/`）：进游戏 Loading 链里的 `EnterGameplayAsync` | ★★ |
 
 > **设计决策（2026-06-19）：** **显式 Boot 优先** + **`LazySingleton` / `BootSingleton`**（§6.5a）；Boot 型 **`await InitAsync()`**。
-> **当前位置（项目脚手架1.4 ✅）：** `Assets/CmgmUnityPackages/CmgmFramework/Bootstrap/CmgmFrameBoot.cs`（`namespace CMGM.Bootstrap`，**无 asmdef**，落默认 `Assembly-CSharp`——Boot 须直接 `await LuaManager.InitAsync()` 等，见 §6.5 / §7.5）。
+> **当前位置（项目脚手架1.4 ✅）：** `Assets/CmgmUnityPackages/CmgmFramework/Runtime/Bootstrap/CmgmFrameBoot.cs`（`namespace CMGM.Bootstrap`，**无 asmdef**，落默认 `Assembly-CSharp`——Boot 须直接 `await LuaManager.InitAsync()` 等，见 §6.5 / §7.5）。
 
 ### 3.6 场景加载与流程（**不建 Scene 模块**；`ScenesManager` 为临时宿主）
 
@@ -279,23 +283,24 @@ InitScene（CmgmFrameBoot.Awake）
 
 ```
 Assets/CmgmUnityPackages/
-  CmgmFramework/                   Core / Modules / Integrations / Editor / Bootstrap
-    Core/
-    Modules/
-    Integrations/Lua/
+  CmgmFramework/
+    Resources/
     Editor/
-    Bootstrap/
-  CmgmGameKits/                    2.7b 音游暂存等（GameKits 功能见 §6.4【仅作参考】）
+    Runtime/
+      Bootstrap/
+      Core/
+      Modules/
+      Integrations/
+  CmgmGameKits/
 
 Assets/_WorkSpace/
+  GAME_WORKSPACE.md
   HotRes/  Excels/
-  Scripts/
   Scripts/
     Bootstrap/
     UI/Panels/
     Archive/
     Config/
-  Resources/CmgmFrameSettings.asset
 
 Packages/（远期，见 项目脚手架1.6）
   com.cmgm.core/
@@ -318,12 +323,12 @@ Assets/_WorkSpace/Scripts/
 
 | 层级 | 目录 | 模块 id | 默认 | 说明 |
 |------|------|---------|------|------|
-| **Core** | `CmgmFramework/Core/` | `Core` | **必选** | `CMGM.Core` asmdef ✅ |
-| **Modules** | `CmgmFramework/Modules/UI/` | `UI` | 推荐 | `CMGM.UI` ✅ |
+| **Core** | `CmgmFramework/Runtime/Core/` | `Core` | **必选** | `CMGM.Core` asmdef ✅ |
+| **Modules** | `CmgmFramework/Runtime/Modules/UI/` | `UI` | 推荐 | `CMGM.UI` ✅ |
 | **Modules** | `…/Data/` | `Data` | 推荐 | `CMGM.Data` ✅ |
 | **—** | `Modules/Scene/` | — | **不建模块** | **临时** `ScenesManager`（`Assembly-CSharp`）；流程待 GameState 接管（§3.6） |
 | **Modules** | `…/Loading/` | `Loading` | 可选 | 支线「Loading系统」；`CMGM.Loading` |
-| **Integrations** | `CmgmFramework/Integrations/Lua/` | `Lua` | 可选 | **不建 asmdef**，契约 `ILuaService` 入 Core（§7.5） |
+| **Integrations** | `CmgmFramework/Runtime/Integrations/Lua/` | `Lua` | 可选 | **不建 asmdef**，契约 `ILuaService` 入 Core（§7.5） |
 | **Modules** | `…/Audio/` | `Audio` | 可选 | `CMGM.Audio`（编译边界2.7） |
 | **Modules** | `…/Input/` | `Input` | 可选 | `CMGM.Input`（编译边界2.8） |
 | **Modules** | `…/Optional/` | `Optional` | 可选 | 原 `OptionalSystem/`；事件总线等 |
@@ -335,7 +340,7 @@ Assets/_WorkSpace/Scripts/
 |------|------|
 | **已完成基线** | 物理目录 + 去 `Game*` 前缀；UI / Data / Audio / Input / Editor asmdef 闭环 |
 | **主线 编译边界2.6~2.9** ✅ | Lua（Integrations，**无** asmdef）/ Audio / Input / Editor 有 asmdef；Bootstrap / Scene 临时宿主 / Integrations 无 asmdef |
-| **主线 启动编排3.3** ✅ | `CmgmFrameBoot` → `Framework/Bootstrap/`；显式 InitAsync（已验收） |
+| **主线 启动编排3.3** ✅ | `CmgmFrameBoot` → `Runtime/Bootstrap/`；显式 InitAsync（已验收） |
 | **内容扩展1.5 / 项目脚手架1.6** | Editor 模块导入向导（远期） |
 
 最小 JRPG 示例：`Core` + `UI` + `Data` + `Lua`（+ `Integrations`）  
@@ -345,18 +350,18 @@ Assets/_WorkSpace/Scripts/
 
 | 位置 | 内容 | 归属 | 说明 |
 |------|------|------|------|
-| `Framework/Core/` | Runtime | 已完成基线 | 原 `Scripts/GameCore/` 内容；**不含** Editor；`CMGM.Core` |
-| `Framework/Modules/*/Editor/` | 模块 Editor | 各模块闭环 | 如 `ExcelTool`→Data、`Edt_CreateUIPanelAction`→UI |
-| `Framework/Editor/` | 框架级 Editor | **编译边界2.9 ✅** | 由原 `_WorkSpace/Editor/` 迁入：路径检查、通用模板、导入向导 |
+| `Runtime/Core/` | Runtime | 已完成基线 | 原 `Scripts/GameCore/` 内容；**不含** Editor；`CMGM.Core` |
+| `Runtime/Modules/*/Editor/` | 模块 Editor | 各模块闭环 | 如 `ExcelTool`→Data、`Edt_CreateUIPanelAction`→UI |
+| `CmgmFramework/Editor/` | 框架级 Editor | **编译边界2.9 ✅** | 路径检查、脚手架、通用模板 |
 | `_WorkSpace/Scripts/Editor/` | 游戏 Editor（按需） | 远期 | 仅本项目策划/关卡工具，不随框架复制 |
 
-**为何不放进 `Framework/Core/`？**
+**为何不放进 `Runtime/Core/`？**
 
 1. **程序集边界**：`CMGM.Core` 是 Runtime；Editor 需独立 `CMGM.*.Editor` asmdef，且常 `includePlatforms: Editor`。
 2. **依赖范围**：工作区 Editor 常横切多个 Modules（UI 模板 + 配表路径 + manifest），放在 Core 下易让人误以为「只依赖 Core Runtime」。
 3. **可选模块导入**：导入向导勾选 Modules 时，`Framework/Editor/` 作为框架壳层保留；各 `Modules/*/Editor/` 随模块一并勾选或跳过。
 
-**结论：** `_WorkSpace/Editor/` → **`Framework/Editor/`**（与 `Core/`、`Modules/` **同级**），**不要**塞进 `Framework/Core/`。
+**结论：** `_WorkSpace/Editor/` → **`CmgmFramework/Editor/`**（与 **`Runtime/`**、**`Resources/`** 同级），**不要**塞进 `Runtime/Core/`。
 
 ### 6.3 模块目录重命名（已完成基线，去 `Game*` 前缀）
 
@@ -364,17 +369,17 @@ Assets/_WorkSpace/Scripts/
 
 | 现目录 | 框架目标 | 计划 namespace / asmdef |
 |--------|----------|-------------------------|
-| `GameCore/` | `Framework/Core/` | `CMGM.Core` ✅ |
-| `GameUI/` | `Framework/Modules/UI/` | `CMGM.UI` ✅ |
-| `GameData/` | `Framework/Modules/Data/` | `CMGM.Data` ✅ |
-| `GameLevel/` | `Framework/Modules/Scene/` | **不建模块**（临时 `ScenesManager`，§3.6） |
+| `GameCore/` | `Runtime/Core/` | `CMGM.Core` ✅ |
+| `GameUI/` | `Runtime/Modules/UI/` | `CMGM.UI` ✅ |
+| `GameData/` | `Runtime/Modules/Data/` | `CMGM.Data` ✅ |
+| `GameLevel/` | `Runtime/Modules/Scene/` | **不建模块**（临时 `ScenesManager`，§3.6） |
 | `LuaCore/` | `Framework/Integrations/Lua/` | 无 asmdef；`ILuaService` 在 Core ✅ |
-| `AudioSystem/` | `Framework/Modules/Audio/` | `CMGM.Audio`（编译边界2.7） |
-| `GameInput/` | `Framework/Modules/Input/` | `CMGM.Input`（编译边界2.8） |
-| `OptionalSystem/` | `Framework/Modules/Optional/` | `CMGM.Optional` |
-| `Utils/` | `Framework/Modules/Utils/` | 随模块闭环 |
+| `AudioSystem/` | `Runtime/Modules/Audio/` | `CMGM.Audio`（编译边界2.7） |
+| `GameInput/` | `Runtime/Modules/Input/` | `CMGM.Input`（编译边界2.8） |
+| `OptionalSystem/` | `Runtime/Modules/Optional/` | `CMGM.Optional` |
+| `Utils/` | `Runtime/Modules/Utils/` | 随模块闭环 |
 
-> **Core 无 `GameCore` 子文件夹**：原 `GameCore/` 内文件直接进入 `Framework/Core/`，不再嵌套一层 `GameCore/`。
+> **Core 无 `GameCore` 子文件夹**：原 `GameCore/` 内文件直接进入 `Runtime/Core/`，不再嵌套一层 `GameCore/`。
 
 ### 6.4 CmgmGameKits（【仅作参考】· 非可靠计划）
 
@@ -425,7 +430,7 @@ await ScenesManager.Instance.GoToMainScene();
 
 | 组合根 | 文件（当前） | 调用时机 | 典型 Init 内容 |
 |--------|--------------|----------|----------------|
-| **框架 Boot** | `Framework/Bootstrap/CmgmFrameBoot.cs`（`Assembly-CSharp`） | InitScene / Logo 链 | UI、Archive、Lua 等 **`BootSingleton`**；Addressables 预载 |
+| **框架 Boot** | `Runtime/Bootstrap/CmgmFrameBoot.cs`（`Assembly-CSharp`） | InitScene / Logo 链 | UI、Archive、Lua 等 **`BootSingleton`**；Addressables 预载 |
 | **游戏 Boot** | `_WorkSpace/Scripts/Bootstrap/GameBootstrap.cs` | 进游戏 Loading 链 | 配表、关卡资源、gameplay Bank 等 |
 | **懒加载** | 不进 Boot 文件 | 首次业务使用前 | **`LazySingleton`**（纯 C#；Mono 见 Audio 支线） |
 
@@ -439,17 +444,17 @@ await ScenesManager.Instance.GoToMainScene();
 
 | 阶段 | 路径 |
 |------|------|
-| **启动编排3.3 ✅** | `Assets/CmgmUnityPackages/CmgmFramework/Bootstrap/CmgmFrameBoot.cs`（目录归位；**不**建 `CMGM.Bootstrap.asmdef`） |
+| **启动编排3.3 ✅** | `Assets/CmgmUnityPackages/CmgmFramework/Runtime/Bootstrap/CmgmFrameBoot.cs`（目录归位；**不**建 `CMGM.Bootstrap.asmdef`） |
 | **项目脚手架1.4 ✅** | 同上（物理搬迁至 `CmgmUnityPackages/CmgmFramework/`） |
 
-与 `GameBootstrap` 对称：框架 Boot 在 **`CmgmFramework/Bootstrap/`**，游戏 Boot 在 **`_WorkSpace/Scripts/Bootstrap/`**。
+与 `GameBootstrap` 对称：框架 Boot 在 **`CmgmFramework/Runtime/Bootstrap/`**，游戏 Boot 在 **`_WorkSpace/Scripts/Bootstrap/`**。
 
 #### Boot 程序集边界：三种方案对比
 
 | 方案 | Boot 位置 / 程序集 | 优点 | 缺点 | 本框架 |
 |------|-------------------|------|------|--------|
-| **A. 默认程序集 + Bootstrap 目录** | `Framework/Bootstrap/CmgmFrameBoot.cs`，无 asmdef → `Assembly-CSharp` | **Boot 内可写全 Init 列表**（含 Lua / Scene）；与显式 Boot 纪律一致；目录仍清晰 | Boot 与 Integrations 等同程序集，编译边界较松 | **当前（3.3 ✅）** |
-| **B. Bootstrap asmdef** | `Framework/Bootstrap/` + `CMGM.Bootstrap.asmdef`，`references` 勾选已选 Modules | Boot 程序集边界清晰；适合随 `CmgmFramework` 打包 | asmdef **不能**引用 `Assembly-CSharp`；Lua/Scene 需注册桥接或内联，**违背显式 Boot**；仅当 Boot 不碰 Integrations 时值得 | **可选远期**（Editor 生成 Boot 或 Lua 可 asmdef 时再评估） |
+| **A. 默认程序集 + Bootstrap 目录** | `Runtime/Bootstrap/CmgmFrameBoot.cs`，无 asmdef → `Assembly-CSharp` | **Boot 内可写全 Init 列表**（含 Lua / Scene）；与显式 Boot 纪律一致；目录仍清晰 | Boot 与 Integrations 等同程序集，编译边界较松 | **当前（3.3 ✅）** |
+| **B. Bootstrap asmdef** | `Runtime/Bootstrap/` + `CMGM.Bootstrap.asmdef`，`references` 勾选已选 Modules | Boot 程序集边界清晰；适合随 `CmgmFramework` 打包 | asmdef **不能**引用 `Assembly-CSharp`；Lua/Scene 需注册桥接或内联，**违背显式 Boot**；仅当 Boot 不碰 Integrations 时值得 | **可选远期**（Editor 生成 Boot 或 Lua 可 asmdef 时再评估） |
 | **C. Bootstrap 仅引 Core** | `CMGM.Bootstrap` 只 `references CMGM.Core` | Core 边界最严 | 必须 Registry / 反射 / 代码生成 | **不做默认**；见远期支线「模块启动Registry系统」 |
 
 ```
@@ -490,9 +495,9 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 |------|------|
 | **启动编排3.1** ✅ | 文档约定：两组合根 + Init 纪律 + 三档时机（§6.5）；**不改运行时行为** |
 | **启动编排3.2** ✅ | 同上 §6.5a（**范围：仅纯 C# 单例**） |
-| **启动编排3.3** ✅ | `CmgmFrameBoot` → `Framework/Bootstrap/`（方案 A：目录 + 显式 InitAsync，**无** Bootstrap asmdef） |
+| **启动编排3.3** ✅ | `CmgmFrameBoot` → `Runtime/Bootstrap/`（方案 A：目录 + 显式 InitAsync，**无** Bootstrap asmdef） |
 
-**当前：** Boot 在 `Framework/Bootstrap/`（方案 A ✅）；启动编排主线至此冻结。
+**当前：** Boot 在 `Runtime/Bootstrap/`（方案 A ✅）；启动编排主线至此冻结。
 
 ---
 
@@ -544,12 +549,14 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | 框架/游戏分层 | `CmgmUnityPackages/` + `_WorkSpace/Scripts/`；Panel / 配表 / 存档在游戏层脚本目录 |
 | UI / Data / Audio / Input / Editor | 各模块 asmdef 闭环（Editor 含 `CMGM.Editor`、`CMGM.UI.Editor`、`CMGM.Data.Editor`） |
 | Lua | `Integrations/Lua/` + `ILuaService`（**无** Lua asmdef，方案 C） |
-| 启动编排 | `LazySingleton` / `BootSingleton` + `InitAsync`；`CmgmFrameBoot` → `CmgmUnityPackages/CmgmFramework/Bootstrap/`（无 Bootstrap asmdef）；**Play 已验收 ✅** |
+| 启动编排 | `LazySingleton` / `BootSingleton` + `InitAsync`；`CmgmFrameBoot` → `CmgmUnityPackages/CmgmFramework/Runtime/Bootstrap/`（无 Bootstrap asmdef）；**Play 已验收 ✅** |
 | 项目脚手架1.4 | Framework + GameKits → `CmgmUnityPackages`；`Paths.Package` 收口 ✅ |
 | Lua Boot 修复 | 根脚本 Init 阶段不走 `LuaBridge.Instance`，内部 `CompleteCurrentExecution` |
 | 进游戏入口 | `ScenesManager` 配置化 + **`ScenesManager` 仅临时流程宿主**（§3.6）；`GameBootstrap.EnterGameplayAsync` |
 | 项目脚手架1.1 | `CmgmUnityPackages/` 占位 + README |
-| 项目脚手架1.4 | Framework + GameKits 迁入 `CmgmUnityPackages`；`Consts.Paths.Package` 收口 |
+| 项目脚手架1.3 | `_WorkSpace/GAME_WORKSPACE.md` 游戏层文档 ✅ |
+| 项目脚手架1.2 | `Edt_WorkSpaceScaffold` 菜单创建 _WorkSpace / _TestSpace 骨架 ✅ |
+| 框架 Resources + Runtime 三分 | Settings/UI/Logo/Font → `Resources/`；代码 → `Runtime/` ✅ |
 | 迭代模型 | 主线/支线重排；旧 0→9 归档 |
 
 > 完整的旧线性步骤、验收表与废止记录见 `ARCHITECTURE_DEPRECATED.md`。
@@ -564,7 +571,7 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | **编译边界2.9** ✅ | Editor 闭环（`CMGM.Editor`） | 编译边界2.8 完成 ✅ | **已完成** |
 | **启动编排3.1** ✅ | 文档约定：两组合根 + Init 纪律 + 三档时机 + Boot 三方案对比 + Registry 阈值（§6.5、§7.2b）；**不改运行时** | 编译边界2.9 完成 ✅ | **完成 ✅（2026-06-19）** |
 | **启动编排3.2** ✅ | **仅纯 C#**：`LazySingleton` / `BootSingleton` + `InitAsync`；迁移 UI / Archive / Lua；Mono 单例留 Audio 支线 | 启动编排3.1 完成 ✅ | **完成 ✅（已验收）** |
-| **启动编排3.3** ✅ | `CmgmFrameBoot` → `Framework/Bootstrap/`；显式 InitAsync（无 Bootstrap asmdef） | 启动编排3.2 完成 ✅ | **完成 ✅（已验收）** |
+| **启动编排3.3** ✅ | `CmgmFrameBoot` → `Runtime/Bootstrap/`；显式 InitAsync（无 Bootstrap asmdef） | 启动编排3.2 完成 ✅ | **完成 ✅（已验收）** |
 
 > 主线 **启动编排3.3** 已完成，启动契约（显式 Boot）冻结；物理搬迁见 **项目脚手架1.4**。Registry 非主线，见 §7.2b + 远期支线。
 
@@ -611,7 +618,7 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | **GameState系统** | GameState系统1.1 | 启动编排3.3 ✅ | 已解锁 |
 | **事件总线系统** | 事件总线系统1.1 | 启动编排3.3 ✅ | 已解锁 |
 | **依赖抽象系统** | 依赖抽象系统1.1 | 编译边界2.8 ✅ | 已解锁（按需） |
-| **项目脚手架与包体迁移** | **项目脚手架1.3** | 编译边界2.9 ✅；1.1 ✅；**1.4 ✅** | 已解锁 |
+| **项目脚手架与包体迁移** | **项目脚手架1.5** | 1.2 ✅ | 已解锁 |
 | **GameKits** | GameKits1.1 | 未定（草案写 **项目脚手架1.4** 后，**非可靠**） | 🔒【仅作参考】 |
 | **模块启动Registry系统** | 模块启动Registry系统1.1 | 启动编排3.3 ✅ **且** Boot 链 ≥10 | 🔒 远期 |
 | **网游预埋** | 网游预埋1.1 | 存档升级 **且** GameState 完成 | 🔒 远期 |
@@ -700,7 +707,7 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | **内容扩展1.2** | 场景持久化：进出场景对象 Save/Load 钩子（按需；**非**预建 Scene 模块） | 进出场景状态保留 |
 | **内容扩展1.3** | 配表类型扩展：多键表、嵌套结构、本地化列 | ExcelTool 支持 |
 | **内容扩展1.4** | SRPG 接口：网格 / 回合 / 技能预留（与 GameState Battle 衔接） | 与 Battle 态衔接 |
-| **内容扩展1.5** | Editor 模块导入向导：勾选 `Framework/Modules/*` → 改写 Boot `Init()` 源码 + 依赖报告（**可选**生成 `CMGM.Bootstrap.asmdef`；与 **项目脚手架1.6** 合并） | 复制到新工程可裁剪 |
+| **内容扩展1.5** | Editor 模块导入向导：勾选 `Runtime/Modules/*` → 改写 Boot `Init()` 源码 + 依赖报告（**可选**生成 `CMGM.Bootstrap.asmdef`；与 **项目脚手架1.6** 合并） | 复制到新工程可裁剪 |
 
 > **去向说明：** 旧 8.4「Lua 懒加载」→ **Lua系统1.2**；旧 8.5「MUG」→ 2.7b 目录暂存（非 GameKits 正式计划）。
 
@@ -708,14 +715,14 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 
 > **动因：** 框架代码与游戏内容混在 `_WorkSpace/Scripts` 不便跨项目拷贝；常量入口分散（`Consts.Paths` / `MusicGameConsts` 等）；新项目缺少标准游戏层目录。  
 > **目标形态：** 可移植代码 → `Assets/CmgmUnityPackages/{CmgmFramework,CmgmGameKits}`；游戏层 → `_WorkSpace` + `_TestSpace`；框架文档 → `ARCHITECTURE.md`（随框架）；游戏层约定 → `_WorkSpace/GAME_WORKSPACE.md`（随项目）。  
-> **节奏：** 1.1 ✅ → **1.4 ✅**（本仓先迁目录）→ **1.3** → **1.2**（新工程一键骨架）→ 1.5…；**最前节点 = 1.3**（1.2 为同线下一未完成步）。
+> **节奏：** 1.1 ✅ → **1.4 ✅** → **1.3 ✅** → **1.2 ✅** → **1.5**…；**最前节点 = 1.5**。
 
 | 子步 | 内容 | 验收 |
 |------|------|------|
 | **项目脚手架1.1** ✅ | `CmgmUnityPackages/` 占位 + ARCHITECTURE 目标结构 | 占位目录存在 |
 | **项目脚手架1.4** ✅ | Framework + `CmgmGameKits` **目录**物理搬迁 → `CmgmUnityPackages`；`Consts.Paths.Package` 收口 | 编译 + Play |
-| **项目脚手架1.3** | `_WorkSpace/GAME_WORKSPACE.md` 模板 | 游戏文档与框架文档分离 |
-| **项目脚手架1.2** | WorkSpace 脚手架 Editor（一键建 `_WorkSpace` 骨架） | 空工程可建骨架；PathCheck 通过 |
+| **项目脚手架1.3** ✅ | `_WorkSpace/GAME_WORKSPACE.md` 模板 | 游戏文档与框架文档分离 |
+| **项目脚手架1.2** ✅ | WorkSpace 脚手架 Editor（`草木句萌/脚手架/` 菜单） | 空工程可建骨架；PathCheck 通过 |
 | **项目脚手架1.5** | 空工程迁移验证 | 可复制 |
 | **项目脚手架1.6**（远期） | Manifest 驱动勾选 → 生成 Boot Init（+ 可选 asmdef） | 按勾选裁剪 |
 | **项目脚手架1.7**（按需） | 路径扫描自动生成 / 校验（与 **Lua系统1.3** / §2b **E** 衔接） | 路径少手写 |
@@ -768,7 +775,7 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | 线 | 最前节点 | 状态 | 解锁条件 | 预估变更量 | 教学难度 |
 |----|----------|------|----------|------------|----------|
 | **主线（编译边界 + 启动编排）** | — | ✅ 全线完成 | — | — | — |
-| **项目脚手架与包体迁移** | **项目脚手架1.3** | 已解锁 | 1.4 ✅ | **小**（1 个 md 模板） | ★ |
+| **项目脚手架与包体迁移** | **项目脚手架1.5** | 已解锁 | 1.2 ✅ | **中**（新工程复制验证） | ★★★ |
 | **GameState系统** | GameState系统1.1 | 已解锁 | 启动编排3.3 ✅ | **中**（接口 + 状态机骨架 3~6 文件） | ★★★☆ |
 | **Loading系统** | Loading系统1.1 | 已解锁 | Core + UI ✅ | **中**（新 `CMGM.Loading` + 进度 UI） | ★★★☆ |
 | **Lua系统** | Lua系统1.1 | 已解锁 | 2.6 ✅ | **小~中**（Registry 接口 + 游戏侧注册示例） | ★★★☆ |
@@ -781,7 +788,7 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | **模块启动Registry系统** | 模块启动Registry系统1.1 | 🔒 远期 | 3.3 ✅ **且** Boot 链 ≥10 | **大** | ★★★★ |
 | **网游预埋** | 网游预埋1.1 | 🔒 远期 | 存档升级 + GameState 完成 | **大** | ★★★★★ |
 
-> **说明：** 脚手架子步顺序为 **1.4 → 1.3 → 1.2**（本仓先迁包体，再补文档与新建工程工具）。同线内 `1.2` 是 `1.3` 完成后的下一步，不是并列最前。并行推进时，各选**不同支线**的最前节点即可。
+> **说明：** 脚手架子步顺序为 **1.4 → 1.3 → 1.2**（本仓先迁包体，再补文档与新建工程工具）。并行推进时，各选**不同支线**的最前节点即可。
 
 ### 7.5 跨线解锁关系 + 设计决策
 
@@ -791,7 +798,7 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 |------|----------|------|
 | GameState系统 | 依赖主线「启动编排3.3」 | Boot / 流程入口稳定后再接管 `GoToMainScene` |
 | Loading系统1.3 | 软依赖「启动编排3.2」 | 生命周期（Init / await Lua）定稿后接通进游戏链 |
-| **项目脚手架1.2** | 依赖 **项目脚手架1.3** + **1.4 ✅** | 一键骨架应对准搬迁后路径 |
+| **项目脚手架1.2** | 依赖 **项目脚手架1.3 ✅** + **1.4 ✅** | 一键骨架应对准搬迁后路径 |
 | **项目脚手架1.4** ✅ | 依赖 启动编排3.3 ✅ + **1.1 ✅** | 物理搬迁至 `CmgmUnityPackages`（勿与其他支线 **1.4** 混淆） |
 | 网游预埋 | 依赖**支线**（存档升级 + GameState） | 远期 |
 
@@ -836,11 +843,31 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | **文档分工** | `ARCHITECTURE.md` 跟框架；每个游戏 `_WorkSpace/GAME_WORKSPACE.md` 描述游戏层约定 |
 | **常量体系** | 并入 **项目脚手架**（1.1 盘点、**项目脚手架1.4** 路径规范、**项目脚手架1.7** 自动生成） |
 
+**设计决策记录 · 2026-06-19（CmgmFramework 目录三分：Resources / Editor / Runtime）**
+
+| 项 | 结论 |
+|------|------|
+| **顶层** | `CmgmFramework/{Resources,Editor,Runtime}`；**不用**顶层 `Scripts` |
+| **Runtime** | `Bootstrap/`、`Core/`、`Modules/`、`Integrations/` 均在 `Runtime/` 下 |
+| **模块 Editor** | 仍在 `Runtime/Modules/*/Editor/`（asmdef 限定 Editor 平台） |
+| **路径常量** | `Paths.Framework.Runtime`、`Bootstrap`、`Integrations` 等指向 `Runtime/…` |
+
+**设计决策记录 · 2026-06-19（CmgmFramework 内置 Resources）**
+
+| 项 | 结论 |
+|------|------|
+| **归属** | `CmgmFrameSettings`、UI 基建（UICamera/Canvas/EventSystem）、Logo（BeforeGame）、默认字体 → **`CmgmFramework/Resources/`**（框架包随带，非游戏层） |
+| **路径常量** | `Paths.Framework.Resources`；`Resources.Load` 键不变（如 `UI/UICamera`、`CmgmFrameSettings`） |
+| **_WorkSpace** | **不设** `Resources/`；游戏层 = Scripts + HotRes + Excels 等增量 |
+| **脚手架 1.2** | 不再在工作区创建 `CmgmFrameSettings`；新工程依赖框架包内默认 asset，按需改字段 |
+| **Runtime 三分** | 见上节「目录三分」；`Paths.Framework.Runtime` ✅ |
+| **远期目录** | **`Templates/`** 种子（main.lua、MainPanel）复制到 `_WorkSpace` — 待议 |
+
 **设计决策记录 · 2026-06-19（启动编排3.3 · asmdef  pragmatic）**
 
 | 项 | 结论 |
 |------|------|
-| **3.3 范围** | Boot **目录**迁 `Framework/Bootstrap/` ✅；**不**建 `CMGM.Bootstrap.asmdef`（曾试方案 B，因 asmdef 不能引用 `Assembly-CSharp` 而引入注册桥接，与「显式 Boot、不用 Registry」冲突，已回退）。 |
+| **3.3 范围** | Boot **目录**迁 `Runtime/Bootstrap/` ✅；**不**建 `CMGM.Bootstrap.asmdef`（曾试方案 B，因 asmdef 不能引用 `Assembly-CSharp` 而引入注册桥接，与「显式 Boot、不用 Registry」冲突，已回退）。 |
 | **asmdef 原则** | **按需加、不强迫**（§7.0）。Bootstrap、Integrations/Lua、Scene 临时宿主均无 asmdef。 |
 | **远期 Bootstrap asmdef** | 仅当 Boot 不再直接 Init Lua/Scene（或 Editor 生成 Boot 源码、或 XLua 官方恢复可维护 asmdef）时再评估方案 B。 |
 
@@ -871,7 +898,7 @@ Excel（Excels/）
 
 ```
 GameRuntimeData（I_Saveable，_WorkSpace/Scripts/Archive/）
-  → ArchiveManager 序列化（Framework/Modules/Data/Archive/）
+  → ArchiveManager 序列化（Runtime/Modules/Data/Archive/）
   → persistentDataPath/Archives/
 ```
 
@@ -883,10 +910,12 @@ GameRuntimeData（I_Saveable，_WorkSpace/Scripts/Archive/）
 | `Paths.WorkSpaceScripts.Config` | `_WorkSpace/Scripts/Config/` | Excel 导出的配表 Container（只读） |
 | `Paths.WorkSpaceScripts.Bootstrap` | `_WorkSpace/Scripts/Bootstrap/` | 游戏组合根 `GameBootstrap` |
 | `Paths.WorkSpaceScripts.UI_Panels` | `_WorkSpace/Scripts/UI/Panels/` | Panel 脚本 |
-| `Paths.Framework.DataModule.Archive` | `CmgmFramework/Modules/Data/Archive/` | 存档框架（`ArchiveManager`、`I_Saveable`） |
-| `Paths.Framework.DataModule.Config` | `CmgmFramework/Modules/Data/Config/` | 配表框架（`ConfigTableManager`） |
-| `Paths.Framework.DataModule.Editor` | `CmgmFramework/Modules/Data/Editor/` | Data 模块 Editor（`ExcelTool`、`ArchiveEditor`） |
+| `Paths.Framework.DataModule.Archive` | `CmgmFramework/Runtime/Modules/Data/Archive/` | 存档框架（`ArchiveManager`、`I_Saveable`） |
+| `Paths.Framework.DataModule.Config` | `CmgmFramework/Runtime/Modules/Data/Config/` | 配表框架（`ConfigTableManager`） |
+| `Paths.Framework.DataModule.Editor` | `CmgmFramework/Runtime/Modules/Data/Editor/` | Data 模块 Editor（`ExcelTool`、`ArchiveEditor`） |
 | `Paths.Framework.Editor` | `CmgmFramework/Editor/` | 框架级 Editor |
+| `Paths.Framework.Runtime` | `CmgmFramework/Runtime/` | 运行时代码根 |
+| `Paths.Framework.Resources` | `CmgmFramework/Resources/` | Settings、UI 基建、Logo、字体 |
 | `Paths.Package.Framework` | `CmgmUnityPackages/CmgmFramework/` | **项目脚手架1.4** ✅ |
 | `Paths.Package.GameKits` | `CmgmUnityPackages/CmgmGameKits/` | **项目脚手架1.4** ✅ |
 
@@ -943,4 +972,4 @@ CmgmFrameSettings.ROOT_LUA_URI（如 main.lua.txt）
 
 ---
 
-*主线已全部完成。**项目脚手架1.4 ✅** 后，脚手架最前节点为 **项目脚手架1.3**；亦可并行 **GameState系统1.1** 等。详见 §7.6。*
+*脚手架 1.2 ✅ 后，本线最前节点：**项目脚手架1.5**（空工程迁移验证）。亦可并行 **GameState系统1.1** 等。详见 §7.6。*

@@ -1,0 +1,40 @@
+# 游戏层工作区说明
+
+> **本文档随游戏项目**，描述 `_WorkSpace` 约定。框架见 `Assets/CmgmUnityPackages/ARCHITECTURE.md`。
+
+---
+
+## 1. 目录角色
+
+| 目录 | 角色 |
+|------|------|
+| **`CmgmFramework/Resources/`** | 框架内置：Settings、UI 基建、Logo、字体 |
+| **`_WorkSpace/`** | 游戏层：Scripts、HotRes、Excels |
+| **`_TestSpace/`** | 测试层 |
+
+---
+
+## 2. 推荐 `_WorkSpace` 结构
+
+```
+_WorkSpace/
+├── GAME_WORKSPACE.md
+├── Excels/
+├── HotRes/
+│   ├── Lua/
+│   ├── Scenes/
+│   └── UI/Panels/
+└── Scripts/
+    ├── Bootstrap/
+    ├── UI/Panels/
+    ├── Archive/
+    └── Config/
+```
+
+框架配置：`CmgmFramework/Resources/CmgmFrameSettings.asset`。
+
+---
+
+## 3. 本项目专有说明
+
+（题材、特殊目录、配表清单等）

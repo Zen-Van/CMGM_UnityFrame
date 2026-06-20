@@ -55,16 +55,23 @@ namespace CMGM.Core
             /// <summary>配表二进制输出目录（StreamingAssets）</summary>
             public static string ConfigData => Application.streamingAssetsPath + "/TableConfig/";
 
-            /// <summary>框架目录（Core + Modules + Integrations + Editor + Bootstrap）</summary>
+            /// <summary>框架目录（Resources + Editor + Runtime 三分）</summary>
             public static class Framework
             {
                 public static string Root => Package.Framework;
-                public static string Core => Root + "/Core";
-                public static string Modules => Root + "/Modules";
+                /// <summary>运行时代码根（Core / Modules / Integrations / Bootstrap）</summary>
+                public static string Runtime => Root + "/Runtime";
+                public static string Core => Runtime + "/Core";
+                public static string Modules => Runtime + "/Modules";
+                public static string Bootstrap => Runtime + "/Bootstrap";
+                public static string Integrations => Runtime + "/Integrations";
                 /// <summary>框架级 Editor（路径检查、通用模板等，编译边界2.9）</summary>
                 public static string Editor => Root + "/Editor";
 
-                /// <summary>Framework/Modules/Data/ 模块（Archive 存档管线 + Config 配表管线）</summary>
+                /// <summary>框架内置 Resources（Settings、UI 基建、Logo、字体；Resources.Load）</summary>
+                public static string Resources => Root + "/Resources";
+
+                /// <summary>Runtime/Modules/Data/ 模块（Archive 存档管线 + Config 配表管线）</summary>
                 public static class DataModule
                 {
                     public static string Root => Modules + "/Data";

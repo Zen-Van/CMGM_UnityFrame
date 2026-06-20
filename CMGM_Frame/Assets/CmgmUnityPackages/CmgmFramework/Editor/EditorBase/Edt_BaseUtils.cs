@@ -14,14 +14,14 @@ public class Edt_BaseUtils
     [MenuItem("Assets/CMGM Search/入口场景", false, -200)]
     static void SelectInitScenesPath()//s = s.Substring(0,s.Length - 1)
     {
-        string path = "Assets/_CMGM_Frame/AbRes/Scenes/InitScene.unity";
+        string path = Consts.Paths.HotScene + "/InitScene.unity";
         PathSelect(path);
     }
 
     [MenuItem("Assets/CMGM Search/工程配置文件", false, -178)]
     static void SelectFrameSettingPath()//s = s.Substring(0,s.Length - 1)
     {
-        string path = Consts.Paths.WorkSpace + "/Resources/CmgmFrameSettings.asset";
+        string path = Consts.Paths.Framework.Resources + "/CmgmFrameSettings.asset";
         PathSelect(path);
     }
 

@@ -19,11 +19,14 @@ public class Edt_ProjectPathCheck
             CheckDirectory(Consts.Paths.ScriptsPath) &&
             CheckDirectory(Consts.Paths.Package.Framework) &&
             CheckDirectory(Consts.Paths.Package.GameKits) &&
+            CheckDirectory(Consts.Paths.Framework.Runtime) &&
             CheckDirectory(Consts.Paths.Framework.Core) &&
             CheckDirectory(Consts.Paths.Framework.Modules) &&
             CheckDirectory(Consts.Paths.Framework.DataModule.Archive) &&
             CheckDirectory(Consts.Paths.Framework.DataModule.Config) &&
             CheckDirectory(Consts.Paths.Framework.DataModule.Editor) &&
+            CheckDirectory(Consts.Paths.Framework.Resources) &&
+            CheckDirectory(Consts.Paths.Framework.Resources + "/UI") &&
             CheckDirectory(Consts.Paths.WorkSpaceScripts.Bootstrap) &&
             CheckDirectory(Consts.Paths.WorkSpaceScripts.UI_Panels) &&
             CheckDirectory(Consts.Paths.WorkSpaceScripts.Archive) &&
