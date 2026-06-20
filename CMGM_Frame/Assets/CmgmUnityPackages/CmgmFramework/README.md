@@ -1,5 +1,7 @@
-# CmgmFramework（占位）
-
-**尚未迁入代码。** 启动编排3.3 ✅ 后，由 **项目脚手架1.4** 将 `_WorkSpace/Scripts/Framework/` 整体迁入此处。
-
-包含：Core、Modules、Integrations、Editor、Bootstrap 等框架运行时与框架 Editor。
+# CmgmFramework
+
+CMGM 框架运行时与框架 Editor（**项目脚手架1.4** ✅ 已迁入）。
+
+包含：Core、Modules、Integrations、Editor、Bootstrap 等。
+
+Boot 入口：`Bootstrap/CmgmFrameBoot.cs`（`namespace CMGM.Bootstrap`，无 asmdef）。

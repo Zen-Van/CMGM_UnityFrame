@@ -22,7 +22,7 @@ public class Edt_CreateUIPanelAction : EndNameEditAction
     public override void Action(int instanceId, string pathName, string resourceFile)
     {
         string fileName = Path.GetFileNameWithoutExtension(pathName);
-        string scriptPath = Consts.Paths.Game.UI_Panels + "/" + fileName + ".cs";
+        string scriptPath = Consts.Paths.WorkSpaceScripts.UI_Panels + "/" + fileName + ".cs";
         //创建资源        
         MonoScript script = CreateAssetFormTemplate<MonoScript>
             (scriptPath, TemplatePath_PanelScript, true);

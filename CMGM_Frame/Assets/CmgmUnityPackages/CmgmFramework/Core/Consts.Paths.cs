@@ -12,7 +12,7 @@ namespace CMGM.Core
         public static class Paths
         {
             /// <summary>
-            /// 工作区根目录（默认 Assets/_WorkSpace，见 CmgmFrameSettings.WORK_SPACE_ROOT）
+            /// 游戏层工作区根目录（默认 Assets/_WorkSpace，见 CmgmFrameSettings.WORK_SPACE_ROOT）
             /// </summary>
             public static string WorkSpace
             {
@@ -25,7 +25,24 @@ namespace CMGM.Core
                 }
             }
 
+            /// <summary>测试层根目录（不进包，默认 Assets/_TestSpace）</summary>
+            public const string TestSpace = "Assets/_TestSpace";
+
+            /// <summary>游戏层脚本根（_WorkSpace/Scripts）</summary>
             public static string ScriptsPath => WorkSpace + "/Scripts";
+
+            /// <summary>测试层脚本根（_TestSpace/Scripts）</summary>
+            public static string TestScriptsPath => TestSpace + "/Scripts";
+
+            /// <summary>可跨项目拷贝的包根目录（项目脚手架1.4）</summary>
+            public const string PackageRoot = "Assets/CmgmUnityPackages";
+
+            /// <summary>CmgmUnityPackages 下各包路径</summary>
+            public static class Package
+            {
+                public static string Framework => PackageRoot + "/CmgmFramework";
+                public static string GameKits => PackageRoot + "/CmgmGameKits";
+            }
 
             public static string HotRes => WorkSpace + "/HotRes";
             public static string HotScene => HotRes + "/Scenes";
@@ -38,10 +55,10 @@ namespace CMGM.Core
             /// <summary>配表二进制输出目录（StreamingAssets）</summary>
             public static string ConfigData => Application.streamingAssetsPath + "/TableConfig/";
 
-            /// <summary>框架目录（Core + Modules）</summary>
+            /// <summary>框架目录（Core + Modules + Integrations + Editor + Bootstrap）</summary>
             public static class Framework
             {
-                public static string Root => ScriptsPath + "/Framework";
+                public static string Root => Package.Framework;
                 public static string Core => Root + "/Core";
                 public static string Modules => Root + "/Modules";
                 /// <summary>框架级 Editor（路径检查、通用模板等，编译边界2.9）</summary>
@@ -57,12 +74,13 @@ namespace CMGM.Core
                 }
             }
 
-            /// <summary>游戏层目录（Panel、存档结构、配表 Container 等）</summary>
-            public static class Game
+            /// <summary>_WorkSpace/Scripts 下子目录（游戏层代码；无 Scripts/Game 中间层）</summary>
+            public static class WorkSpaceScripts
             {
-                public static string Root => ScriptsPath + "/Game";
+                public static string Root => ScriptsPath;
+                public static string Bootstrap => Root + "/Bootstrap";
                 public static string UI_Panels => Root + "/UI/Panels";
-                /// <summary>游戏运行时存档结构（如 GameRuntimeData）</summary>
+                /// <summary>游戏运行时存档结构脚本（如 GameRuntimeData）</summary>
                 public static string Archive => Root + "/Archive";
                 /// <summary>Excel 导表生成的 *Container.cs 输出目录</summary>
                 public static string Config => Root + "/Config";

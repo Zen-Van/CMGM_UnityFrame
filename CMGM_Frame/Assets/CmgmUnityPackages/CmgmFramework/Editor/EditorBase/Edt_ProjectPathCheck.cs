@@ -17,14 +17,17 @@ public class Edt_ProjectPathCheck
         bool checkResult =
             CheckDirectory(Consts.Paths.WorkSpace) &&
             CheckDirectory(Consts.Paths.ScriptsPath) &&
+            CheckDirectory(Consts.Paths.Package.Framework) &&
+            CheckDirectory(Consts.Paths.Package.GameKits) &&
             CheckDirectory(Consts.Paths.Framework.Core) &&
             CheckDirectory(Consts.Paths.Framework.Modules) &&
             CheckDirectory(Consts.Paths.Framework.DataModule.Archive) &&
             CheckDirectory(Consts.Paths.Framework.DataModule.Config) &&
             CheckDirectory(Consts.Paths.Framework.DataModule.Editor) &&
-            CheckDirectory(Consts.Paths.Game.UI_Panels) &&
-            CheckDirectory(Consts.Paths.Game.Archive) &&
-            CheckDirectory(Consts.Paths.Game.Config) &&
+            CheckDirectory(Consts.Paths.WorkSpaceScripts.Bootstrap) &&
+            CheckDirectory(Consts.Paths.WorkSpaceScripts.UI_Panels) &&
+            CheckDirectory(Consts.Paths.WorkSpaceScripts.Archive) &&
+            CheckDirectory(Consts.Paths.WorkSpaceScripts.Config) &&
             CheckDirectory(Edt_BaseUtils.EditorRoot);
 
         //CmgmLog.fPositive("泥嚎，我是你的效能助手小蝉，ฅ ˘ฅ让我开看看工程基础结构是否正确喔～");

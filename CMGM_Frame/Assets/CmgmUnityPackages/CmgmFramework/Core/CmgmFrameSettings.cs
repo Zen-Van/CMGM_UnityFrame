@@ -13,7 +13,7 @@ namespace CMGM.Core
 
         [BoxGroup("项目路径")]
         [LabelText("工作区根目录")]
-        [InfoBox("框架与热更资源的根路径，默认 Assets/_WorkSpace。换项目时可在此修改，Consts.Paths 会从此读取。")]
+        [InfoBox("游戏层工作区根路径，默认 Assets/_WorkSpace。换项目时可在此修改，Consts.Paths 会从此读取。")]
         public string WORK_SPACE_ROOT = "Assets/_WorkSpace";
 
         [BoxGroup("流程配置")]

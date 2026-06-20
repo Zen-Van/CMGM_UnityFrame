@@ -1,5 +1,5 @@
-# CmgmGameKits（占位）
-
-**尚未迁入代码。** **项目脚手架1.4** 可将 `_WorkSpace/Scripts/CmgmGameKits/` 可选迁入此处（物理目录，与功能计划无关）。
-
-GameKits 功能支线在 `ARCHITECTURE.md` 中为 **【仅作参考】**，非当前可靠计划。
+# CmgmGameKits
+
+可选非框架代码目录（**项目脚手架1.4** ✅ 已迁入）。
+
+当前含 2.7b 音游相关暂存（`MusicGame/BeatSync` 等）。GameKits **功能支线**在 `ARCHITECTURE.md` 中为 **【仅作参考】**，非当前可靠执行计划。
