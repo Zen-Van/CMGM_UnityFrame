@@ -170,12 +170,11 @@ Assets/
 
 | 组件 | 职责 | 成熟度 |
 |------|------|--------|
-| `CmgmFrameBoot` | InitScene **框架组合根**：Logo + **`await BootSingleton.InitAsync()`** + `ScenesManager.GoToMainScene` | ★★ |
+| `CmgmFrameBoot` | InitScene **框架组合根**：Logo + **`await BootSingleton.InitAsync()`** + 进主界面 | ★★ |
 | `GameBootstrap` | **游戏组合根**（`Scripts/Game/Bootstrap/`）：进游戏 Loading 链里的 `EnterGameplayAsync` | ★★ |
 
 > **设计决策（2026-06-19）：** **显式 Boot 优先** + **`LazySingleton` / `BootSingleton`**（§6.5a）；Boot 型 **`await InitAsync()`**。
-> **当前位置：** `Assets/_WorkSpace/Scripts/Framework/CmgmFrameBoot.cs`（无 namespace、无 asmdef，落默认 `Assembly-CSharp`）。  
-> **目标位置（启动编排3.3）：** 同级子目录 **`Framework/Bootstrap/`**（与 `Core/`、`Modules/`、`Editor/` **同级**），程序集 **`CMGM.Bootstrap`**；搬迁后路径为 `…/Framework/Bootstrap/CmgmFrameBoot.cs`（项目脚手架1.4 后 → `CmgmUnityPackages/CmgmFramework/Bootstrap/`）。
+> **当前位置（启动编排3.3 ✅）：** `Assets/_WorkSpace/Scripts/Framework/Bootstrap/CmgmFrameBoot.cs`（`namespace CMGM.Bootstrap`，**无 asmdef**，落默认 `Assembly-CSharp`——Boot 须直接 `await LuaManager.InitAsync()` 等，见 §6.5 / §7.5）。项目脚手架1.4 后 → `CmgmUnityPackages/CmgmFramework/Bootstrap/`。
 
 ### 3.6 场景 / 流程（`Framework/Modules/Scene/`）
 
@@ -339,7 +338,7 @@ Assets/_WorkSpace/
       Bootstrap/
     CmgmGameKits/
     Framework/
-      Bootstrap/                   CmgmFrameBoot（CMGM.Bootstrap，启动编排3.3）
+      Bootstrap/                   CmgmFrameBoot（namespace CMGM.Bootstrap；无 asmdef，Assembly-CSharp）
       Core/
       Modules/
       Integrations/Lua/
@@ -370,7 +369,7 @@ Assets/_WorkSpace/
 |------|------|
 | **已完成基线** | 物理目录 + 去 `Game*` 前缀；UI / Data asmdef 闭环 |
 | **主线 编译边界2.6~2.9** | Lua / Audio / Input / Editor 各模块 asmdef |
-| **主线 启动编排3.3** | `CmgmFrameBoot` → `Framework/Bootstrap/` + `CMGM.Bootstrap` asmdef；**仍用显式 `Init()` 列表** |
+| **主线 启动编排3.3** ✅ | `CmgmFrameBoot` → `Framework/Bootstrap/`；**显式 InitAsync 列表**（无 asmdef、无注册桥接） |
 | **内容扩展1.5 / 项目脚手架1.6** | Editor 模块导入向导：勾选 Modules → 改写 Boot 内 `Init()` + asmdef 引用（§6.5 Manifest） |
 
 最小 JRPG 示例：`Core` + `UI` + `Data` + `Scene` + `Lua`  
@@ -480,7 +479,7 @@ await ScenesManager.Instance.GoToMainScene();
 
 | 组合根 | 文件（当前） | 调用时机 | 典型 Init 内容 |
 |--------|--------------|----------|----------------|
-| **框架 Boot** | `Framework/CmgmFrameBoot.cs` → 3.3 迁 `Framework/Bootstrap/` | InitScene / Logo 链 | UI、Archive、Lua 等 **`BootSingleton`**；Addressables 预载 |
+| **框架 Boot** | `Framework/Bootstrap/CmgmFrameBoot.cs`（`Assembly-CSharp`） | InitScene / Logo 链 | UI、Archive、Lua 等 **`BootSingleton`**；Addressables 预载 |
 | **游戏 Boot** | `Scripts/Game/Bootstrap/GameBootstrap.cs` | 进游戏 Loading 链 | 配表、关卡资源、gameplay Bank 等 |
 | **懒加载** | 不进 Boot 文件 | 首次业务使用前 | **`LazySingleton`**（纯 C#；Mono 见 Audio 支线） |
 
@@ -494,8 +493,7 @@ await ScenesManager.Instance.GoToMainScene();
 
 | 阶段 | 路径 |
 |------|------|
-| **现在** | `Assets/_WorkSpace/Scripts/Framework/CmgmFrameBoot.cs`（与 `Core/` 同级，**不在** `Core/` 里） |
-| **启动编排3.3** | `Assets/_WorkSpace/Scripts/Framework/Bootstrap/CmgmFrameBoot.cs` + `CMGM.Bootstrap.asmdef` |
+| **启动编排3.3 ✅** | `Assets/_WorkSpace/Scripts/Framework/Bootstrap/CmgmFrameBoot.cs`（目录归位；**不**建 `CMGM.Bootstrap.asmdef`） |
 | **项目脚手架1.4 后** | `Assets/CmgmUnityPackages/CmgmFramework/Bootstrap/`（随框架包复制） |
 
 与 `GameBootstrap` 对称：框架 Boot 在 **Framework/Bootstrap/**，游戏 Boot 在 **Scripts/Game/Bootstrap/**。
@@ -504,14 +502,15 @@ await ScenesManager.Instance.GoToMainScene();
 
 | 方案 | Boot 位置 / 程序集 | 优点 | 缺点 | 本框架 |
 |------|-------------------|------|------|--------|
-| **A. 默认程序集** | `Framework/CmgmFrameBoot.cs`，无 asmdef → `Assembly-CSharp` | 最简单；可直接引用 UI/Data/Audio asmdef **以及** Lua、`ScenesManager` 等同程序集代码；可读性最好 | Boot 与游戏脚本同程序集，边界模糊；拷框架时 Boot 混在默认程序集里 | **当前**；3.3 前可保持 |
-| **B. Bootstrap 引用已选 Modules** | `Framework/Bootstrap/` + `CMGM.Bootstrap.asmdef`，`references` 勾选的 `CMGM.UI`、`CMGM.Data`… + 默认可引用 `Assembly-CSharp`（Lua/Scene） | Boot 目录/程序集清晰；仍用**显式 Init 列表**；适合随 `CmgmFramework` 打包 | 每增删模块要改 **Boot 内 Init 行** + **asmdef references**；Lua 仍在默认程序集时需靠 `Assembly-CSharp` 自动引用 | **启动编排3.3 目标** |
-| **C. Bootstrap 仅引 Core** | `CMGM.Bootstrap` 只 `references CMGM.Core` | Core 边界最严；Boot 不能直接写 `UIManager.Init()` | 必须 Registry / 反射 / 代码生成等 indirection；抽象层多、新人难读 | **不做默认**；见远期支线「模块启动Registry系统」 |
+| **A. 默认程序集 + Bootstrap 目录** | `Framework/Bootstrap/CmgmFrameBoot.cs`，无 asmdef → `Assembly-CSharp` | **Boot 内可写全 Init 列表**（含 Lua / Scene）；与显式 Boot 纪律一致；目录仍清晰 | Boot 与 Integrations 等同程序集，编译边界较松 | **当前（3.3 ✅）** |
+| **B. Bootstrap asmdef** | `Framework/Bootstrap/` + `CMGM.Bootstrap.asmdef`，`references` 勾选已选 Modules | Boot 程序集边界清晰；适合随 `CmgmFramework` 打包 | asmdef **不能**引用 `Assembly-CSharp`；Lua/Scene 需注册桥接或内联，**违背显式 Boot**；仅当 Boot 不碰 Integrations 时值得 | **可选远期**（Editor 生成 Boot 或 Lua 可 asmdef 时再评估） |
+| **C. Bootstrap 仅引 Core** | `CMGM.Bootstrap` 只 `references CMGM.Core` | Core 边界最严 | 必须 Registry / 反射 / 代码生成 | **不做默认**；见远期支线「模块启动Registry系统」 |
 
 ```
 Modules ──► Core                    ✅
 Core ──► Modules                    ❌（Boot 若进 Core 且直接调 Manager）
-Bootstrap ──► Core + 已选 Modules   ✅ 方案 B（显式 Init）
+Bootstrap ──► Core + 已选 Modules   ✅ 方案 B（可选远期）
+Bootstrap ──► 同 Assembly-CSharp   ✅ 方案 A（当前）
 Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 ```
 
@@ -521,7 +520,7 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 
 | 手段 | 做法 | 说明 |
 |------|------|------|
-| **Editor 向导（推荐）** | 勾选 Modules → 生成/改写 `CmgmFrameBoot` 内 Init 块 + `CMGM.Bootstrap.asmdef` references | 归属 **内容扩展1.5** / **项目脚手架1.6**；Manifest 可为 ScriptableObject 或勾选 UI 的**输入**，输出的是 Boot 源码与 asmdef，不是运行时 Registry |
+| **Editor 向导（推荐）** | 勾选 Modules → 生成/改写 `CmgmFrameBoot` 内 Init 块；**可选**同步 `CMGM.Bootstrap.asmdef` references | 归属 **内容扩展1.5** / **项目脚手架1.6**；Manifest 为 Editor **输入**，输出 Boot **源码**（显式 Init），不是运行时 Registry |
 | **注释掉未选 Init 行** | 手动或向导注释 `// UIManager.Instance.Init();` | **可行、直观**；缺点是易漏改 asmdef、易 merge 冲突；适合模块少时 |
 | **`#if CMGM_MODULE_XXX`** | 向导按勾选注入预处理器符号 + 条件编译 | 比纯注释更不易误编译进未选模块；仍保持显式列表 |
 | **运行时 Registry** | `IGameModule` + `Register` + `InitAllAsync` | 模块 **≥10** 且 Boot 链过长时再评估（§7.2b 阈值） |
@@ -545,9 +544,9 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 |------|------|
 | **启动编排3.1** ✅ | 文档约定：两组合根 + Init 纪律 + 三档时机（§6.5）；**不改运行时行为** |
 | **启动编排3.2** ✅ | 同上 §6.5a（**范围：仅纯 C# 单例**） |
-| **启动编排3.3** | `CmgmFrameBoot` → `Framework/Bootstrap/` + `CMGM.Bootstrap` asmdef（方案 B） |
+| **启动编排3.3** ✅ | `CmgmFrameBoot` → `Framework/Bootstrap/`（方案 A：目录 + 显式 InitAsync，**无** Bootstrap asmdef） |
 
-**当前：** Boot 在 `Framework/CmgmFrameBoot.cs`（方案 A）；3.3 迁入 `Framework/Bootstrap/`。
+**当前：** Boot 在 `Framework/Bootstrap/`（方案 A ✅）；启动编排主线至此冻结。
 
 ---
 
@@ -584,6 +583,7 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | 禁止为修编译改业务 | 不得删改 Panel 按钮逻辑、场景跳转等；边界问题用迁移 / 接口 / 引用解决 |
 | 动功能前先确认 | 任何可能影响运行时行为的改法，先与用户确认 |
 | XLua 不建 asmdef | 官方 `feature/asmdef` 已被回滚（PR#1067 加、PR#1068 删），XLua 留官方 master、待在 `Assembly-CSharp`；Lua 模块改走「契约入 Core / 实现入 `Integrations`」，不给 XLua 套 asmdef（§7.5） |
+| **asmdef 按需、不强迫** | asmdef 是编译边界工具，**不是**每个目录的必选项。能加且收益大于成本（如 UI/Data/Audio 已闭环）则加；若导致 Boot 注册桥接、破坏显式 Init、或与第三方（XLua）冲突，则**保持 `Assembly-CSharp` + namespace 分层**（§7.5） |
 | 小步验证 | 每模块闭环后编译 + 主流程 Play 一次，再开下一模块 |
 
 > 主线「编译边界2.6~2.8」即按此四步推进。
@@ -612,9 +612,9 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | **编译边界2.9** ✅ | Editor 闭环（`CMGM.Editor`） | 编译边界2.8 完成 ✅ | **已完成** |
 | **启动编排3.1** ✅ | 文档约定：两组合根 + Init 纪律 + 三档时机 + Boot 三方案对比 + Registry 阈值（§6.5、§7.2b）；**不改运行时** | 编译边界2.9 完成 ✅ | **完成 ✅（2026-06-19）** |
 | **启动编排3.2** ✅ | **仅纯 C#**：`LazySingleton` / `BootSingleton` + `InitAsync`；迁移 UI / Archive / Lua；**Mono 单例与 Wwise/Input 留 Audio 支线** | 启动编排3.1 完成 ✅ | **完成 ✅（2026-06-19，待 Unity 编译 + Play 验证）** |
-| **启动编排3.3** | `CmgmFrameBoot` → `Framework/Bootstrap/` + `CMGM.Bootstrap` asmdef（方案 B，显式 InitAsync） | 启动编排3.2 完成 ✅ | **可做** |
+| **启动编排3.3** ✅ | `CmgmFrameBoot` → `Framework/Bootstrap/`；显式 `InitAsync` 链（**不**建 Bootstrap asmdef，见 §7.5） | 启动编排3.2 完成 ✅ | **完成 ✅（2026-06-19，待 Unity 编译 + Play 验证）** |
 
-> 主线推到 **启动编排3.3**，启动契约（显式 Boot）冻结；物理搬迁见 **项目脚手架1.4**（3.3 后）。Registry 非主线，见 §7.2b + 远期支线。
+> 主线 **启动编排3.3** 已完成，启动契约（显式 Boot）冻结；物理搬迁见 **项目脚手架1.4**。Registry 非主线，见 §7.2b + 远期支线。
 
 #### 7.2b 启动编排 · Registry 阈值与远期支线
 
@@ -656,8 +656,8 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | **存档升级系统** | 存档升级系统1.1 | Data ✅ | **已解锁** | 版本头 + 分块 + 替换 `BinaryFormatter` + 迁移 |
 | **Lua系统** | Lua系统1.1 | 编译边界2.6 完成 ✅ | **已解锁** | 桥接注册、懒加载、路径生成 |
 | **Audio系统** | Audio系统1.1 | 编译边界2.7 完成 ✅ | **已解锁** | 通用音频：Bank 加载策略、`IAudioService` 抽象（节拍/音游归 GameKit MusicGame） |
-| **GameState系统** | GameState系统1.1 | 启动编排3.3 完成 | 🔒 | 状态机基础态；接管 `GoToMainScene` / `QuitGame` |
-| **事件总线系统** | 事件总线系统1.1 | 启动编排3.3 完成 | 🔒 | `IEventBus` 落地 Optional 模块 |
+| **GameState系统** | GameState系统1.1 | 启动编排3.3 完成 ✅ | **已解锁** | 状态机基础态；接管 `GoToMainScene` / `QuitGame` |
+| **事件总线系统** | 事件总线系统1.1 | 启动编排3.3 完成 ✅ | **已解锁** | `IEventBus` 落地 Optional 模块 |
 | **模块启动Registry系统** | 模块启动Registry系统1.1 | 启动编排3.3 完成 **且** Boot 链 ≥10 模块（或导入向导需运行时裁剪） | 🔒（远期） | 可选：`IGameModule` + Registry 替代过长显式 Init 列表 |
 | **依赖抽象系统** | 依赖抽象系统1.1 | 编译边界2.8 完成 ✅ | **已解锁** | 去 Odin 硬依赖、URP/RP 抽象（音频/Lua 抽象见各自支线） |
 | **项目脚手架与包体迁移** | 项目脚手架1.1 | 编译边界2.9 完成 ✅ | **已解锁**（1.1 占位进行中） | 可移植包 `CmgmUnityPackages`、WorkSpace 脚手架、常量规范（原「常量体系」已并入本支线） |
@@ -710,7 +710,7 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | **Audio系统1.2** | Bank 加载 / 卸载策略：gameplay Bank 进游戏按需载、退出卸载 | gameplay Bank 不进启动链 |
 | ~~Audio系统1.3~~ | **已移出本支线**：节拍 / 判定 / 谱面（MUG）归 GameKit `MusicGame`（编译边界2.7b 起 `BeatSync` 落地，后续 `Beatmap/Judgement` 见 §6.4a） | — |
 
-#### GameState系统（🔒 启动编排3.3 后）
+#### GameState系统（已解锁）
 
 | 子步 | 内容 | 验收 |
 |------|------|------|
@@ -720,7 +720,7 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | **GameState系统1.4** | 预留态 `Pause` / `Cutscene` / `Battle` 空壳或最小实现 | JRPG / SRPG 可扩展 |
 | **GameState系统1.5** | 与 UI / 输入：状态切换时 UI 层、输入 map 切换策略 | 暂停时输入正确 |
 
-#### 事件总线系统（🔒 启动编排3.3 后）
+#### 事件总线系统（已解锁）
 
 | 子步 | 内容 | 验收 |
 |------|------|------|
@@ -745,7 +745,7 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | **内容扩展1.2** | 场景持久化：进出场景对象 Save/Load 钩子（依赖完整 Scene 模块） | 进出场景状态保留 |
 | **内容扩展1.3** | 配表类型扩展：多键表、嵌套结构、本地化列 | ExcelTool 支持 |
 | **内容扩展1.4** | SRPG 接口：网格 / 回合 / 技能预留（与 GameState Battle 衔接） | 与 Battle 态衔接 |
-| **内容扩展1.5** | Editor 模块导入向导：勾选 `Framework/Modules/*` → 改写 Boot `Init()` + `CMGM.Bootstrap.asmdef` + 依赖报告（与 **项目脚手架1.6** 合并；Manifest 为 Editor 输入，见 §6.5） | 复制到新工程可裁剪 |
+| **内容扩展1.5** | Editor 模块导入向导：勾选 `Framework/Modules/*` → 改写 Boot `Init()` 源码 + 依赖报告（**可选**生成 `CMGM.Bootstrap.asmdef`；与 **项目脚手架1.6** 合并） | 复制到新工程可裁剪 |
 
 > **去向说明：** 旧 8.4「Lua 懒加载」已移至 **Lua系统1.2**；旧 8.5「MUG」节拍部分改入 GameKit **`MusicGame/BeatSync`**（编译边界2.7b 起），Audio系统支线只保留通用音频（Bank / `IAudioService`）。
 
@@ -858,6 +858,14 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | **文档分工** | `ARCHITECTURE.md` 跟框架；每个游戏 `_WorkSpace/GAME_WORKSPACE.md` 描述游戏层约定。 |
 | **常量体系** | 独立支线废止，并入 **项目脚手架**（1.1 分类、1.4 路径规范、1.7 自动生成）。 |
 | **GameKits asmdef** | 在 **项目脚手架1.4** 搬迁完成后再做 GameKits1.1。 |
+
+**设计决策记录 · 2026-06-19（启动编排3.3 · asmdef  pragmatic）**
+
+| 项 | 结论 |
+|------|------|
+| **3.3 范围** | Boot **目录**迁 `Framework/Bootstrap/` ✅；**不**建 `CMGM.Bootstrap.asmdef`（曾试方案 B，因 asmdef 不能引用 `Assembly-CSharp` 而引入注册桥接，与「显式 Boot、不用 Registry」冲突，已回退）。 |
+| **asmdef 原则** | **按需加、不强迫**：边界清晰、第三方可引用（Wwise）时值得；若破坏 Boot 可读性 / 功能（Lua 全显式 Init）则保持默认程序集 + `namespace` 目录分层。Scene、Bootstrap、Integrations/Lua 当前均 **无 asmdef**。 |
+| **远期 Bootstrap asmdef** | 仅当 Boot 不再直接 Init Lua/Scene（或 Editor 生成 Boot 源码、或 XLua 官方恢复可维护 asmdef）时再评估方案 B。 |
 
 **潜在完善候选（backlog，未立支线；当用户问「还能怎样进一步完善框架」时主动提醒）**
 
