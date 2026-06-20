@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using CMGM.Core;
@@ -15,9 +15,7 @@ public class LuaBridge
     /// </summary>
     public static void LuaExecuteFinished(string ret)
     {
-        var s = LuaManager.Instance.CurrentEventSourceStack.Pop();
-        s.TrySetResult(ret);//将弹出的标记设置为已完成，并把返回值返回到C#一侧
-        CmgmLog.fPositive("结束了该lua脚本的调用");
+        LuaManager.Instance.CompleteCurrentExecution(ret);
     }
 
     #region 交互&UI

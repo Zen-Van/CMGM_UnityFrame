@@ -1,4 +1,4 @@
-using Cysharp.Threading.Tasks;
+﻿using Cysharp.Threading.Tasks;
 using CMGM.Core;
 using System;
 using System.Collections;
@@ -191,24 +191,20 @@ public class LuaManager : BootSingleton<LuaManager>, ILuaService
     /// <param name="uri">Consts.Paths.Lua_Path路径下的相对路径,需要带完整后缀</param>
     public async UniTask ExecuteLua(string uri)
     {
+        bool isRootFile = uri == ROOT_FILE_URI;
         //如果不是要执行根文件，等初始化完成了再执行
-        if (uri != ROOT_FILE_URI)
+        if (!isRootFile)
             await UniTask.WaitUntil(() => IsInited);
 
         //lua脚本的内容
         string luaContent = Encoding.UTF8.GetString(GetLuaContent(uri)).Trim('\n').Trim('\r');
-
-        string template =
+        string template = isRootFile ? luaContent :
             $"local function temp_lua_func()\r\n " +
             $"{luaContent}\r\n " +
             $"end\r\n " +
             $"util.coroutine_call(combine(temp_lua_func, LuaExecuteFinished))();\r\n";
         //上面的combine函数，将第一个函数的返回值当作了第二个函数的参数，会被设置为CompletionSource的Result
-
-        //如果是根文件
-        if (uri == ROOT_FILE_URI) template = luaContent + "\r\n " +
-            $"LuaExecuteFinished('');";
-
+        // 根文件在 OnInitAsync 内执行，此时 IsReady 仍为 false，不可经 Lua 回调 LuaExecuteFinished（会走 Instance）
 
         CmgmLog.fPositive($"开始执行lua语句：\r\n{template}");
 
@@ -220,6 +216,8 @@ public class LuaManager : BootSingleton<LuaManager>, ILuaService
         try
         {
             LuaEnv.DoString(template.Trim());
+            if (isRootFile)
+                CompleteCurrentExecution(string.Empty);
             await cs.Task;
         }
         catch (Exception e)
@@ -228,10 +226,18 @@ public class LuaManager : BootSingleton<LuaManager>, ILuaService
             {
                 //异常情况有时候不会执行到Lua代码末尾，要手动结束掉对应的UniTaskCompletionSource
                 if (CurrentEventSourceStack.Peek() == cs)
-                    LuaBridge.LuaExecuteFinished(template);
+                    CompleteCurrentExecution(string.Empty);
             }
             Debug.LogError("lua执行错误：" + e.ToString());
         }
+    }
+
+    /// <summary>一段 Lua 执行完毕时弹出 CompletionSource 并标记完成；根脚本 Init 阶段由 Manager 内部直接调用。</summary>
+    internal void CompleteCurrentExecution(string ret)
+    {
+        var s = CurrentEventSourceStack.Pop();
+        s.TrySetResult(ret);
+        CmgmLog.fPositive("结束了该lua脚本的调用");
     }
     public bool IsExecuting()
     {
