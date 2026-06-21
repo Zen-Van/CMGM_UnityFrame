@@ -30,7 +30,7 @@ public class Edt_ProjectPathCheck
         else
         {
             CmgmLog.fError("检查完毕，下列路径没有找到o(╥﹏╥):\n" + errorPaths +
-                           "\n游戏层可通过菜单「草木句萌/脚手架/创建游戏层与测试层」补全。");
+                           "\n可通过菜单「草木句萌/脚手架/框架目录初始化」补全。");
         }
     }
 

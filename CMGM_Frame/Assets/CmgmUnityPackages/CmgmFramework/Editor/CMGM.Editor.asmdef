@@ -3,7 +3,8 @@
     "rootNamespace": "CMGM.Editor",
     "references": [
         "CMGM.Core",
-        "Unity.TextMeshPro"
+        "Unity.TextMeshPro",
+        "VFolders"
     ],
     "includePlatforms": [
         "Editor"
