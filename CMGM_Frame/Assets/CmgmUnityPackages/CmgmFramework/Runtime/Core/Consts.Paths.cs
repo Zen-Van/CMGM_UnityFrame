@@ -89,8 +89,10 @@ namespace CMGM.Core
                 public static string UI_Panels => Root + "/UI/Panels";
                 /// <summary>游戏运行时存档结构脚本（如 GameRuntimeData）</summary>
                 public static string Archive => Root + "/Archive";
-                /// <summary>Excel 导表生成的 *Container.cs 输出目录</summary>
-                public static string Config => Root + "/Config";
+                /// <summary>框架/工具链自动生成的脚本（勿手改）</summary>
+                public static string Generated => Root + "/_Generated";
+                /// <summary>Excel 导表生成的 Container 脚本输出目录</summary>
+                public static string Config => Generated + "/Config";
             }
         }
     }

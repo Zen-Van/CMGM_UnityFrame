@@ -1,0 +1,21 @@
+using CMGM.Core;
+using Cysharp.Threading.Tasks;
+
+namespace CMGM.Game
+{
+    /// <summary>
+    /// 游戏层「进游戏」入口（脚手架最简模板）。Logo → 主界面由 <see cref="CMGM.Bootstrap.CmgmFrameBoot"/> 负责。
+    /// </summary>
+    public static class GameBootstrap
+    {
+        /// <summary>
+        /// 主界面点击「开始 / 读档」等进入游戏时调用。
+        /// </summary>
+        public static async UniTask EnterGameplayAsync()
+        {
+            // TODO：在此 LoadTable、预载关卡 Addressables、Wwise Bank 等（见 ARCHITECTURE §8）
+            CmgmLog.fPositive("进游戏内容加载完成（脚手架模板；请按项目补充加载清单）");
+            await UniTask.CompletedTask;
+        }
+    }
+}

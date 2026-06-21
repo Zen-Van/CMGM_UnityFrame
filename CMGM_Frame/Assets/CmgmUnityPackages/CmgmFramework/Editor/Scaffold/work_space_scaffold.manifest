@@ -1,0 +1,15 @@
+# 游戏层 / 测试层脚手架清单（菜单「草木句萌/脚手架/创建游戏层与测试层」与路径检查共用）
+# 每行一条 Assets 路径；有扩展名视为文件（从 WorkSpaceSeed 复制），否则视为目录
+# .cs 种子在模板中为 *.cs.txt，部署时写入 *.cs；已存在的路径不会覆盖
+# Assets/_WorkSpace 会替换为 CmgmFrameSettings.WORK_SPACE_ROOT
+
+Assets/_TestSpace
+Assets/_WorkSpace
+Assets/_WorkSpace/Excels
+Assets/_WorkSpace/HotRes
+Assets/_WorkSpace/HotRes/BuildSource/RELEASE_NOTE.txt
+Assets/_WorkSpace/HotRes/Lua/main.lua.txt
+Assets/_WorkSpace/HotRes/Scenes/InitScene.unity
+Assets/_WorkSpace/HotRes/Scenes/MainScene.unity
+Assets/_WorkSpace/HotRes/UI/Panels/MainPanel.prefab
+Assets/_WorkSpace/Scripts/UI/Panels/MainPanel.cs

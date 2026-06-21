@@ -32,7 +32,8 @@ _WorkSpace/
     ├── Bootstrap/              GameBootstrap
     ├── UI/Panels/
     ├── Archive/
-    └── Config/
+    └── _Generated/
+        └── Config/               Excel 导表 Container（勿手改）
 ```
 
 **框架配置与内置资源：** `CmgmUnityPackages/CmgmFramework/Resources/`（含 `CmgmFrameSettings.asset`）。
@@ -66,7 +67,7 @@ Boot 参数（主场景名、主 Panel 名、工作区根路径等）在 **`Cmgm
 | 类型 | 目录 |
 |------|------|
 | Excel 源 | `Excels/` |
-| Container 脚本 | `Scripts/Config/` |
+| Container 脚本 | `Scripts/_Generated/Config/`（勿手改） |
 | 存档结构 | `Scripts/Archive/` |
 
 ---

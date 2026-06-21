@@ -2,7 +2,7 @@
 
 > 本文档是框架化改造的长期参考（「北极星」）。  
 > 目标：将当前工程从「带 Demo 的原型项目」逐步改造为「可跨项目迁移的框架」。  
-> 最后更新：2026-06-19 — **CmgmFramework** 三分：`Resources` + `Editor` + `Runtime`（代码收拢 ✅）。
+> 最后更新：2026-06-20 — **项目脚手架1.2b ✅** 游戏层种子 + `_TestSpace` 仅顶层。
 
 ---
 
@@ -50,15 +50,14 @@ Assets/_WorkSpace/                  （游戏层）
     ├── Bootstrap/
     ├── UI/Panels/
     ├── Archive/
-    └── Config/
+    └── _Generated/
+        └── Config/
 
-Assets/_TestSpace/                  （测试层）
-├── Scripts/
-└── Scenes/
+Assets/_TestSpace/                  （测试层；脚手架仅建顶层空目录，子目录用户自建）
 ```
 
 > **三层划分：** `CmgmUnityPackages` = 框架与拓展包（含 **Resources 内置**）；`_WorkSpace` = 游戏层增量；`_TestSpace` = 测试层。  
-> **CmgmFramework 三分：** `Resources/`（内置 asset）+ `Editor/` + `Runtime/`（Core / Modules / Integrations / Bootstrap）。**`Templates/`**（main.lua、MainPanel 种子）远期另议。
+> **CmgmFramework 三分：** `Resources/` + `Editor/` + `Runtime/`。**游戏层最简模板**由脚手架 **1.2b ✅** 写入 `_WorkSpace`。
 
 ### 2.2 远期（按需）
 
@@ -131,7 +130,7 @@ Packages/（项目脚手架1.6 远期 UPM）
 |------|------|--------|
 | `ConfigTableManager` | 读取 `.cmgm` 二进制配表（反射 + 解密） | ★★★★ |
 | `ExcelTool`（Editor） | Excel → Container.cs + 二进制 | ★★★★ |
-| `RoleInfoContainer` 等 | 游戏配表（`_WorkSpace/Scripts/Config/`）✅ | — |
+| `RoleInfoContainer` 等 | 游戏配表（`_WorkSpace/Scripts/_Generated/Config/`）✅ | — |
 | `ArchiveManager` | 存档元数据 + 运行时数据读写 | ★★★ |
 | `GameRuntimeData` | 游戏存档结构（`_WorkSpace/Scripts/Archive/`）✅ | — |
 | `CipherTool` | 配表 / 存档加解密 | ★★★ |
@@ -239,7 +238,7 @@ InitScene（CmgmFrameBoot.Awake）
 | 主界面 Panel | `CmgmFrameSettings.MAIN_PANEL_NAME` → `ShowPanel(name)` ✅ | 换项目改 Settings |
 | 主场景名 | `CmgmFrameSettings.MAIN_SCENE_NAME` ✅ | 换场景改 Settings |
 | 存档数据结构 | `GameRuntimeData`（博物、任务、背包…） | 游戏专属字段 |
-| 配表容器 | `RoleInfo` 等（`_WorkSpace/Scripts/Config/`）✅ | 游戏专属表结构 |
+| 配表容器 | `RoleInfo` 等（`_WorkSpace/Scripts/_Generated/Config/`）✅ | 游戏专属表结构 |
 | Lua 桥接 | `LuaBridge.Talk` | 空实现，且写死在框架里 |
 | 第三方绑定 | Wwise / Odin / URP 直接引用 | 换音频 / RP 需改 Core |
 
@@ -300,7 +299,8 @@ Assets/_WorkSpace/
     Bootstrap/
     UI/Panels/
     Archive/
-    Config/
+    _Generated/
+      Config/
 
 Packages/（远期，见 项目脚手架1.6）
   com.cmgm.core/
@@ -555,7 +555,8 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | 进游戏入口 | `ScenesManager` 配置化 + **`ScenesManager` 仅临时流程宿主**（§3.6）；`GameBootstrap.EnterGameplayAsync` |
 | 项目脚手架1.1 | `CmgmUnityPackages/` 占位 + README |
 | 项目脚手架1.3 | `_WorkSpace/GAME_WORKSPACE.md` 游戏层文档 ✅ |
-| 项目脚手架1.2 | `Edt_WorkSpaceScaffold` 菜单创建 _WorkSpace / _TestSpace 骨架 ✅ |
+| 项目脚手架1.2 | `Edt_WorkSpaceScaffold` 菜单 ✅ |
+| 项目脚手架1.2b | WorkSpaceSeed 模板 + 游戏层种子；TestSpace 仅顶层 ✅ |
 | 框架 Resources + Runtime 三分 | Settings/UI/Logo/Font → `Resources/`；代码 → `Runtime/` ✅ |
 | 迭代模型 | 主线/支线重排；旧 0→9 归档 |
 
@@ -618,7 +619,7 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | **GameState系统** | GameState系统1.1 | 启动编排3.3 ✅ | 已解锁 |
 | **事件总线系统** | 事件总线系统1.1 | 启动编排3.3 ✅ | 已解锁 |
 | **依赖抽象系统** | 依赖抽象系统1.1 | 编译边界2.8 ✅ | 已解锁（按需） |
-| **项目脚手架与包体迁移** | **项目脚手架1.5** | 1.2 ✅ | 已解锁 |
+| **项目脚手架与包体迁移** | **项目脚手架1.5** | 1.2b ✅ | 已解锁 |
 | **GameKits** | GameKits1.1 | 未定（草案写 **项目脚手架1.4** 后，**非可靠**） | 🔒【仅作参考】 |
 | **模块启动Registry系统** | 模块启动Registry系统1.1 | 启动编排3.3 ✅ **且** Boot 链 ≥10 | 🔒 远期 |
 | **网游预埋** | 网游预埋1.1 | 存档升级 **且** GameState 完成 | 🔒 远期 |
@@ -715,19 +716,35 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 
 > **动因：** 框架代码与游戏内容混在 `_WorkSpace/Scripts` 不便跨项目拷贝；常量入口分散（`Consts.Paths` / `MusicGameConsts` 等）；新项目缺少标准游戏层目录。  
 > **目标形态：** 可移植代码 → `Assets/CmgmUnityPackages/{CmgmFramework,CmgmGameKits}`；游戏层 → `_WorkSpace` + `_TestSpace`；框架文档 → `ARCHITECTURE.md`（随框架）；游戏层约定 → `_WorkSpace/GAME_WORKSPACE.md`（随项目）。  
-> **节奏：** 1.1 ✅ → **1.4 ✅** → **1.3 ✅** → **1.2 ✅** → **1.5**…；**最前节点 = 1.5**。
+> **节奏：** 1.1 ✅ → **1.4 ✅** → **1.3 ✅** → **1.2 ✅** → **1.2b ✅** → **1.5**…；**最前节点 = 1.5**。
 
 | 子步 | 内容 | 验收 |
 |------|------|------|
 | **项目脚手架1.1** ✅ | `CmgmUnityPackages/` 占位 + ARCHITECTURE 目标结构 | 占位目录存在 |
 | **项目脚手架1.4** ✅ | Framework + `CmgmGameKits` **目录**物理搬迁 → `CmgmUnityPackages`；`Consts.Paths.Package` 收口 | 编译 + Play |
 | **项目脚手架1.3** ✅ | `_WorkSpace/GAME_WORKSPACE.md` 模板 | 游戏文档与框架文档分离 |
-| **项目脚手架1.2** ✅ | WorkSpace 脚手架 Editor（`草木句萌/脚手架/` 菜单） | 空工程可建骨架；PathCheck 通过 |
+| **项目脚手架1.2** ✅ | WorkSpace 脚手架 Editor（`草木句萌/脚手架/` 菜单）；**仅目录 + GAME_WORKSPACE.md** | 空工程可建骨架；PathCheck 通过 |
+| **项目脚手架1.2b** ✅ | 游戏层种子（main.lua、RELEASE_NOTE、InitScene/MainScene、MainPanel、GameBootstrap）；`_TestSpace` 仅顶层；模板源 `Editor/.../WorkSpaceSeed/` | 脚手架可写最简闭环 |
 | **项目脚手架1.5** | 空工程迁移验证 | 可复制 |
 | **项目脚手架1.6**（远期） | Manifest 驱动勾选 → 生成 Boot Init（+ 可选 asmdef） | 按勾选裁剪 |
 | **项目脚手架1.7**（按需） | 路径扫描自动生成 / 校验（与 **Lua系统1.3** / §2b **E** 衔接） | 路径少手写 |
 
 > **废止说明：** 独立支线「常量与配置体系」已并入本支线（1.1 盘点、1.4 路径收口、1.7 自动生成）；详见 `ARCHITECTURE_DEPRECATED.md` **归档块 D**。
+
+**项目脚手架1.2b（✅ 2026-06-20）**
+
+> **原则：** 游戏层最简模板 **不进 `CmgmFramework/Runtime` 或 `Resources`**；脚手架从 `Editor/TemplateCreator/Templates/WorkSpaceSeed/` 复制到 `_WorkSpace`。
+
+| 类别 | 脚手架写入 `_WorkSpace`（缺失则创建） |
+|------|--------------------------------------|
+| 文本 | `HotRes/Lua/main.lua.txt`、`HotRes/BuildSource/RELEASE_NOTE.txt` |
+| 场景 | `HotRes/Scenes/InitScene.unity`、`MainScene.unity` |
+| UI | `HotRes/UI/Panels/MainPanel.prefab`、`Scripts/UI/Panels/MainPanel.cs` |
+| Boot（游戏侧） | `Scripts/Bootstrap/GameBootstrap.cs`（最简模板，无项目配表依赖） |
+| 目录 + 文档 | 1.2 已有；含 `HotRes/BuildSource/` |
+| **_TestSpace** | 与 WorkSpace 同菜单：**仅** `Assets/_TestSpace/` 顶层空目录 |
+
+| **GameBootstrap 归属（待议，非 1.2b 范围）** | 现为游戏层脚手架种子；若视为「游戏层准备、无业务」可将来迁至框架 `Runtime/Bootstrap/` 与 `CmgmFrameBoot` 并列 — **未决** |
 
 #### 模块启动Registry系统（🔒 远期，见 §7.2b）
 
@@ -775,7 +792,7 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | 线 | 最前节点 | 状态 | 解锁条件 | 预估变更量 | 教学难度 |
 |----|----------|------|----------|------------|----------|
 | **主线（编译边界 + 启动编排）** | — | ✅ 全线完成 | — | — | — |
-| **项目脚手架与包体迁移** | **项目脚手架1.5** | 已解锁 | 1.2 ✅ | **中**（新工程复制验证） | ★★★ |
+| **项目脚手架与包体迁移** | **项目脚手架1.5** | 已解锁 | 1.2b ✅ | **中**（新工程复制验证） | ★★★ |
 | **GameState系统** | GameState系统1.1 | 已解锁 | 启动编排3.3 ✅ | **中**（接口 + 状态机骨架 3~6 文件） | ★★★☆ |
 | **Loading系统** | Loading系统1.1 | 已解锁 | Core + UI ✅ | **中**（新 `CMGM.Loading` + 进度 UI） | ★★★☆ |
 | **Lua系统** | Lua系统1.1 | 已解锁 | 2.6 ✅ | **小~中**（Registry 接口 + 游戏侧注册示例） | ★★★☆ |
@@ -852,6 +869,19 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | **模块 Editor** | 仍在 `Runtime/Modules/*/Editor/`（asmdef 限定 Editor 平台） |
 | **路径常量** | `Paths.Framework.Runtime`、`Bootstrap`、`Integrations` 等指向 `Runtime/…` |
 
+> **说明：** 脚手架 **1.2b ✅** 后本线最前节点为 **1.5**。
+
+**设计决策记录 · 2026-06-20（脚手架 · 游戏层种子 vs 框架层）** ✅ 1.2b
+
+| 项 | 结论 |
+|------|------|
+| **不进框架** | `main.lua`、`RELEASE_NOTE`、`InitScene`、`MainScene`、`MainPanel`（及对应脚本）**不**放在 `CmgmFramework/Resources` 或 `Runtime/` |
+| **创建时机** | **脚手架**在 `_WorkSpace` 建目录时 **一并** 写入最简模板（文本 copy / 预制体从 Editor 模板导出） |
+| **框架 Resources** | 仍仅：Settings、UI 基建、Logo、字体（Boot 契约层） |
+| **_TestSpace** | 脚手架 **只建顶层**空目录；子文件夹留给使用者自建 |
+| **模板存放** | `Editor/TemplateCreator/Templates/WorkSpaceSeed/`（Editor 复制用） |
+| **GameBootstrap** | 1.2b 作为游戏层种子；是否升格为框架 `Runtime/Bootstrap/` 与 `CmgmFrameBoot` 并列 — **待议** |
+
 **设计决策记录 · 2026-06-19（CmgmFramework 内置 Resources）**
 
 | 项 | 结论 |
@@ -861,7 +891,6 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | **_WorkSpace** | **不设** `Resources/`；游戏层 = Scripts + HotRes + Excels 等增量 |
 | **脚手架 1.2** | 不再在工作区创建 `CmgmFrameSettings`；新工程依赖框架包内默认 asset，按需改字段 |
 | **Runtime 三分** | 见上节「目录三分」；`Paths.Framework.Runtime` ✅ |
-| **远期目录** | **`Templates/`** 种子（main.lua、MainPanel）复制到 `_WorkSpace` — 待议 |
 
 **设计决策记录 · 2026-06-19（启动编排3.3 · asmdef  pragmatic）**
 
@@ -907,7 +936,7 @@ GameRuntimeData（I_Saveable，_WorkSpace/Scripts/Archive/）
 | 路径常量 | 目录 | 内容 |
 |----------|------|------|
 | `Paths.WorkSpaceScripts.Archive` | `_WorkSpace/Scripts/Archive/` | 运行时存档结构脚本（可变） |
-| `Paths.WorkSpaceScripts.Config` | `_WorkSpace/Scripts/Config/` | Excel 导出的配表 Container（只读） |
+| `Paths.WorkSpaceScripts.Config` | `_WorkSpace/Scripts/_Generated/Config/` | Excel 导出的配表 Container（只读，勿手改） |
 | `Paths.WorkSpaceScripts.Bootstrap` | `_WorkSpace/Scripts/Bootstrap/` | 游戏组合根 `GameBootstrap` |
 | `Paths.WorkSpaceScripts.UI_Panels` | `_WorkSpace/Scripts/UI/Panels/` | Panel 脚本 |
 | `Paths.Framework.DataModule.Archive` | `CmgmFramework/Runtime/Modules/Data/Archive/` | 存档框架（`ArchiveManager`、`I_Saveable`） |
@@ -972,4 +1001,4 @@ CmgmFrameSettings.ROOT_LUA_URI（如 main.lua.txt）
 
 ---
 
-*脚手架 1.2 ✅ 后，本线最前节点：**项目脚手架1.5**（空工程迁移验证）。亦可并行 **GameState系统1.1** 等。详见 §7.6。*
+*脚手架 1.2b ✅。本线最前节点：**项目脚手架1.5**（空工程迁移验证）。详见 §7.6。*
