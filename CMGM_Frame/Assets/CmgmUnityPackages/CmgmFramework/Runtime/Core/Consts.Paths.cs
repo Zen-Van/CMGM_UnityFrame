@@ -28,6 +28,9 @@ namespace CMGM.Core
             /// <summary>测试层根目录（不进包，默认 Assets/_TestSpace）</summary>
             public const string TestSpace = "Assets/_TestSpace";
 
+            /// <summary>公共资源根目录（默认 Assets/_PublicRes）</summary>
+            public const string PublicRes = "Assets/_PublicRes";
+
             /// <summary>游戏层脚本根（_WorkSpace/Scripts）</summary>
             public static string ScriptsPath => WorkSpace + "/Scripts";
 

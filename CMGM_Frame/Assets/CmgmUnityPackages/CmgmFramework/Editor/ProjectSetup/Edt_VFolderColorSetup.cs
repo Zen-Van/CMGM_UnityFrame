@@ -9,15 +9,13 @@ using VFoldersLib = VFolders.VFolders;
 /// </summary>
 public static class Edt_VFolderColorSetup
 {
-    private const string PublicResRoot = "Assets/_PublicRes";
-
     // vFolders 调色板索引，与当前工程四个顶层目录一致
     private static readonly (string path, int colorIndex)[] FrameworkFolderColors =
     {
         (Consts.Paths.WorkSpace, 1),
         (Consts.Paths.TestSpace, 4),
         (Consts.Paths.PackageRoot, 6),
-        (PublicResRoot, 9),
+        (Consts.Paths.PublicRes, 9),
     };
 
     public static int ApplyFrameworkFolderColors()
