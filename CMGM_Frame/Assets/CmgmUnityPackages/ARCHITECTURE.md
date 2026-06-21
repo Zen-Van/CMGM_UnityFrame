@@ -2,7 +2,7 @@
 
 > 本文档是框架化改造的长期参考（「北极星」）。  
 > 目标：将当前工程从「带 Demo 的原型项目」逐步改造为「可跨项目迁移的框架」。  
-> 最后更新：2026-06-20 — **项目脚手架1.2b ✅** 游戏层种子 + `_TestSpace` 仅顶层。
+> 最后更新：2026-06-20 — **Editor 四分法 ✅**、`project_layer.manifest` 补全；本线最前节点仍为 **项目脚手架1.5**。
 
 ---
 
@@ -555,9 +555,10 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | 进游戏入口 | `ScenesManager` 配置化 + **`ScenesManager` 仅临时流程宿主**（§3.6）；`GameBootstrap.EnterGameplayAsync` |
 | 项目脚手架1.1 | `CmgmUnityPackages/` 占位 + README |
 | 项目脚手架1.3 | `_WorkSpace/GAME_WORKSPACE.md` 游戏层文档 ✅ |
+| Editor 四分法 | `ProjectSetup` / `AssetTemplates` / `QuickSearch` / `Tools`；`project_layer.manifest` ✅ |
 | 项目脚手架1.2 | `Edt_ProjectLayerSetup` 菜单 ✅ |
 | 项目脚手架1.2b | `ProjectSetup/Seeds` 模板 + 游戏层种子；TestSpace 仅顶层 ✅ |
-| Editor 四分法 | `ProjectSetup` / `AssetTemplates` / `QuickSearch` / `Tools` ✅ |
+| 项目脚手架1.2c | `project_layer.manifest` 补全 + 重命名 ✅ |
 | 框架 Resources + Runtime 三分 | Settings/UI/Logo/Font → `Resources/`；代码 → `Runtime/` ✅ |
 | 迭代模型 | 主线/支线重排；旧 0→9 归档 |
 
@@ -725,7 +726,8 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | **项目脚手架1.4** ✅ | Framework + `CmgmGameKits` **目录**物理搬迁 → `CmgmUnityPackages`；`Consts.Paths.Package` 收口 | 编译 + Play |
 | **项目脚手架1.3** ✅ | `_WorkSpace/GAME_WORKSPACE.md` 模板 | 游戏文档与框架文档分离 |
 | **项目脚手架1.2** ✅ | WorkSpace 脚手架 Editor（`草木句萌/脚手架/` 菜单）；**仅目录 + GAME_WORKSPACE.md** | 空工程可建骨架；PathCheck 通过 |
-| **项目脚手架1.2b** ✅ | 游戏层种子（main.lua、RELEASE_NOTE、InitScene/MainScene、MainPanel、GameBootstrap）；`_TestSpace` 仅顶层；模板源 `Editor/ProjectSetup/Seeds/` | 脚手架可写最简闭环 |
+| **项目脚手架1.2b** ✅ | 游戏层种子 + `project_layer.manifest`；模板源 `Editor/ProjectSetup/Seeds/` | 脚手架可写最简闭环 |
+| **项目脚手架1.2c** ✅ | manifest 补全（`GAME_WORKSPACE.md`、`_Generated/Config/`、`GameBootstrap.cs`）；`work_space_scaffold` → **`project_layer.manifest`** | PathCheck 与菜单一致 |
 | **项目脚手架1.5** | 空工程迁移验证 | 可复制 |
 | **项目脚手架1.6**（远期） | Manifest 驱动勾选 → 生成 Boot Init（+ 可选 asmdef） | 按勾选裁剪 |
 | **项目脚手架1.7**（按需） | 路径扫描自动生成 / 校验（与 **Lua系统1.3** / §2b **E** 衔接） | 路径少手写 |
@@ -736,16 +738,16 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 
 > **原则：** 游戏层最简模板 **不进 `CmgmFramework/Runtime` 或 `Resources`**；脚手架从 `Editor/ProjectSetup/Seeds/` 复制到 `_WorkSpace`。
 
-| 类别 | 脚手架写入 `_WorkSpace`（缺失则创建） |
-|------|--------------------------------------|
+| 类别 | `project_layer.manifest` 写入 `_WorkSpace`（缺失则创建） |
+|------|----------------------------------------------------------|
+| 顶层 | `_TestSpace/`、`_WorkSpace/`、`GAME_WORKSPACE.md` |
+| 目录 | `Excels/`、`HotRes/`、`Scripts/_Generated/Config/` |
 | 文本 | `HotRes/Lua/main.lua.txt`、`HotRes/BuildSource/RELEASE_NOTE.txt` |
 | 场景 | `HotRes/Scenes/InitScene.unity`、`MainScene.unity` |
 | UI | `HotRes/UI/Panels/MainPanel.prefab`、`Scripts/UI/Panels/MainPanel.cs` |
-| Boot（游戏侧） | `Scripts/Bootstrap/GameBootstrap.cs`（最简模板，无项目配表依赖） |
-| 目录 + 文档 | 1.2 已有；含 `HotRes/BuildSource/` |
-| **_TestSpace** | 与 WorkSpace 同菜单：**仅** `Assets/_TestSpace/` 顶层空目录 |
+| Boot（游戏侧） | `Scripts/Bootstrap/GameBootstrap.cs`（种子已纳入清单，**归属待讨论**，见下表） |
 
-| **GameBootstrap 归属（待议，非 1.2b 范围）** | 现为游戏层脚手架种子；若视为「游戏层准备、无业务」可将来迁至框架 `Runtime/Bootstrap/` 与 `CmgmFrameBoot` 并列 — **未决** |
+| **GameBootstrap（⚠️ 待讨论）** | **现状：** 已写入 `project_layer.manifest` 与 `Seeds/`，脚手架会创建最简模板。**未决：** 是否应随框架创建、或迁至 `Runtime/Bootstrap/` 与 `CmgmFrameBoot` 并列。**触发复盘：** 实现 `EnterGameplayAsync` 具体加载逻辑时，或推进 **Loading系统1.3** 接通进游戏链之前，**必须**与用户讨论归属后再定稿。 |
 
 #### 模块启动Registry系统（🔒 远期，见 §7.2b）
 
@@ -806,7 +808,22 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | **模块启动Registry系统** | 模块启动Registry系统1.1 | 🔒 远期 | 3.3 ✅ **且** Boot 链 ≥10 | **大** | ★★★★ |
 | **网游预埋** | 网游预埋1.1 | 🔒 远期 | 存档升级 + GameState 完成 | **大** | ★★★★★ |
 
-> **说明：** 脚手架子步顺序为 **1.4 → 1.3 → 1.2**（本仓先迁包体，再补文档与新建工程工具）。并行推进时，各选**不同支线**的最前节点即可。
+> **说明：** 脚手架子步顺序为 **1.4 → 1.3 → 1.2 → 1.2b → 1.2c**。**本线最前节点仍为 1.5**（空工程验证）。并行推进时，各选**不同支线**的最前节点即可。
+
+### 7.7 推荐推进顺序（2026-06-20）
+
+在 **项目脚手架1.5**（你自行验证空工程复制）完成后，建议按「先打通竖切、再铺基础设施」选线：
+
+| 阶段 | 建议支线 | 理由 |
+|------|----------|------|
+| **A · 竖切** | **Loading系统1.1 → 1.2 → 1.3** | 直接改善主界面→进游戏体验；1.3 接通 `GameBootstrap` 前须 **⚠️ 复盘 GameBootstrap 归属** |
+| **B · 流程** | **GameState系统1.1 → 1.2 → 1.3** | 接管 `ScenesManager` 临时宿主，与 Loading / Boot 分工清晰 |
+| **C · 基础设施** | **Lua系统1.1**、**Audio系统1.1**、**事件总线系统1.1** | 可并行；为后续 Manager 解耦与 Boot 策略定案 |
+| **D · 数据** | **存档升级系统1.1** | 与 Demo 存档演进相关；变更面大，可稍晚 |
+| **按需** | **依赖抽象系统**、**内容扩展** | 遇 Odin/URP 痛点再做 |
+| **暂缓** | **GameKits**（仅参考）、**Registry**、**网游预埋** | 见 §7.3 解锁条件 |
+
+> **并行原则：** 同一时期最多推进 **1 条「中~大」变更线**（如 Loading 或 GameState 或 存档升级）+ **1~2 条「小」线**（Lua Registry、事件总线接口等）。
 
 ### 7.5 跨线解锁关系 + 设计决策
 
@@ -902,8 +919,9 @@ Editor/
 | **创建时机** | **脚手架**在 `_WorkSpace` 建目录时 **一并** 写入最简模板（文本 copy / 预制体从 Editor 模板导出） |
 | **框架 Resources** | 仍仅：Settings、UI 基建、Logo、字体（Boot 契约层） |
 | **_TestSpace** | 脚手架 **只建顶层**空目录；子文件夹留给使用者自建 |
-| **模板存放** | `Editor/ProjectSetup/Seeds/`（脚手架种子）；`Editor/AssetTemplates/Templates/`（右键新建） |
-| **GameBootstrap** | 1.2b 作为游戏层种子；是否升格为框架 `Runtime/Bootstrap/` 与 `CmgmFrameBoot` 并列 — **待议** |
+| **模板存放** | `Editor/ProjectSetup/Seeds/`（脚手架）；`Editor/AssetTemplates/Templates/`（右键新建） |
+| **清单文件** | `Editor/ProjectSetup/Manifests/project_layer.manifest`（游戏层/测试层）；`framework_path_check.manifest`（框架目录） |
+| **GameBootstrap** | 已纳入 `project_layer.manifest`（**⚠️ 待讨论** 是否应随框架创建）；实现进游戏逻辑前须复盘归属（见上表） |
 
 **设计决策记录 · 2026-06-19（CmgmFramework 内置 Resources）**
 
@@ -1024,4 +1042,4 @@ CmgmFrameSettings.ROOT_LUA_URI（如 main.lua.txt）
 
 ---
 
-*脚手架 1.2b ✅。本线最前节点：**项目脚手架1.5**（空工程迁移验证）。详见 §7.6。*
+*Editor 四分法 ✅ · `project_layer.manifest` 补全。本线最前节点：**项目脚手架1.5**。并行建议见 **§7.7**。*

@@ -13,7 +13,7 @@ public static class Edt_ProjectLayerSetup
     public static void CreateProjectLayers()
     {
         if (!EditorUtility.DisplayDialog("创建游戏层与测试层",
-                "将按 work_space_scaffold.manifest 创建 _WorkSpace、_TestSpace 目录与种子文件。\n\n" +
+                "将按 project_layer.manifest 创建 _WorkSpace、_TestSpace 目录与种子文件。\n\n" +
                 "已存在的目录与文件不会覆盖。\n" +
                 "框架内置资源见 CmgmFramework/Resources/。\n\n继续？",
                 "创建", "取消"))

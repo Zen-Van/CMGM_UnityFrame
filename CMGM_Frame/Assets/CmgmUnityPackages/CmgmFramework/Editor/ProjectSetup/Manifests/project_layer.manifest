@@ -1,10 +1,13 @@
-# 游戏层 / 测试层脚手架清单（菜单「草木句萌/脚手架/创建游戏层与测试层」与路径检查共用）
+# 游戏层 / 测试层脚手架清单（project_layer.manifest）
+# 菜单「草木句萌/脚手架/创建游戏层与测试层」与 Edt_ProjectPathCheck 共用
 # 每行一条 Assets 路径；有扩展名视为文件（从 ProjectSetup/Seeds 复制），否则视为目录
-# .cs 种子在模板中为 *.cs.txt，部署时写入 *.cs；已存在的路径不会覆盖
+# 种子文件在 Seeds 中多为 *.txt 后缀（如 *.cs.txt、*.md.txt）；已存在的路径不会覆盖
 # Assets/_WorkSpace 会替换为 CmgmFrameSettings.WORK_SPACE_ROOT
 
 Assets/_TestSpace
 Assets/_WorkSpace
+Assets/ArtsResource
+Assets/_WorkSpace/GAME_WORKSPACE.md
 Assets/_WorkSpace/Excels
 Assets/_WorkSpace/HotRes
 Assets/_WorkSpace/HotRes/BuildSource/RELEASE_NOTE.txt
@@ -12,4 +15,6 @@ Assets/_WorkSpace/HotRes/Lua/main.lua.txt
 Assets/_WorkSpace/HotRes/Scenes/InitScene.unity
 Assets/_WorkSpace/HotRes/Scenes/MainScene.unity
 Assets/_WorkSpace/HotRes/UI/Panels/MainPanel.prefab
+Assets/_WorkSpace/Scripts/Bootstrap/GameBootstrap.cs
 Assets/_WorkSpace/Scripts/UI/Panels/MainPanel.cs
+Assets/_WorkSpace/Scripts/_Generated/Config

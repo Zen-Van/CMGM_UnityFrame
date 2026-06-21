@@ -4,7 +4,7 @@ using System.Text;
 using CMGM.Core;
 
 /// <summary>
-/// 读取 work_space_scaffold.manifest，供脚手架创建与工程路径检查共用。
+/// 读取 project_layer.manifest，供脚手架创建与工程路径检查共用。
 /// </summary>
 public static class Edt_ProjectLayerManifest
 {
@@ -214,12 +214,9 @@ public static class Edt_ProjectLayerManifest
         if (File.Exists(templateAssetPath))
             return true;
 
-        if (workSpaceRelative.EndsWith(".cs", System.StringComparison.OrdinalIgnoreCase))
-        {
-            templateAssetPath = TemplateRoot + "/" + workSpaceRelative + ".txt";
-            if (File.Exists(templateAssetPath))
-                return true;
-        }
+        templateAssetPath = TemplateRoot + "/" + workSpaceRelative + ".txt";
+        if (File.Exists(templateAssetPath))
+            return true;
 
         templateAssetPath = null;
         return false;
@@ -238,7 +235,8 @@ public static class Edt_ProjectLayerManifest
 
     private static void CopyMetaIfMissing(string targetAssetPath, string templateAssetPath)
     {
-        if (targetAssetPath.EndsWith(".cs", System.StringComparison.OrdinalIgnoreCase))
+        if (targetAssetPath.EndsWith(".cs", System.StringComparison.OrdinalIgnoreCase) ||
+            targetAssetPath.EndsWith(".md", System.StringComparison.OrdinalIgnoreCase))
             return;
 
         string targetMeta = targetAssetPath + ".meta";
