@@ -555,8 +555,9 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | 进游戏入口 | `ScenesManager` 配置化 + **`ScenesManager` 仅临时流程宿主**（§3.6）；`GameBootstrap.EnterGameplayAsync` |
 | 项目脚手架1.1 | `CmgmUnityPackages/` 占位 + README |
 | 项目脚手架1.3 | `_WorkSpace/GAME_WORKSPACE.md` 游戏层文档 ✅ |
-| 项目脚手架1.2 | `Edt_WorkSpaceScaffold` 菜单 ✅ |
-| 项目脚手架1.2b | WorkSpaceSeed 模板 + 游戏层种子；TestSpace 仅顶层 ✅ |
+| 项目脚手架1.2 | `Edt_ProjectLayerSetup` 菜单 ✅ |
+| 项目脚手架1.2b | `ProjectSetup/Seeds` 模板 + 游戏层种子；TestSpace 仅顶层 ✅ |
+| Editor 四分法 | `ProjectSetup` / `AssetTemplates` / `QuickSearch` / `Tools` ✅ |
 | 框架 Resources + Runtime 三分 | Settings/UI/Logo/Font → `Resources/`；代码 → `Runtime/` ✅ |
 | 迭代模型 | 主线/支线重排；旧 0→9 归档 |
 
@@ -724,7 +725,7 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | **项目脚手架1.4** ✅ | Framework + `CmgmGameKits` **目录**物理搬迁 → `CmgmUnityPackages`；`Consts.Paths.Package` 收口 | 编译 + Play |
 | **项目脚手架1.3** ✅ | `_WorkSpace/GAME_WORKSPACE.md` 模板 | 游戏文档与框架文档分离 |
 | **项目脚手架1.2** ✅ | WorkSpace 脚手架 Editor（`草木句萌/脚手架/` 菜单）；**仅目录 + GAME_WORKSPACE.md** | 空工程可建骨架；PathCheck 通过 |
-| **项目脚手架1.2b** ✅ | 游戏层种子（main.lua、RELEASE_NOTE、InitScene/MainScene、MainPanel、GameBootstrap）；`_TestSpace` 仅顶层；模板源 `Editor/.../WorkSpaceSeed/` | 脚手架可写最简闭环 |
+| **项目脚手架1.2b** ✅ | 游戏层种子（main.lua、RELEASE_NOTE、InitScene/MainScene、MainPanel、GameBootstrap）；`_TestSpace` 仅顶层；模板源 `Editor/ProjectSetup/Seeds/` | 脚手架可写最简闭环 |
 | **项目脚手架1.5** | 空工程迁移验证 | 可复制 |
 | **项目脚手架1.6**（远期） | Manifest 驱动勾选 → 生成 Boot Init（+ 可选 asmdef） | 按勾选裁剪 |
 | **项目脚手架1.7**（按需） | 路径扫描自动生成 / 校验（与 **Lua系统1.3** / §2b **E** 衔接） | 路径少手写 |
@@ -733,7 +734,7 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 
 **项目脚手架1.2b（✅ 2026-06-20）**
 
-> **原则：** 游戏层最简模板 **不进 `CmgmFramework/Runtime` 或 `Resources`**；脚手架从 `Editor/TemplateCreator/Templates/WorkSpaceSeed/` 复制到 `_WorkSpace`。
+> **原则：** 游戏层最简模板 **不进 `CmgmFramework/Runtime` 或 `Resources`**；脚手架从 `Editor/ProjectSetup/Seeds/` 复制到 `_WorkSpace`。
 
 | 类别 | 脚手架写入 `_WorkSpace`（缺失则创建） |
 |------|--------------------------------------|
@@ -871,6 +872,28 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 
 > **说明：** 脚手架 **1.2b ✅** 后本线最前节点为 **1.5**。
 
+**CmgmFramework/Editor 布局（四分法 · 2026-06-20）**
+
+```
+Editor/
+├── ProjectSetup/           工程级：manifest、Seeds、路径检查、脚手架菜单
+│   ├── Manifests/
+│   ├── Seeds/
+│   ├── Edt_CmgmEditorPaths.cs
+│   ├── Edt_ProjectLayerSetup.cs
+│   ├── Edt_ProjectLayerManifest.cs
+│   ├── Edt_ProjectPathCheck.cs
+│   └── Edt_ManifestPathUtil.cs
+├── AssetTemplates/         右键 CMGM Create：脚本 / Excel / 空文件夹模板
+│   └── Templates/
+├── QuickSearch/            菜单跳转与打开系统目录
+│   └── Edt_QuickSearchMenus.cs
+└── Tools/                  独立小工具
+    └── TMP/
+```
+
+> 模块专属 Editor（如 `ExcelTool`、`Edt_CreateUIPanelAction`）仍在 `Runtime/Modules/*/Editor/`；跨模块工程能力放 `CmgmFramework/Editor/`。
+
 **设计决策记录 · 2026-06-20（脚手架 · 游戏层种子 vs 框架层）** ✅ 1.2b
 
 | 项 | 结论 |
@@ -879,7 +902,7 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | **创建时机** | **脚手架**在 `_WorkSpace` 建目录时 **一并** 写入最简模板（文本 copy / 预制体从 Editor 模板导出） |
 | **框架 Resources** | 仍仅：Settings、UI 基建、Logo、字体（Boot 契约层） |
 | **_TestSpace** | 脚手架 **只建顶层**空目录；子文件夹留给使用者自建 |
-| **模板存放** | `Editor/TemplateCreator/Templates/WorkSpaceSeed/`（Editor 复制用） |
+| **模板存放** | `Editor/ProjectSetup/Seeds/`（脚手架种子）；`Editor/AssetTemplates/Templates/`（右键新建） |
 | **GameBootstrap** | 1.2b 作为游戏层种子；是否升格为框架 `Runtime/Bootstrap/` 与 `CmgmFrameBoot` 并列 — **待议** |
 
 **设计决策记录 · 2026-06-19（CmgmFramework 内置 Resources）**

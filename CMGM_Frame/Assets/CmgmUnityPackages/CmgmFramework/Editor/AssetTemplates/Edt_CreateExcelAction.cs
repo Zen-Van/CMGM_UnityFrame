@@ -10,7 +10,7 @@ namespace MYDQC
 {
     public class Edt_CreateExcelAction : EndNameEditAction
     {
-        private static string TemplatesPath = Edt_BaseUtils.EditorRoot + "/TemplateCreator/Templates";
+        private static string TemplatesPath = Edt_CmgmEditorPaths.AssetTemplates;
         private static string Path_Excel = TemplatesPath + "/新建 XLSX 工作表.xlsx";
 
 

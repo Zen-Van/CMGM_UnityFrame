@@ -2,21 +2,18 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using CMGM.Core;
-using UnityEditor;
 
 /// <summary>
 /// 读取 work_space_scaffold.manifest，供脚手架创建与工程路径检查共用。
 /// </summary>
-public static class Edt_WorkSpaceScaffoldManifest
+public static class Edt_ProjectLayerManifest
 {
     private const string DefaultWorkSpacePrefix = "Assets/_WorkSpace";
     private const string DefaultTestSpacePrefix = "Assets/_TestSpace";
 
-    public static string ManifestPath =>
-        Edt_BaseUtils.EditorRoot + "/Scaffold/work_space_scaffold.manifest";
+    public static string ManifestPath => Edt_CmgmEditorPaths.ProjectLayerManifest;
 
-    private static string TemplateRoot =>
-        Edt_BaseUtils.EditorRoot + "/TemplateCreator/Templates/WorkSpaceSeed";
+    private static string TemplateRoot => Edt_CmgmEditorPaths.ProjectLayerSeeds;
 
     public sealed class EnsureReport
     {
@@ -30,21 +27,56 @@ public static class Edt_WorkSpaceScaffoldManifest
 
         public void LogSummary()
         {
+            CmgmLog.fNormal(BuildFullLog());
+        }
+
+        public string BuildDialogSummary()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine($"新建：目录 {CreatedDirectories.Count}，文件 {CreatedFiles.Count}");
+            sb.AppendLine($"跳过：目录 {SkippedDirectories.Count}，文件 {SkippedFiles.Count}");
+
+            if (Errors.Count > 0)
+                sb.AppendLine($"错误：{Errors.Count} 项（详见控制台）");
+
+            AppendDialogSection(sb, "新建目录", CreatedDirectories);
+            AppendDialogSection(sb, "新建文件", CreatedFiles);
+            AppendDialogSection(sb, "跳过", SkippedDirectories, SkippedFiles);
+
+            return sb.ToString().TrimEnd();
+        }
+
+        public string BuildFullLog()
+        {
             var sb = new StringBuilder();
             sb.AppendLine("[脚手架] 补全结果：");
-
             AppendSection(sb, "新建目录", CreatedDirectories);
             AppendSection(sb, "已存在（跳过目录）", SkippedDirectories);
             AppendSection(sb, "新建文件", CreatedFiles);
             AppendSection(sb, "已存在（跳过文件）", SkippedFiles);
             AppendSection(sb, "错误", Errors);
+            return sb.ToString().TrimEnd();
+        }
 
-            if (AnyCreated)
-                CmgmLog.fPositive(sb.ToString().TrimEnd());
-            else if (Errors.Count > 0)
-                CmgmLog.fError(sb.ToString().TrimEnd());
-            else
-                CmgmLog.fNormal(sb.ToString().TrimEnd());
+        private static void AppendDialogSection(
+            StringBuilder sb, string title, List<string> primary, List<string> secondary = null)
+        {
+            var items = new List<string>();
+            items.AddRange(primary);
+            if (secondary != null)
+                items.AddRange(secondary);
+
+            if (items.Count == 0)
+                return;
+
+            sb.AppendLine();
+            sb.AppendLine($"{title}：");
+            const int max = 8;
+            for (int i = 0; i < items.Count && i < max; i++)
+                sb.AppendLine($"  · {items[i]}");
+
+            if (items.Count > max)
+                sb.AppendLine($"  … 另有 {items.Count - max} 项（见控制台）");
         }
 
         private static void AppendSection(StringBuilder sb, string title, List<string> items)
@@ -62,25 +94,7 @@ public static class Edt_WorkSpaceScaffoldManifest
     }
 
     public static IReadOnlyList<string> ReadEntries()
-    {
-        var entries = new List<string>();
-        if (!File.Exists(ManifestPath))
-        {
-            CmgmLog.fError($"[脚手架] 找不到清单 {ManifestPath}");
-            return entries;
-        }
-
-        foreach (string rawLine in File.ReadAllLines(ManifestPath))
-        {
-            string line = rawLine.Trim();
-            if (line.Length == 0 || line.StartsWith("#"))
-                continue;
-
-            entries.Add(NormalizeEntry(line));
-        }
-
-        return entries;
-    }
+        => Edt_ManifestPathUtil.ReadEntries(ManifestPath);
 
     public static string ResolvePath(string manifestEntry)
     {
@@ -113,7 +127,15 @@ public static class Edt_WorkSpaceScaffoldManifest
         }
 
         if (logSummary || report.AnyCreated || report.Errors.Count > 0)
-            report.LogSummary();
+        {
+            string log = report.BuildFullLog();
+            if (report.AnyCreated)
+                CmgmLog.fPositive(log);
+            else if (report.Errors.Count > 0)
+                CmgmLog.fError(log);
+            else
+                CmgmLog.fNormal(log);
+        }
 
         return report;
     }
@@ -145,7 +167,7 @@ public static class Edt_WorkSpaceScaffoldManifest
     }
 
     private static string NormalizeEntry(string entry)
-        => entry.Replace('\\', '/').Trim().TrimEnd('/');
+        => Edt_ManifestPathUtil.NormalizeEntry(entry);
 
     private static void EnsureDirectory(string assetPath, EnsureReport report)
     {
@@ -216,7 +238,6 @@ public static class Edt_WorkSpaceScaffoldManifest
 
     private static void CopyMetaIfMissing(string targetAssetPath, string templateAssetPath)
     {
-        // .cs 部署后由 Unity 生成 MonoScript meta；不可复制 TextScriptImporter 的 .cs.txt.meta
         if (targetAssetPath.EndsWith(".cs", System.StringComparison.OrdinalIgnoreCase))
             return;
 

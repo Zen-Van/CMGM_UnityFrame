@@ -3,9 +3,9 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>
-/// 项目脚手架：按 work_space_scaffold.manifest 手动创建 _WorkSpace 与 _TestSpace。
+/// 项目脚手架：按 manifest 手动创建 _WorkSpace 与 _TestSpace。
 /// </summary>
-public static class Edt_WorkSpaceScaffold
+public static class Edt_ProjectLayerSetup
 {
     private const string MenuPath = "草木句萌/脚手架/创建游戏层与测试层";
 
@@ -19,15 +19,14 @@ public static class Edt_WorkSpaceScaffold
                 "创建", "取消"))
             return;
 
-        var report = Edt_WorkSpaceScaffoldManifest.EnsureAll();
+        var report = Edt_ProjectLayerManifest.EnsureAll();
         if (report.AnyCreated)
             AssetDatabase.Refresh();
 
         EditorUtility.DisplayDialog("脚手架",
-            "_WorkSpace / _TestSpace 已按清单创建或补全。\n" +
-            "详情见控制台。\n" +
+            report.BuildDialogSummary() + "\n\n" +
             "Settings / UI 基建见 CmgmFramework/Resources/。",
             "确定");
-        Edt_BaseUtils.PathSelect(Consts.Paths.WorkSpace);
+        Edt_QuickSearchMenus.PathSelect(Consts.Paths.WorkSpace);
     }
 }

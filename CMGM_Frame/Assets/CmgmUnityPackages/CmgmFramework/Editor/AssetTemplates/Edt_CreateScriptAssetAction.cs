@@ -8,7 +8,7 @@ using System.IO;
 public class Edt_CreateScriptAssetAction : EndNameEditAction
 {
     #region 各模板路径
-    private static string TemplatesPath = Edt_BaseUtils.EditorRoot + "/TemplateCreator/Templates";
+    private static string TemplatesPath = Edt_CmgmEditorPaths.AssetTemplates;
     
     private static string Path_Empty = TemplatesPath + "/Empty.txt";
     private static string Path_MonoBehaviour = TemplatesPath + "/NewMonoBehaviour.cs.txt";

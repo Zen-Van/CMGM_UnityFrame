@@ -1,0 +1,14 @@
+# 框架包路径检查清单（仅目录；启动时校验，不自动创建）
+# 路径相对 Assets/，与 Consts.Paths.Package / Framework 保持一致
+
+Assets/CmgmUnityPackages/CmgmFramework
+Assets/CmgmUnityPackages/CmgmGameKits
+Assets/CmgmUnityPackages/CmgmFramework/Runtime
+Assets/CmgmUnityPackages/CmgmFramework/Runtime/Core
+Assets/CmgmUnityPackages/CmgmFramework/Runtime/Modules
+Assets/CmgmUnityPackages/CmgmFramework/Runtime/Modules/Data/Archive
+Assets/CmgmUnityPackages/CmgmFramework/Runtime/Modules/Data/Config
+Assets/CmgmUnityPackages/CmgmFramework/Runtime/Modules/Data/Editor
+Assets/CmgmUnityPackages/CmgmFramework/Resources
+Assets/CmgmUnityPackages/CmgmFramework/Resources/UI
+Assets/CmgmUnityPackages/CmgmFramework/Editor

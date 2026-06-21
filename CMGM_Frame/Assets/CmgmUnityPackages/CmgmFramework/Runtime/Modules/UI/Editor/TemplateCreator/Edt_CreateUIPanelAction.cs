@@ -14,7 +14,7 @@ namespace CMGM.UI.Editor
 public class Edt_CreateUIPanelAction : EndNameEditAction
 {
     #region 各模板路径
-    private static string TemplatesPath = Edt_BaseUtils.EditorRoot + "/TemplateCreator/Templates";
+    private static string TemplatesPath = Edt_CmgmEditorPaths.AssetTemplates;
     private static string TemplatePath_PanelScript = TemplatesPath + "/NewPanel.cs.txt";
     private static string TemplatePath_PanelPrefab = TemplatesPath + "/NewPanel.prefab.txt";
     #endregion
