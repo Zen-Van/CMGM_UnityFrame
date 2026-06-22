@@ -4,7 +4,7 @@ using System.Text;
 using CMGM.Core;
 
 /// <summary>
-/// 读取 project_layer.manifest，供脚手架创建与工程路径检查共用。
+/// 读取 project_layer.manifest，供项目初始化与工程路径检查共用。
 /// </summary>
 public static class Edt_ProjectLayerManifest
 {
@@ -49,7 +49,7 @@ public static class Edt_ProjectLayerManifest
         public string BuildFullLog()
         {
             var sb = new StringBuilder();
-            sb.AppendLine("[脚手架] 补全结果：");
+            sb.AppendLine("[项目初始化] 补全结果：");
             AppendSection(sb, "新建目录", CreatedDirectories);
             AppendSection(sb, "已存在（跳过目录）", SkippedDirectories);
             AppendSection(sb, "新建文件", CreatedFiles);
@@ -189,10 +189,10 @@ public static class Edt_ProjectLayerManifest
             return;
         }
 
-        string relative = GetWorkSpaceRelativePath(targetAssetPath);
+        string relative = GetSeedRelativePath(targetAssetPath);
         if (relative == null)
         {
-            report.Errors.Add($"清单文件不在工作区内，无法映射模板：{targetAssetPath}");
+            report.Errors.Add($"清单文件无法映射种子模板：{targetAssetPath}");
             return;
         }
 
@@ -208,13 +208,13 @@ public static class Edt_ProjectLayerManifest
         report.CreatedFiles.Add(targetAssetPath);
     }
 
-    private static bool TryResolveTemplatePath(string workSpaceRelative, out string templateAssetPath)
+    private static bool TryResolveTemplatePath(string seedRelative, out string templateAssetPath)
     {
-        templateAssetPath = TemplateRoot + "/" + workSpaceRelative;
+        templateAssetPath = TemplateRoot + "/" + seedRelative;
         if (File.Exists(templateAssetPath))
             return true;
 
-        templateAssetPath = TemplateRoot + "/" + workSpaceRelative + ".txt";
+        templateAssetPath = TemplateRoot + "/" + seedRelative + ".txt";
         if (File.Exists(templateAssetPath))
             return true;
 
@@ -222,15 +222,33 @@ public static class Edt_ProjectLayerManifest
         return false;
     }
 
-    private static string GetWorkSpaceRelativePath(string resolvedAssetPath)
+    private static string GetSeedRelativePath(string resolvedAssetPath)
     {
-        string workSpace = Consts.Paths.WorkSpace.Replace('\\', '/');
         string path = resolvedAssetPath.Replace('\\', '/');
-        if (!path.StartsWith(workSpace))
-            return null;
 
-        string relative = path.Substring(workSpace.Length).TrimStart('/');
-        return relative.Length == 0 ? null : relative;
+        if (TryGetRelativeUnderRoot(path, Consts.Paths.WorkSpace, out string relative))
+            return relative;
+
+        if (TryGetRelativeUnderRoot(path, Consts.Paths.TestSpace, out relative))
+            return "_TestSpace/" + relative;
+
+        if (TryGetRelativeUnderRoot(path, Consts.Paths.PublicRes, out relative))
+            return "_PublicRes/" + relative;
+
+        return null;
+    }
+
+    private static bool TryGetRelativeUnderRoot(string path, string root, out string relative)
+    {
+        root = root.Replace('\\', '/');
+        if (!path.StartsWith(root))
+        {
+            relative = null;
+            return false;
+        }
+
+        relative = path.Substring(root.Length).TrimStart('/');
+        return relative.Length > 0;
     }
 
     private static void CopyMetaIfMissing(string targetAssetPath, string templateAssetPath)

@@ -4,7 +4,7 @@ using Cysharp.Threading.Tasks;
 namespace CMGM.Game
 {
     /// <summary>
-    /// 游戏层「进游戏」入口（脚手架最简模板）。Logo → 主界面由 <see cref="CMGM.Bootstrap.CmgmFrameBoot"/> 负责。
+    /// 游戏层「进游戏」入口（项目初始化模板）。Logo → 主界面由 <see cref="CMGM.Bootstrap.CmgmFrameBoot"/> 负责。
     /// </summary>
     public static class GameBootstrap
     {
@@ -14,7 +14,7 @@ namespace CMGM.Game
         public static async UniTask EnterGameplayAsync()
         {
             // TODO：在此 LoadTable、预载关卡 Addressables、Wwise Bank 等（见 ARCHITECTURE §8）
-            CmgmLog.fPositive("进游戏内容加载完成（脚手架模板；请按项目补充加载清单）");
+            CmgmLog.fPositive("进游戏内容加载完成（项目初始化模板；请按项目补充加载清单）");
             await UniTask.CompletedTask;
         }
     }

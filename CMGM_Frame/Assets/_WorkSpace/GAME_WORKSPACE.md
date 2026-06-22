@@ -13,7 +13,7 @@
 | **`Assets/_WorkSpace/`** | **游戏层**（本文档）：脚本、HotRes、Excels |
 | **`Assets/_TestSpace/`** | **测试层** |
 
-换项目时：复制 `CmgmUnityPackages` + 脚手架生成 `_WorkSpace`；框架 Resources 随包，无需在工作区重复一份 Settings。
+换项目时：复制 `CmgmUnityPackages` + 通过「▶ 项目初始化」生成 `_WorkSpace`；框架 Resources 随包，无需在工作区重复一份 Settings。
 
 ---
 

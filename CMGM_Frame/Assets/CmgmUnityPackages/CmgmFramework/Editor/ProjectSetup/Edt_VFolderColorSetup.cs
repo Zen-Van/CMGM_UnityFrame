@@ -1,3 +1,4 @@
+using System.IO;
 using CMGM.Core;
 using UnityEditor;
 using UnityEngine;
@@ -5,7 +6,7 @@ using VFolderData = VFolders.VFoldersData;
 using VFoldersLib = VFolders.VFolders;
 
 /// <summary>
-/// 脚手架：为框架关键目录设置 vFolders 文件夹颜色。
+/// 项目初始化：为关键目录设置 vFolders 文件夹颜色。
 /// </summary>
 public static class Edt_VFolderColorSetup
 {
@@ -22,14 +23,16 @@ public static class Edt_VFolderColorSetup
     {
         if (VFoldersLib.data == null)
         {
-            CmgmLog.fNormal("[脚手架] 未找到 vFolders Data，跳过文件夹着色。");
+            CmgmLog.fNormal("[项目初始化] 未找到 vFolders Data，跳过文件夹着色。");
             return 0;
         }
+
+        EnsureFoldersImported();
 
         int applied = 0;
         foreach (var (path, colorIndex) in FrameworkFolderColors)
         {
-            if (!AssetDatabase.IsValidFolder(path))
+            if (!TryGetImportedFolderGuid(path, out _))
                 continue;
 
             VFoldersLib.SetColor(path, colorIndex);
@@ -42,16 +45,41 @@ public static class Edt_VFolderColorSetup
         return applied;
     }
 
+    private static void EnsureFoldersImported()
+    {
+        bool needsRefresh = false;
+        foreach (var (path, _) in FrameworkFolderColors)
+        {
+            if (Directory.Exists(path) && string.IsNullOrEmpty(AssetDatabase.AssetPathToGUID(path)))
+                needsRefresh = true;
+        }
+
+        if (needsRefresh)
+            AssetDatabase.Refresh();
+    }
+
+    private static bool TryGetImportedFolderGuid(string path, out string guid)
+    {
+        guid = AssetDatabase.AssetPathToGUID(path);
+        if (!string.IsNullOrEmpty(guid))
+            return true;
+
+        if (!Directory.Exists(path))
+            return false;
+
+        CmgmLog.fNormal($"[项目初始化] 文件夹未导入 AssetDatabase，跳过着色：{path}");
+        return false;
+    }
+
     private static void SaveFolderColorData()
     {
         if (VFolderData.storeDataInMetaFiles)
         {
             foreach (var (path, _) in FrameworkFolderColors)
             {
-                if (!AssetDatabase.IsValidFolder(path))
+                if (!TryGetImportedFolderGuid(path, out string guid))
                     continue;
 
-                string guid = AssetDatabase.AssetPathToGUID(path);
                 var folderData = VFoldersLib.GetFolderData(guid, createDataIfDoesntExist: false);
                 if (folderData == null)
                     continue;

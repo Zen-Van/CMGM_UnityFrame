@@ -16,7 +16,7 @@
 
 ## 2. 推荐 `_WorkSpace` 结构
 
-脚手架 **1.2 / 1.2b** 会创建目录，并写入 main.lua、InitScene、MainPanel、GameBootstrap 等种子（缺失时）。
+项目初始化会创建目录，并写入 main.lua、InitScene、MainPanel、GameBootstrap 等种子（缺失时）。
 
 ```
 _WorkSpace/
