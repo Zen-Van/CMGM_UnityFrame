@@ -66,7 +66,7 @@
 | **3** Bootstrap | 3.2~3.4 将各 Manager 改为 Module，构造函数不再做重活 | 并入主线「启动组合根3.1」 |
 | **3** Bootstrap | 3.5 `CmgmFrameBoot` 迁至 `Framework/Bootstrap/`（**`CMGM.Bootstrap`** 组合根）；按 Order await 注册模块 | 重排为主线「启动组合根3.2」一部分 |
 | **3** Bootstrap | 3.6 游戏项目在 `GameBootstrap` 注册自己的 Module | 同上 |
-| **4** 存档升级 | 4.1~4.6 分块存档、`ISaveChunk`、版本头、替换 `BinaryFormatter`、迁移示例 | 重排为支线「存档升级系统」 |
+| **4** 存档升级 | 4.1~4.6 分块存档、`ISaveChunk`、版本头、替换 `BinaryFormatter`、迁移示例 | 2026-06-20 拆为「**存档格式优化**」（前置最小包）+「**存档升级系统**」（拓展）；见 `ARCHITECTURE.md` §7.4 |
 | **5** GameState | 5.1~5.5 状态机基础态 + Pause/Cutscene/Battle 预留 | 重排为支线「GameState系统」 |
 | **6** 事件总线 | 6.1~6.4 `IEventBus` 落地 OptionalSystem，替代一处直接调用 | 重排为支线「事件总线系统」 |
 | **7** 依赖抽象 | 7.1 `IAudioService` → **Audio系统1.1**；7.2 `ILuaBridgeRegistry` → **Lua系统1.1**；7.3 Odin 降级 → **依赖抽象系统1.1**；7.4 URP/RP 抽象 → **依赖抽象系统1.2** | 重排为支线（拆入相关系统 + 依赖抽象系统） |

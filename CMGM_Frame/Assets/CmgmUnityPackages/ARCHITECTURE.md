@@ -2,7 +2,7 @@
 
 > 本文档是框架化改造的长期参考（「北极星」）。  
 > 目标：将当前工程从「带 Demo 的原型项目」逐步改造为「可跨项目迁移的框架」。  
-> 最后更新：2026-06-20 — **Editor 四分法 ✅**、`project_layer.manifest` 补全；本线最前节点仍为 **项目脚手架1.5**。
+> 最后更新：2026-06-20 — **存档格式优化** 扩展为 **`.cmgm` 统一容器**（Archive + Config 同头分 kind）；脚手架 **1.5 ✅**。
 
 ---
 
@@ -247,7 +247,8 @@ InitScene（CmgmFrameBoot.Awake）
 | 问题 | 位置 | 计划归属 |
 |------|------|----------|
 | namespace / asmdef | Core/UI/Data/Audio/Input/Editor 已闭环；Lua/Bootstrap/Scene 临时宿主 无 asmdef | §7.2 ✅ |
-| `BinaryFormatter` 序列化 | `ArchiveManager` | 支线「存档升级系统」 |
+| `BinaryFormatter` 序列化 | `ArchiveManager` | **存档格式优化1.2** |
+| 配表 `.cmgm` 无统一文件头 | `ExcelTool` / `ConfigTableManager` | **存档格式优化1.1b ~ 1.3b** |
 | 无 GameState 状态机 | — | 支线「GameState系统」 |
 | 无事件总线 | `OptionalSystem/` | 支线「事件总线系统」 |
 
@@ -559,6 +560,7 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | 项目脚手架1.2 | `Edt_ProjectLayerSetup` 菜单 ✅ |
 | 项目脚手架1.2b | `ProjectSetup/Seeds` 模板 + 游戏层种子；TestSpace 仅顶层 ✅ |
 | 项目脚手架1.2c | `project_layer.manifest` 补全 + 重命名 ✅ |
+| 项目脚手架1.5 | 空工程迁移验证 ✅ |
 | 框架 Resources + Runtime 三分 | Settings/UI/Logo/Font → `Resources/`；代码 → `Runtime/` ✅ |
 | 迭代模型 | 主线/支线重排；旧 0→9 归档 |
 
@@ -615,16 +617,17 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | 支线系统 | 最前节点 | 解锁条件 | 状态 |
 |----------|----------|----------|------|
 | **Loading系统** | Loading系统1.1 | Core ✅ + UI ✅ | 已解锁 |
-| **存档升级系统** | 存档升级系统1.1 | Data ✅ | 已解锁 |
+| **存档格式优化** | **存档格式优化1.1** | Data ✅ | 已解锁 |
+| **存档升级系统** | 存档升级系统1.1 | **存档格式优化** 全线完成（含 **1.1b~1.3b**） | 🔒 待解锁 |
 | **Lua系统** | Lua系统1.1 | 编译边界2.6 ✅ | 已解锁 |
 | **Audio系统** | Audio系统1.1 | 编译边界2.7 ✅ | 已解锁 |
 | **GameState系统** | GameState系统1.1 | 启动编排3.3 ✅ | 已解锁 |
 | **事件总线系统** | 事件总线系统1.1 | 启动编排3.3 ✅ | 已解锁 |
 | **依赖抽象系统** | 依赖抽象系统1.1 | 编译边界2.8 ✅ | 已解锁（按需） |
-| **项目脚手架与包体迁移** | **项目脚手架1.5** | 1.2b ✅ | 已解锁 |
+| **项目脚手架与包体迁移** | **项目脚手架1.6**（远期） | 1.5 ✅ | 已解锁 |
 | **GameKits** | GameKits1.1 | 未定（草案写 **项目脚手架1.4** 后，**非可靠**） | 🔒【仅作参考】 |
 | **模块启动Registry系统** | 模块启动Registry系统1.1 | 启动编排3.3 ✅ **且** Boot 链 ≥10 | 🔒 远期 |
-| **网游预埋** | 网游预埋1.1 | 存档升级 **且** GameState 完成 | 🔒 远期 |
+| **网游预埋** | 网游预埋1.1 | **存档升级系统** 完成 **且** GameState 完成 | 🔒 远期 |
 | **内容扩展** | 内容扩展1.1 | 按需 | 按需 |
 
 > 各线内部步骤、验收与学习点见 **§7.4**；带变更量与难度的「下一步」总表见 **§7.6**。
@@ -646,16 +649,45 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 > **进度模型（1.2 起）：** 每个 `ILoadTask` 带 `Weight`；总进度 = `Σ(已完成权重) + 当前任务权重 × 当前任务内部进度`。Addressables/场景用真实 `PercentComplete`；Bank/Init 等无中间进度者完成即跳段（必要时加假进度补间防卡顿感）。显示推荐「单条 + 当前阶段文案」，不展示多条并行子进度。  
 > **配置形态（1.4）：** 不做全局大表；**每个加载点一个 `.asset`（ScriptableObject）** 配静态资源，运行时按上下文（敌人 ID 等）程序化追加 `ILoadTask`。统一的是「执行器」，分散的是「清单」。
 
-#### 存档升级系统（已解锁）
+#### 存档格式优化（已解锁 · **`.cmgm` 统一容器 + 存档升级系统前置**）
+
+> **动因：** ① `BinaryFormatter` 过时；② 当前 **存档** 与 **配表** 虽同扩展名 `.cmgm`，但磁盘格式不一致（BF blob vs Excel 自定义二进制），无法自检类型、难以统一演进。  
+> **目标：** `.cmgm` = **统一容器头** + **分类型 payload**；头里标识 `Archive` / `Config`，各自走自己的编解码器。  
+> **范围：** 不含 `ISaveChunk`、完整 Migrator 链（属 **存档升级系统**）。配表 **payload 语义**（行/列二进制布局）本阶段可保持不变，只统一「外壳 + 编解码入口」。
+
+**统一容器头 v1（计划形态，实现时落于 `CmgmFileFormat` 或等价）**
+
+| 字段 | 说明 |
+|------|------|
+| `magic` | 固定四字节（如 `CMGM`），标识 CMGM 容器文件 |
+| `version` | `uint32`，容器格式版本（v1 起） |
+| `kind` | `uint32`：`Archive` / `Config`（枚举） |
+| `payload` | 正文；**Archive** → `IArchiveSerializer`；**Config** → `IConfigTableCodec`（Excel 表二进制） |
+
+读写顺序（与现网一致）：`Pack(header+payload)` → `CipherTool` → 写盘；读盘反向。  
+**Archive** 落盘：`persistentDataPath/Archives/`；**Config** 落盘：`StreamingAssets/TableConfig/`。
+
+| 子步 | 内容 | 验收 | 解决的问题 |
+|------|------|------|------------|
+| **存档格式优化1.1** | 实现 **统一容器头** + `Pack`/`Unpack`；Archive 侧接入 + `IArchiveSerializer` 抽象；`ArchiveManager` 不再直接 `BinaryFormatter` | 新存档文件带 `CMGM` 头且 `kind=Archive`；Save/Load 经统一入口 | 存档可识别、可 versioning；序列化可替换 |
+| **存档格式优化1.1b** | Config 侧接入同一容器：`ExcelTool` 导出、`ConfigTableManager.LoadTable` 读入均 `Unpack` 后按 `kind=Config` 分支 | 导出的 `TableConfig/*.cmgm` 带相同头；`LoadTable` 与导表一致 | 配表/存档不再「同名不同物」；误读文件可报错 |
+| **存档格式优化1.2** | Archive **payload**：新序列化（如 Newtonsoft，支持 `Dictionary`） | `ArchiveMeta` + `GameRuntimeData` 读写正常；工程无 `BinaryFormatter` | 去掉过时 API 与安全/平台风险 |
+| **存档格式优化1.2b** | Config **payload**：`IConfigTableCodec` 收口 `ExcelTool` 写表二进制与 `ConfigTableManager` 读表逻辑（布局可与现网一致） | 导表 + 运行时 `LoadTable` 行为不变；编解码只经 Codec 一处 | Excel 读写不再散落两处；后续改表格式只改 Codec |
+| **存档格式优化1.3** | Archive **旧档**：开发期清 `Archives/`，或可选 Legacy（无头 / BF）→ v1 一次性迁移 | Demo 存档策略明确 | 1.2 上线后不 silent fail |
+| **存档格式优化1.3b** | Config **旧档**：无头旧 `StreamingAssets` 配表 — 约定 **重新导表**（推荐），或可选 Legacy 直读旧二进制 | 文档 + 菜单/说明；误用旧包可识别 | 与 1.1b 配套，避免混用旧表数据 |
+
+> **子步顺序建议：** `1.1 → 1.1b`（先定壳、双侧接入）→ `1.2 ∥ 1.2b`（payload 可并行）→ `1.3 ∥ 1.3b`（旧档策略）。
+
+#### 存档升级系统（🔒 解锁：**存档格式优化 1.1~1.3 与 1.1b~1.3b** 全线完成）
+
+> **定位：** 在 v1 序列化稳定后的**拓展线**——分块、版本迁移、运行时 API 增强。原「阶段 4」中除换序列化外的能力均在此线。
 
 | 子步 | 内容 | 验收 |
 |------|------|------|
-| **存档升级系统1.1** | 存档版本头（magic + version + chunk 数量） | 旧档可识别 |
-| **存档升级系统1.2** | 分块接口 `ISaveChunk` / chunk 注册表；每块独立序列化 | 游戏只增 Game 层 chunk |
-| **存档升级系统1.3** | 替换 `BinaryFormatter`（JSON / MemoryPack / 自定义二进制择一） | 安全、可版本迁移 |
-| **存档升级系统1.4** | 迁移管线 `ISaveMigrator`：vN → vN+1 | 样例迁移测试 |
-| **存档升级系统1.5** | 运行时 API：`SaveSlot` / 异步写盘 / 校验 | 多存档槽正常 |
-| **存档升级系统1.6** | 示例与文档：演示新增字段如何加 chunk | 策划 / 程序可查 |
+| **存档升级系统1.1** | 分块 `ISaveChunk` / chunk 注册表；文件头扩展（如 chunk 数量） | 游戏层只增 chunk，不改编解码器入口 |
+| **存档升级系统1.2** | `ISaveMigrator`：vN → vN+1 迁移管线 | 样例迁移测试 |
+| **存档升级系统1.3** | 运行时 API：`SaveSlot` / 异步写盘 / 校验 | 多存档槽与写盘体验 |
+| **存档升级系统1.4** | 示例与文档：演示新增字段如何加 chunk | 策划 / 程序可查 |
 
 #### Lua系统（已解锁）
 
@@ -718,7 +750,7 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 
 > **动因：** 框架代码与游戏内容混在 `_WorkSpace/Scripts` 不便跨项目拷贝；常量入口分散（`Consts.Paths` / `MusicGameConsts` 等）；新项目缺少标准游戏层目录。  
 > **目标形态：** 可移植代码 → `Assets/CmgmUnityPackages/{CmgmFramework,CmgmGameKits}`；游戏层 → `_WorkSpace` + `_TestSpace`；框架文档 → `ARCHITECTURE.md`（随框架）；游戏层约定 → `_WorkSpace/GAME_WORKSPACE.md`（随项目）。  
-> **节奏：** 1.1 ✅ → **1.4 ✅** → **1.3 ✅** → **1.2 ✅** → **1.2b ✅** → **1.5**…；**最前节点 = 1.5**。
+> **节奏：** 1.1 ✅ → **1.4 ✅** → **1.3 ✅** → **1.2 ✅** → **1.2b ✅** → **1.2c ✅** → **1.5 ✅**…；**本线最前节点 = 1.6（远期）**。
 
 | 子步 | 内容 | 验收 |
 |------|------|------|
@@ -728,7 +760,7 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | **项目脚手架1.2** ✅ | WorkSpace 脚手架 Editor（`草木句萌/脚手架/` 菜单）；**仅目录 + GAME_WORKSPACE.md** | 空工程可建骨架；PathCheck 通过 |
 | **项目脚手架1.2b** ✅ | 游戏层种子 + `project_layer.manifest`；模板源 `Editor/ProjectSetup/Seeds/` | 脚手架可写最简闭环 |
 | **项目脚手架1.2c** ✅ | manifest 补全（`GAME_WORKSPACE.md`、`_Generated/Config/`、`GameBootstrap.cs`）；`work_space_scaffold` → **`project_layer.manifest`** | PathCheck 与菜单一致 |
-| **项目脚手架1.5** | 空工程迁移验证 | 可复制 |
+| **项目脚手架1.5** ✅ | 空工程迁移验证 | 可复制 |
 | **项目脚手架1.6**（远期） | Manifest 驱动勾选 → 生成 Boot Init（+ 可选 asmdef） | 按勾选裁剪 |
 | **项目脚手架1.7**（按需） | 路径扫描自动生成 / 校验（与 **Lua系统1.3** / §2b **E** 衔接） | 路径少手写 |
 
@@ -773,7 +805,7 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | **GameKits1.5** | 发布 / 整包可删策略 | 与 **项目脚手架1.6** 衔接 |
 | **GameKits1.6** | MusicGame / BeatSync 正式化（2.7b 暂存代码的后续，若做） | 待定 |
 
-#### 网游预埋（🔒 远期，存档升级 + GameState 完成后）
+#### 网游预埋（🔒 远期，**存档升级系统** + GameState 完成后）
 
 | 子步 | 内容 | 验收 |
 |------|------|------|
@@ -795,35 +827,35 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | 线 | 最前节点 | 状态 | 解锁条件 | 预估变更量 | 教学难度 |
 |----|----------|------|----------|------------|----------|
 | **主线（编译边界 + 启动编排）** | — | ✅ 全线完成 | — | — | — |
-| **项目脚手架与包体迁移** | **项目脚手架1.5** | 已解锁 | 1.2b ✅ | **中**（新工程复制验证） | ★★★ |
+| **项目脚手架与包体迁移** | **项目脚手架1.6**（远期） | 远期按需 | 1.5 ✅ | **大**（模块导入向导） | ★★★★ |
+| **存档格式优化** | **存档格式优化1.1** | 已解锁 | Data ✅ | **中~略大**（统一头；Archive **1.1~1.3** + Config **1.1b~1.3b**） | ★★★☆ |
+| **存档升级系统** | 存档升级系统1.1 | 🔒 待解锁 | **存档格式优化** 全线完成（含 **1.1b~1.3b**） | **中~大**（chunk + 迁移） | ★★★★ |
 | **GameState系统** | GameState系统1.1 | 已解锁 | 启动编排3.3 ✅ | **中**（接口 + 状态机骨架 3~6 文件） | ★★★☆ |
 | **Loading系统** | Loading系统1.1 | 已解锁 | Core + UI ✅ | **中**（新 `CMGM.Loading` + 进度 UI） | ★★★☆ |
 | **Lua系统** | Lua系统1.1 | 已解锁 | 2.6 ✅ | **小~中**（Registry 接口 + 游戏侧注册示例） | ★★★☆ |
 | **Audio系统** | Audio系统1.1 | 已解锁 | 2.7 ✅ | **中**（`IAudioService` + Wwise 包装 + Boot 策略文档） | ★★★☆ |
-| **存档升级系统** | 存档升级系统1.1 | 已解锁 | Data ✅ | **中**（版本头 + Archive 读写改动的第一刀） | ★★★★ |
 | **事件总线系统** | 事件总线系统1.1 | 已解锁 | 3.3 ✅ | **小~中**（`IEventBus` + Optional 空实现） | ★★☆☆ |
 | **依赖抽象系统** | 依赖抽象系统1.1 | 已解锁（按需） | 2.8 ✅ | **小~中**（Odin 条件编译 / asmdef 引用清理） | ★★☆☆ |
 | **内容扩展** | 内容扩展1.1 | 按需 | 各子项依赖对系统 | **不一** | ★★~★★★★ |
 | **GameKits** | GameKits1.1 | 🔒【仅作参考】 | **未定**（草案：**项目脚手架1.4** 后；非可靠） | **未定** | **未定** |
 | **模块启动Registry系统** | 模块启动Registry系统1.1 | 🔒 远期 | 3.3 ✅ **且** Boot 链 ≥10 | **大** | ★★★★ |
-| **网游预埋** | 网游预埋1.1 | 🔒 远期 | 存档升级 + GameState 完成 | **大** | ★★★★★ |
+| **网游预埋** | 网游预埋1.1 | 🔒 远期 | **存档升级系统** 完成 **且** GameState 完成 | **大** | ★★★★★ |
 
-> **说明：** 脚手架子步顺序为 **1.4 → 1.3 → 1.2 → 1.2b → 1.2c**。**本线最前节点仍为 1.5**（空工程验证）。并行推进时，各选**不同支线**的最前节点即可。
+> **说明：** 脚手架 **1.5 ✅** 已完成。数据向建议按 **存档格式优化** 子步顺序推进（含配表 **1.1b~1.3b**）。并行时各选不同支线最前节点即可。
 
-### 7.7 推荐推进顺序（2026-06-20）
-
-在 **项目脚手架1.5**（你自行验证空工程复制）完成后，建议按「先打通竖切、再铺基础设施」选线：
+### 7.7 推荐推进顺序（2026-06-20，**1.5 ✅ 后更新**）
 
 | 阶段 | 建议支线 | 理由 |
 |------|----------|------|
-| **A · 竖切** | **Loading系统1.1 → 1.2 → 1.3** | 直接改善主界面→进游戏体验；1.3 接通 `GameBootstrap` 前须 **⚠️ 复盘 GameBootstrap 归属** |
-| **B · 流程** | **GameState系统1.1 → 1.2 → 1.3** | 接管 `ScenesManager` 临时宿主，与 Loading / Boot 分工清晰 |
-| **C · 基础设施** | **Lua系统1.1**、**Audio系统1.1**、**事件总线系统1.1** | 可并行；为后续 Manager 解耦与 Boot 策略定案 |
-| **D · 数据** | **存档升级系统1.1** | 与 Demo 存档演进相关；变更面大，可稍晚 |
-| **按需** | **依赖抽象系统**、**内容扩展** | 遇 Odin/URP 痛点再做 |
-| **暂缓** | **GameKits**（仅参考）、**Registry**、**网游预埋** | 见 §7.3 解锁条件 |
+| **D0 · 数据前置（优先）** | **存档格式优化**：`1.1→1.1b` → `1.2∥1.2b` → `1.3∥1.3b` | 统一 `.cmgm` 容器；Archive 去 BF；Config 导表/读表同壳 |
+| **A · 竖切** | **Loading系统1.1 → 1.2 → 1.3** | 可与 D0 串行：格式优化完成后再做；1.3 前复盘 **GameBootstrap 归属** |
+| **B · 流程** | **GameState系统1.1 → 1.2 → 1.3** | 与 Loading 二选一作「中~大」主轨 |
+| **D1 · 数据拓展** | **存档升级系统**（**存档格式优化** 完成后） | chunk、Migrator、异步写盘 |
+| **C · 基础设施** | **Lua系统1.1**、**Audio系统1.1**、**事件总线系统1.1** | 可并行小线 |
+| **按需** | **依赖抽象系统**、**内容扩展**、**项目脚手架1.6** | 遇痛点再做 |
+| **暂缓** | **GameKits**（仅参考）、**Registry**、**网游预埋** | 见 §7.3 |
 
-> **并行原则：** 同一时期最多推进 **1 条「中~大」变更线**（如 Loading 或 GameState 或 存档升级）+ **1~2 条「小」线**（Lua Registry、事件总线接口等）。
+> **并行原则：** 同一时期 **1 条「中~大」线** + **1~2 条「小」线**；**存档格式优化**与 Loading/GameState 不宜三条同时开大。
 
 ### 7.5 跨线解锁关系 + 设计决策
 
@@ -835,7 +867,8 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | Loading系统1.3 | 软依赖「启动编排3.2」 | 生命周期（Init / await Lua）定稿后接通进游戏链 |
 | **项目脚手架1.2** | 依赖 **项目脚手架1.3 ✅** + **1.4 ✅** | 一键骨架应对准搬迁后路径 |
 | **项目脚手架1.4** ✅ | 依赖 启动编排3.3 ✅ + **1.1 ✅** | 物理搬迁至 `CmgmUnityPackages`（勿与其他支线 **1.4** 混淆） |
-| 网游预埋 | 依赖**支线**（存档升级 + GameState） | 远期 |
+| 网游预埋 | 依赖**支线**（**存档升级系统** + GameState） | 远期 |
+| **存档升级系统** | 依赖 **存档格式优化** 全线完成（**含 1.1b~1.3b**） | chunk / Migrator 建立在统一 `.cmgm` v1 之上 |
 
 **设计决策记录 · 2026-06-19（Loading / Scene 重定位）**
 
@@ -911,6 +944,26 @@ Editor/
 
 > 模块专属 Editor（如 `ExcelTool`、`Edt_CreateUIPanelAction`）仍在 `Runtime/Modules/*/Editor/`；跨模块工程能力放 `CmgmFramework/Editor/`。
 
+**设计决策记录 · 2026-06-20（`.cmgm` 统一容器 · Archive + Config）**
+
+| 项 | 结论 |
+|------|------|
+| **统一壳** | 所有 `.cmgm` 文件共用 **同一文件头**（magic + version + **kind**）；扩展名不再隐含类型 |
+| **分轨 payload** | `kind=Archive` → `IArchiveSerializer`；`kind=Config` → `IConfigTableCodec`（Excel 表二进制，语义可延续现网） |
+| **共享模块** | 容器 `Pack`/`Unpack` 放 Data 模块（如 `CmgmFileFormat`）；`ArchiveManager`、`ExcelTool`、`ConfigTableManager` 只调壳 + 各自 Codec |
+| **CipherTool** | 仍包裹 **整文件**（头+payload）；改加密算法须 bump `version` 或 kind 内子版本 |
+| **1.1b** | 配表导出/读表与存档 **同步** 上头，避免只改一侧导致 `.cmgm` 仍两种形态 |
+| **1.3b 默认** | Config 旧档优先 **重新导表**；Legacy 直读仅作开发期可选项 |
+
+**设计决策记录 · 2026-06-20（存档 · 格式优化 vs 升级拓展）**
+
+| 项 | 结论 |
+|------|------|
+| **拆线** | 原「存档升级系统」拆为两条：**存档格式优化**（最小包，前置）+ **存档升级系统**（拓展） |
+| **格式优化** | 1.1~1.3（Archive）+ **1.1b~1.3b**（Config）；**不含** `ISaveChunk` |
+| **升级拓展** | 原 1.2~1.6 重编号为 **存档升级系统1.1~1.4**；解锁 = 格式优化 **含 b 子步** 全线完成 |
+| **旧档** | Archive：清 `Archives/` 或 BF Legacy；Config：**重导表** 为主；Migrator 链在 **存档升级系统1.2** |
+
 **设计决策记录 · 2026-06-20（脚手架 · 游戏层种子 vs 框架层）** ✅ 1.2b
 
 | 项 | 结论 |
@@ -955,22 +1008,43 @@ Editor/
 
 ```
 Excel（Excels/）
-  → ExcelTool 导出
-  → *Container.cs（行类 *Row + 容器类 *）
+  → ExcelTool 导出（IConfigTableCodec 写 payload）
+  → Pack(CmgmFileFormat, kind=Config) → CipherTool
   → StreamingAssets/TableConfig/*.cmgm
-  → ConfigTableManager.LoadTable<T>() / GetTable<T>()
+  → ConfigTableManager：CipherTool → Unpack → kind 校验 → Codec 读入 dataDic
 ```
 
 - 容器类必须有 `Dictionary<K, VRow> dataDic` 字段
 - `ConfigTableManager` 通过反射读 `dataDic` 泛型参数推断行类型
+- **计划（1.1b~1.3b）：** 与存档共用 `.cmgm` 头；旧无头配表见 **存档格式优化1.3b**（默认重新导表）
 
 ### 存档管线
 
 ```
-GameRuntimeData（I_Saveable，_WorkSpace/Scripts/Archive/）
-  → ArchiveManager 序列化（Runtime/Modules/Data/Archive/）
-  → persistentDataPath/Archives/
+GameRuntimeData（I_Saveable）
+  → IArchiveSerializer 写 payload
+  → Pack(CmgmFileFormat, kind=Archive) → CipherTool
+  → persistentDataPath/Archives/*.cmgm
 ```
+
+> **计划：** Archive 仍为 `BinaryFormatter`（1.2 替换）；配表为无头 Excel 二进制（**1.1b** 上头）。统一后 **§存档格式优化** 全线完成，再开 **存档升级系统**。
+
+### `.cmgm` 统一容器（计划 · v1）
+
+```
+┌──────────────────────────────────────────┐
+│  CmgmFileHeader (v1)                     │
+│  magic | version | kind (Archive/Config) │
+├──────────────────────────────────────────┤
+│  payload（由 kind 分发）                    │
+│  Archive → JSON 等（IArchiveSerializer）   │
+│  Config  → Excel 表二进制（IConfigTableCodec）│
+└──────────────────────────────────────────┘
+         ↕ CipherTool（整文件）
+              .cmgm 文件
+```
+
+**涉及代码（实现时，本文档仅计划）：** `CmgmFileFormat`、`ArchiveManager`、`ExcelTool`、`ConfigTableManager`、`CipherTool`（调用顺序不变）。
 
 ### Game 层目录约定（Archive / Config 并列）
 
@@ -1042,4 +1116,4 @@ CmgmFrameSettings.ROOT_LUA_URI（如 main.lua.txt）
 
 ---
 
-*Editor 四分法 ✅ · `project_layer.manifest` 补全。本线最前节点：**项目脚手架1.5**。并行建议见 **§7.7**。*
+*脚手架 1.5 ✅。数据向最前节点：**存档格式优化1.1**（统一 `.cmgm` 头 + Archive）；随后 **1.1b**（Config）。详见 §7.4 / §7.7 / §8。*
