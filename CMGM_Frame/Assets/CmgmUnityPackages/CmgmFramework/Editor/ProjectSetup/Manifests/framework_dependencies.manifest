@@ -1,0 +1,11 @@
+# 框架依赖清单（framework_dependencies.manifest）
+# 项目初始化时检查；registry 可经 Package Manager 按当前 Unity 版本安装最新兼容版
+# registry  包 ID（不写版本）
+# any       满足任一即可（| 分隔）；com. 开头为 UPM 包，否则为 Assets 路径
+# asset     须随工程拷贝的 Assets 目录或文件
+
+registry	com.unity.addressables
+registry	com.unity.inputsystem
+any	com.unity.textmeshpro|Assets/TextMesh Pro
+asset	Assets/XLua/Src
+asset	Assets/Plugins/UniTask/Runtime/UniTask.asmdef
