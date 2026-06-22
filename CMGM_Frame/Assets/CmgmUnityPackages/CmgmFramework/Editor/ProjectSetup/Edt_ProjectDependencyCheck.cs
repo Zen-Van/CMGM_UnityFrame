@@ -203,7 +203,7 @@ public static class Edt_ProjectDependencyCheck
 
     private static HashSet<string> GetInstalledPackageIds()
     {
-        ListRequest request = Client.List(offline: true);
+        ListRequest request = Client.List();
         while (!request.IsCompleted)
             Thread.Sleep(50);
 
