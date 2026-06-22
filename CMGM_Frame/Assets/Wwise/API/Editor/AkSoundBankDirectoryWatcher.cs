@@ -19,7 +19,7 @@ using System;
 using System.Threading.Tasks;
 using UnityEngine;
 
-#if UNITY_EDITOR
+#if UNITY_EDITOR && WWISE_AUTHORING
 namespace Wwise.API.Editor.SoundBankDirectoryWatcher.Common
 {
 	[UnityEditor.InitializeOnLoad]
