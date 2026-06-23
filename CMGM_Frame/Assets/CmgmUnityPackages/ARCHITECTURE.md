@@ -2,7 +2,7 @@
 
 > 本文档是框架化改造的长期参考（「北极星」）。  
 > 目标：将当前工程从「带 Demo 的原型项目」逐步改造为「可跨项目迁移的框架」。  
-> 最后更新：2026-06-19 — **存档格式优化 1.1 / 1.1b / 1.3 / 1.3b ✅**；`.cmgm` 统一容器读策略（无 Legacy、version 告警）落地。
+> 最后更新：2026-06-19 — **存档格式优化全线 ✅**（含 1.2b Config Codec）；**存档升级系统** 已解锁。
 
 ---
 
@@ -247,8 +247,8 @@ InitScene（CmgmFrameBoot.Awake）
 | 问题 | 位置 | 计划归属 |
 |------|------|----------|
 | namespace / asmdef | Core/UI/Data/Audio/Input/Editor 已闭环；Lua/Bootstrap/Scene 临时宿主 无 asmdef | §7.2 ✅ |
-| `BinaryFormatter` 序列化 | `ArchiveManager` | **存档格式优化1.2** |
-| 配表 payload 读写分散 | `ExcelTool` / `ConfigTableManager` | **存档格式优化1.2b** |
+| ~~`BinaryFormatter` 序列化~~ | ~~`ArchiveManager`~~ | **存档格式优化1.2 ✅**（`JsonArchiveSerializer`） |
+| 配表 payload 读写分散 | ~~`ExcelTool` / `ConfigTableManager`~~ | **存档格式优化1.2b ✅** |
 | 无 GameState 状态机 | — | 支线「GameState系统」 |
 | 无事件总线 | `OptionalSystem/` | 支线「事件总线系统」 |
 
@@ -561,7 +561,9 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | 项目脚手架1.2b | `ProjectSetup/Seeds` 模板 + 游戏层种子；TestSpace 仅顶层 ✅ |
 | 项目脚手架1.2c | `project_layer.manifest` 补全 + 重命名 ✅ |
 | 项目脚手架1.5 | 空工程迁移验证 ✅ |
-| **存档格式优化1.1 / 1.1b** | `CmgmFileFormat` 统一壳；Archive / Config 双侧 `Pack` / `Unpack`；`IArchiveSerializer` + BF 实现 ✅ |
+| **存档格式优化1.1 / 1.1b** | `CmgmFileFormat` 统一壳；Archive / Config 双侧 `Pack` / `Unpack` ✅ |
+| **存档格式优化1.2** | `JsonArchiveSerializer` + `com.unity.nuget.newtonsoft-json` ✅ |
+| **存档格式优化1.2b** | `IConfigTableCodec` + `ExcelBinaryConfigTableCodec` ✅ |
 | **存档格式优化1.3 / 1.3b** | 读侧 **fail-fast**：无 CMGM 头或 version/kind 不匹配即报错；**不**兼容无头旧档；开发期清档 / 重导表 ✅ |
 | 框架 Resources + Runtime 三分 | Settings/UI/Logo/Font → `Resources/`；代码 → `Runtime/` ✅ |
 | 迭代模型 | 主线/支线重排；旧 0→9 归档 |
@@ -619,8 +621,8 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | 支线系统 | 最前节点 | 解锁条件 | 状态 |
 |----------|----------|----------|------|
 | **Loading系统** | Loading系统1.1 | Core ✅ + UI ✅ | 已解锁 |
-| **存档格式优化** | **存档格式优化1.2** | Data ✅；**1.1 / 1.1b / 1.3 / 1.3b ✅** | 已解锁 |
-| **存档升级系统** | 存档升级系统1.1 | **存档格式优化** 全线完成（含 **1.1b~1.3b**） | 🔒 待解锁 |
+| **存档格式优化** | — | Data ✅；**全线完成 ✅** | 已解锁 |
+| **存档升级系统** | 存档升级系统1.1 | **存档格式优化** 全线完成 | 已解锁 |
 | **Lua系统** | Lua系统1.1 | 编译边界2.6 ✅ | 已解锁 |
 | **Audio系统** | Audio系统1.1 | 编译边界2.7 ✅ | 已解锁 |
 | **GameState系统** | GameState系统1.1 | 启动编排3.3 ✅ | 已解锁 |
@@ -651,7 +653,7 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 > **进度模型（1.2 起）：** 每个 `ILoadTask` 带 `Weight`；总进度 = `Σ(已完成权重) + 当前任务权重 × 当前任务内部进度`。Addressables/场景用真实 `PercentComplete`；Bank/Init 等无中间进度者完成即跳段（必要时加假进度补间防卡顿感）。显示推荐「单条 + 当前阶段文案」，不展示多条并行子进度。  
 > **配置形态（1.4）：** 不做全局大表；**每个加载点一个 `.asset`（ScriptableObject）** 配静态资源，运行时按上下文（敌人 ID 等）程序化追加 `ILoadTask`。统一的是「执行器」，分散的是「清单」。
 
-#### 存档格式优化（已解锁 · **`.cmgm` 统一容器 + 存档升级系统前置**）
+#### 存档格式优化（✅ 全线完成 · **存档升级系统前置**）
 
 > **动因：** ① `BinaryFormatter` 过时；② 当前 **存档** 与 **配表** 虽同扩展名 `.cmgm`，但磁盘格式不一致（BF blob vs Excel 自定义二进制），无法自检类型、难以统一演进。  
 > **目标：** `.cmgm` = **统一容器头** + **分类型 payload**；头里标识 `Archive` / `Config`，各自走自己的编解码器。  
@@ -664,7 +666,7 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | `magic` | 固定四字节 `CMGM` |
 | `version` | `uint32` LE，容器格式版本（当前运行时 `ContainerVersion = 1`） |
 | `kind` | `uint8`：`0=Archive`，`1=Config` |
-| `payload` | 正文；**Archive** → `IArchiveSerializer`；**Config** → 表二进制（**1.2b** 收口为 `IConfigTableCodec`） |
+| `payload` | 正文；**Archive** → `JsonArchiveSerializer`；**Config** → `ExcelBinaryConfigTableCodec` |
 
 **读侧策略（1.1 / 1.1b / 1.3 / 1.3b 已落地）：**
 
@@ -681,14 +683,14 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 |------|------|------|------|
 | **存档格式优化1.1** | 统一容器头 + Archive 接入 + `IArchiveSerializer` | 新存档带 `CMGM` 头且 `kind=Archive` | ✅ |
 | **存档格式优化1.1b** | Config 侧 `ExcelTool` / `ConfigTableManager` 同壳 | 导表与运行时读表一致 | ✅ |
-| **存档格式优化1.2** | Archive payload：Newtonsoft 等替换 BF | 无 `BinaryFormatter` | 待做 |
-| **存档格式优化1.2b** | Config payload：`IConfigTableCodec` 收口读写 | 导表 + LoadTable 经 Codec | 待做 |
+| **存档格式优化1.2** | Archive payload：`JsonArchiveSerializer`（Newtonsoft UTF-8 JSON） | 无 `BinaryFormatter`；`ArchiveMeta` / `GameRuntimeData` 读写正常 | ✅ |
+| **存档格式优化1.2b** | Config payload：`IConfigTableCodec` + `ExcelBinaryConfigTableCodec` 收口读写 | 导表 + LoadTable 经 Codec | ✅ |
 | **存档格式优化1.3** | Archive 旧档策略：**fail-fast**，开发期清档 | 无头档直接报错 | ✅ |
 | **存档格式优化1.3b** | Config 旧档策略：**fail-fast**，开发期重导表 | 无头配表直接报错 | ✅ |
 
-> **子步顺序建议：** `1.1 → 1.1b → 1.3 / 1.3b`（读策略）✅ → **`1.2 ∥ 1.2b`**（payload，当前最前）→ 全线完成后解锁 **存档升级系统**。
+> **子步顺序建议：** 全线 ✅ → 可开 **存档升级系统**。
 
-#### 存档升级系统（🔒 解锁：**存档格式优化 1.1~1.3 与 1.1b~1.3b** 全线完成）
+#### 存档升级系统（已解锁）
 
 > **定位：** 在 v1 序列化稳定后的**拓展线**——分块、版本迁移、运行时 API 增强。原「阶段 4」中除换序列化外的能力均在此线。
 
@@ -838,8 +840,8 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 |----|----------|------|----------|------------|----------|
 | **主线（编译边界 + 启动编排）** | — | ✅ 全线完成 | — | — | — |
 | **项目脚手架与包体迁移** | **项目脚手架1.6**（远期） | 远期按需 | 1.5 ✅ | **大**（模块导入向导） | ★★★★ |
-| **存档格式优化** | **存档格式优化1.2** | 已解锁 | Data ✅；**1.1 / 1.1b / 1.3 / 1.3b ✅** | **中**（换 Archive 序列化） | ★★★☆ |
-| **存档升级系统** | 存档升级系统1.1 | 🔒 待解锁 | **存档格式优化** 全线完成（含 **1.1b~1.3b**） | **中~大**（chunk + 迁移） | ★★★★ |
+| **存档格式优化** | — | ✅ 全线完成 | Data ✅ | — | — |
+| **存档升级系统** | 存档升级系统1.1 | 已解锁 | **存档格式优化** ✅ | **中~大**（chunk + 迁移） | ★★★★ |
 | **GameState系统** | GameState系统1.1 | 已解锁 | 启动编排3.3 ✅ | **中**（接口 + 状态机骨架 3~6 文件） | ★★★☆ |
 | **Loading系统** | Loading系统1.1 | 已解锁 | Core + UI ✅ | **中**（新 `CMGM.Loading` + 进度 UI） | ★★★☆ |
 | **Lua系统** | Lua系统1.1 | 已解锁 | 2.6 ✅ | **小~中**（Registry 接口 + 游戏侧注册示例） | ★★★☆ |
@@ -851,16 +853,15 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | **模块启动Registry系统** | 模块启动Registry系统1.1 | 🔒 远期 | 3.3 ✅ **且** Boot 链 ≥10 | **大** | ★★★★ |
 | **网游预埋** | 网游预埋1.1 | 🔒 远期 | **存档升级系统** 完成 **且** GameState 完成 | **大** | ★★★★★ |
 
-> **说明：** **存档格式优化 1.1 / 1.1b / 1.3 / 1.3b ✅**；本线最前节点 **1.2**（Archive payload）或 **1.2b**（Config Codec，可并行）。
+> **说明：** **存档格式优化 ✅** 已完成。数据向最前节点：**存档升级系统1.1**。
 
 ### 7.7 推荐推进顺序（2026-06-20，**1.5 ✅ 后更新**）
 
 | 阶段 | 建议支线 | 理由 |
 |------|----------|------|
-| **D0 · 数据前置（优先）** | **存档格式优化 1.2 ∥ 1.2b** | 壳与读策略 ✅；待换 payload 编解码 |
-| **A · 竖切** | **Loading系统1.1 → 1.2 → 1.3** | 可与 D0 串行：格式优化完成后再做；1.3 前复盘 **GameBootstrap 归属** |
+| **D1 · 数据拓展（优先）** | **存档升级系统1.1** | 格式优化 ✅；chunk / Migrator |
+| **A · 竖切** | **Loading系统1.1 → 1.2 → 1.3** | 1.3 前复盘 **GameBootstrap 归属** |
 | **B · 流程** | **GameState系统1.1 → 1.2 → 1.3** | 与 Loading 二选一作「中~大」主轨 |
-| **D1 · 数据拓展** | **存档升级系统**（**存档格式优化** 完成后） | chunk、Migrator、异步写盘 |
 | **C · 基础设施** | **Lua系统1.1**、**Audio系统1.1**、**事件总线系统1.1** | 可并行小线 |
 | **按需** | **依赖抽象系统**、**内容扩展**、**项目脚手架1.6** | 遇痛点再做 |
 | **暂缓** | **GameKits**（仅参考）、**Registry**、**网游预埋** | 见 §7.3 |
@@ -1020,10 +1021,9 @@ Editor/
 
 ```
 Excel（Excels/）
-  → ExcelTool 导出（IConfigTableCodec 写 payload）
-  → Pack(CmgmFileFormat, kind=Config) → CipherTool
+  → ExcelTool 导出（ExcelBinaryConfigTableCodec）→ Pack → CipherTool
   → StreamingAssets/TableConfig/*.cmgm
-  → ConfigTableManager：CipherTool → Unpack(Config) → 表二进制读入 dataDic
+  → ConfigTableManager：CipherTool → Unpack → ExcelBinaryConfigTableCodec → dataDic
 ```
 
 - 容器类必须有 `Dictionary<K, VRow> dataDic` 字段
@@ -1034,13 +1034,13 @@ Excel（Excels/）
 
 ```
 GameRuntimeData（I_Saveable）
-  → IArchiveSerializer（当前 BF）写 payload
+  → IArchiveSerializer（JsonArchiveSerializer）写 UTF-8 JSON payload
   → Pack(CmgmFileFormat, kind=Archive) → CipherTool
   → persistentDataPath/Archives/*.cmgm
   → 读：CipherTool → Unpack(Archive) → Deserialize
 ```
 
-> Archive payload 仍为 **BinaryFormatter**（**1.2** 替换）；配表 payload 布局未变（**1.2b** 收口 Codec）。
+> Archive payload 为 **UTF-8 JSON**；Config payload 为 **Excel 自定义二进制**（经 `IConfigTableCodec`）。换 JSON 后须清空旧 BF 存档。
 
 ### `.cmgm` 统一容器（v1 · 已落地）
 
@@ -1057,7 +1057,7 @@ GameRuntimeData（I_Saveable）
               .cmgm 文件
 ```
 
-**涉及代码：** `CmgmFileFormat`（`Pack` / `Unpack`）、`CmgmFileVersionDebugLog`、`ArchiveManager`、`ExcelTool`、`ConfigTableManager`、`CipherTool`。
+**涉及代码：** `CmgmFileFormat`、`IConfigTableCodec` / `ExcelBinaryConfigTableCodec`、`JsonArchiveSerializer`、`ArchiveManager`、`ExcelTool`、`ConfigTableManager`、`CipherTool`。
 
 ### Game 层目录约定（Archive / Config 并列）
 
@@ -1129,4 +1129,4 @@ CmgmFrameSettings.ROOT_LUA_URI（如 main.lua.txt）
 
 ---
 
-*脚手架 1.5 ✅。数据向最前节点：**存档格式优化1.2**（Archive payload）∥ **1.2b**（Config Codec）。壳 + 读策略见 §7.4 / §8。*
+*脚手架 1.5 ✅。数据向最前节点：**存档升级系统1.1**。详见 §7.4 / §8。*

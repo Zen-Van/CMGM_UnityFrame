@@ -3,6 +3,7 @@
     "rootNamespace": "CMGM.Data",
     "references": [
         "CMGM.Core",
+        "Newtonsoft.Json",
         "UniTask"
     ],
     "includePlatforms": [],

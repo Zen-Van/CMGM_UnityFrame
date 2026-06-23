@@ -17,7 +17,7 @@ public class ArchiveManager : BootSingleton<ArchiveManager>
     /// </summary>
     private static string ARCHIVE_META_NAME = "ArchiveMeta";
 
-    private static readonly IArchiveSerializer Serializer = new BinaryFormatterArchiveSerializer();
+    private static readonly IArchiveSerializer Serializer = new JsonArchiveSerializer();
 
     private ArchiveManager() { }
 
@@ -36,16 +36,14 @@ public class ArchiveManager : BootSingleton<ArchiveManager>
     /// 存档元数据的数据结构
     /// <para>包括有几个存档、和每个存档UI界面上显示的数据</para>
     /// </summary>
-    [System.Serializable]
     public class ArchiveMetaDataSet : ISaveable
     {
-        [System.Serializable]
         public struct SingleArchiveMeta
         {
-            int? id;
-            string name;
-            System.DateTime? savedTime;
-            int? mainQuestId;
+            public int? id;
+            public string name;
+            public System.DateTime? savedTime;
+            public int? mainQuestId;
 
             public SingleArchiveMeta(int? id, string name, System.DateTime? savedTime, int? mainQuestId)
             {
@@ -186,7 +184,7 @@ public class ArchiveManager : BootSingleton<ArchiveManager>
     /// <summary>
     /// 序列化一个类的对象并存储
     /// </summary>
-    /// <param name="obj">继承了接口I_Saveable的类对象</param>
+    /// <param name="obj">实现了 <see cref="ISaveable"/> 的对象</param>
     /// <param name="fileName">存档名</param>
     private void Save(ISaveable obj, string fileName)
     {

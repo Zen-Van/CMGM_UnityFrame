@@ -543,7 +543,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eaf853b107df343568155157492059c2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SHOW_LOGO: 1
+  SHOW_LOGO: 0
   videoPlayer: {fileID: 1355495676}
   Logos:
   - {fileID: 32900000, guid: b8a4cae3cd9ae404f99e3430d222cc6c, type: 3}

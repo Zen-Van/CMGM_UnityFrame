@@ -27,8 +27,8 @@ namespace CMGM.Bootstrap
             InitGame();
         }
 
-
-        private bool _gameInitFinished = false;
+        public static bool GameInitFinished => _gameInitFinished;
+        private static bool _gameInitFinished = false;
         /// <summary>
         /// 初始化游戏的方法（包括显示LOGO并跳转主界面）
         /// </summary>

@@ -15,6 +15,11 @@ MonoBehaviour:
   m_GroupName: Default Local Group
   m_GUID: 3d1131ab9a5494c558ed4aed4038f883
   m_SerializeEntries:
+  - m_GUID: 11a354bff609c49da8e08beac6354d8e
+    m_Address: CmgmFrameSettings
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 174c32fe8f9004702b422573b5e2275c
     m_Address: Assets/_WorkSpace/HotRes/Scenes
     m_ReadOnly: 0
@@ -34,6 +39,11 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 906eb8245c213425893f7e89595596e9
     m_Address: Assets/_WorkSpace/HotRes/LevelPrefabs
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: aac7246b9f2844bf88fb4d9ad89964de
+    m_Address: Assets/_TestSpace/Scenes
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

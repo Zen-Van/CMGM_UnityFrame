@@ -4,13 +4,13 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
-using System.Text;
 using UnityEditor;
 
 namespace CMGM.Data.Editor
 {
 public class ExcelTool
 {
+    private static readonly IConfigTableCodec ConfigCodec = new ExcelBinaryConfigTableCodec();
     /// <summary>
     /// excel文件存放的路径
     /// </summary>
@@ -207,102 +207,47 @@ public class ExcelTool
     /// <param name="table"></param>
     private static void GenerateExcelBinary(DataTable table)
     {
-        //没有路径创建路径
         if (!Directory.Exists(Consts.Paths.ConfigData))
             Directory.CreateDirectory(Consts.Paths.ConfigData);
 
-        //创建一个2进制文件进行写入
-        using (MemoryStream ms = new MemoryStream())
+        DataRow rowType = GetVariableTypeRow(table);
+        DataRow rowName = GetVariableNameRow(table);
+        int keyIndex = GetKeyIndex(table);
+
+        var columnTypes = new List<string>(table.Columns.Count);
+        for (int j = 0; j < table.Columns.Count; j++)
+            columnTypes.Add(rowType[j].ToString());
+
+        var rows = new List<IReadOnlyList<string>>();
+        string tableDebugData = "";
+        for (int i = BEGIN_INDEX; i < table.Rows.Count; i++)
         {
-            //编码头部chuck：{ int 数据行数(表格行数-4) | int 主键变量名长度 | string 主键变量名内容 }
-            //写入行数
-            ms.Write(BitConverter.GetBytes(table.Rows.Count - 4), 0, 4);
-            //写入主键变量名的字符串（字符串都要先写长度再写内容）
-            string keyName = GetVariableNameRow(table)[GetKeyIndex(table)].ToString();
-            byte[] bytes = Encoding.UTF8.GetBytes(keyName);
-            ms.Write(BitConverter.GetBytes(bytes.Length), 0, 4);
-            ms.Write(bytes, 0, bytes.Length);
-
-            //编码主体chuck
-            DataRow row;
-            DataRow rowType = GetVariableTypeRow(table);
-            string EmptyPosInfo = "";
-            string tableDebugData = "";
-            for (int i = BEGIN_INDEX; i < table.Rows.Count; i++)
+            DataRow row = table.Rows[i];
+            var cells = new List<string>(table.Columns.Count);
+            for (int j = 0; j < table.Columns.Count; j++)
             {
-                //得到一行的数据
-                row = table.Rows[i];
-                for (int j = 0; j < table.Columns.Count; j++)
-                {
-                    tableDebugData += $"|{row[j]}|";
-                    try
-                    {
-                        if (string.IsNullOrEmpty(row[j].ToString()))
-                        {
-                            EmptyPosInfo += $"（{i},{j}）";//自动处理空格子
-                            switch (rowType[j].ToString())
-                            {
-                                case "int":
-                                    ms.Write(BitConverter.GetBytes(default(int)), 0, 4);
-                                    break;
-                                case "float":
-                                    ms.Write(BitConverter.GetBytes(default(float)), 0, 4);
-                                    break;
-                                case "bool":
-                                    ms.Write(BitConverter.GetBytes(default(bool)), 0, 1);
-                                    break;
-                                case "string":
-                                    bytes = new byte[0];
-                                    //写入字符串字节数组的长度
-                                    ms.Write(BitConverter.GetBytes(bytes.Length), 0, 4);
-                                    //写入字符串字节数组
-                                    ms.Write(bytes, 0, bytes.Length);
-                                    break;
-                            }
-                        }
-                        else
-                            switch (rowType[j].ToString())
-                            {
-                                case "int":
-                                    ms.Write(BitConverter.GetBytes(int.Parse(row[j].ToString())), 0, 4);
-                                    break;
-                                case "float":
-                                    ms.Write(BitConverter.GetBytes(float.Parse(row[j].ToString())), 0, 4);
-                                    break;
-                                case "bool":
-                                    ms.Write(BitConverter.GetBytes(bool.Parse(row[j].ToString())), 0, 1);
-                                    break;
-                                case "string":
-                                    bytes = Encoding.UTF8.GetBytes(row[j].ToString());
-                                    //写入字符串字节数组的长度
-                                    ms.Write(BitConverter.GetBytes(bytes.Length), 0, 4);
-                                    //写入字符串字节数组
-                                    ms.Write(bytes, 0, bytes.Length);
-                                    break;
-                            }
-                    }
-                    catch (Exception ex)
-                    {
-                        CmgmLog.fError($"序列化表{table.TableName}在（{i},{j}）处的值时出现错误，" +
-                            $"请检查此处的值变量类型是否正确，是否按规则填写。\n" + ex.Message);
-                    }
-
-                }
-                tableDebugData += "\n";
+                tableDebugData += $"|{row[j]}|";
+                cells.Add(row[j] == DBNull.Value ? null : row[j].ToString());
             }
-            CmgmLog.fPositive($"成功导入了表格<color=#E0FFFF>[{table.TableName}]</color>\n{tableDebugData}");
 
-
-            if (!string.IsNullOrEmpty(EmptyPosInfo))
-                CmgmLog.fNegative($"数据表{table.TableName}中：{EmptyPosInfo}处的值为空，写入了对应类型变量的默认值");
-
-            byte[] payload = ms.ToArray();
-            byte[] container = CmgmFileFormat.Pack(CmgmFileKind.Config, payload);
-            CipherTool.Encryption(ref container);
-            File.WriteAllBytes(Consts.Paths.ConfigData + table.TableName + Consts.CMGMFILE_EXTENSION, container);
-
-            ms.Close();
+            rows.Add(cells);
+            tableDebugData += "\n";
         }
+
+        CmgmLog.fPositive($"成功导入了表格<color=#E0FFFF>[{table.TableName}]</color>\n{tableDebugData}");
+
+        var encodeInput = new ConfigTableEncodeInput
+        {
+            TableName = table.TableName,
+            KeyFieldName = rowName[keyIndex].ToString(),
+            ColumnTypes = columnTypes,
+            Rows = rows,
+        };
+
+        byte[] payload = ConfigCodec.Encode(encodeInput);
+        byte[] container = CmgmFileFormat.Pack(CmgmFileKind.Config, payload);
+        CipherTool.Encryption(ref container);
+        File.WriteAllBytes(Consts.Paths.ConfigData + table.TableName + Consts.CMGMFILE_EXTENSION, container);
 
         AssetDatabase.Refresh();
     }

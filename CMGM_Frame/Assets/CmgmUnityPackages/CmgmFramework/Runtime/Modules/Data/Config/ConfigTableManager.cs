@@ -1,10 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
-using System.Text;
 using CMGM.Core;
-using UnityEngine;
 
 namespace CMGM.Data
 {
@@ -13,6 +10,8 @@ namespace CMGM.Data
 /// </summary>
 public class ConfigTableManager : LazySingleton<ConfigTableManager>
 {
+    private static readonly IConfigTableCodec Codec = new ExcelBinaryConfigTableCodec();
+
     private ConfigTableManager() { }
 
     /// <summary>
@@ -26,112 +25,32 @@ public class ConfigTableManager : LazySingleton<ConfigTableManager>
     /// <typeparam name="T">表名（xlsx页签名）</typeparam>
     public void LoadTable<T>()
     {
-        if (tableDic.ContainsKey(typeof(T).Name)) return;   //如果已经读过了就不再读了
+        if (tableDic.ContainsKey(typeof(T).Name)) return;
 
-        #region 旧通过泛型获取Type的过程（需要两个泛型变量，已弃用）
-        // //得到容器类的Type
-        // Type contaninerType = typeof(T);
-        // //得到容器类对象
-        // object contaninerObj = Activator.CreateInstance(contaninerType);
-        // //得到容器对象中的 字典对象
-        // object dicObject = contaninerType.GetField("dataDic").GetValue(contaninerObj);
-        // //得到数据结构类的Type
-        // Type classType = typeof(K);
-        // //实例化一个数据结构类 对象
-        // object dataObj = Activator.CreateInstance(classType);
-        #endregion
-        #region 新通过泛型获取Type的过程（只需要一个泛型变量，已启用）
-        //得到容器类的Type
         Type containerType = typeof(T);
-        //得到容器类对象
-        object contaninerObj = Activator.CreateInstance(containerType);
-        //得到容器对象中的 字典对象
-        object dicObject = containerType.GetField("dataDic").GetValue(contaninerObj);
-        //得到数据结构类的Type
-        Type rowType = null;
-        // 通过字典对象的实际类型推断值类型
-        Type dicType = dicObject.GetType();
+        object containerObj = Activator.CreateInstance(containerType);
+        object dicObject = containerType.GetField("dataDic").GetValue(containerObj);
 
-        // 尝试作为 Dictionary<,> 类型解析
+        Type rowType = null;
+        Type dicType = dicObject.GetType();
         if (dicType.IsGenericType && dicType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
-        {
-            Type[] genericArgs = dicType.GetGenericArguments();
-            rowType = genericArgs[1]; // 第二个参数是值的类型
-        }
+            rowType = dicType.GetGenericArguments()[1];
 
         if (rowType == null)
-        {
             throw new InvalidOperationException("无法从 dataDic 推断值类型");
-        }
 
-        //实例化一个数据结构类 对象
-        object dataObj = Activator.CreateInstance(rowType);
-        #endregion
-
-        #region 读取硬盘数据
         string tableName = typeof(T).Name;
-        string filePath = Consts.Paths.ConfigData + tableName + Consts.CMGMFILE_EXTENSION;
+        string fileLabel = tableName + Consts.CMGMFILE_EXTENSION;
+        string filePath = Consts.Paths.ConfigData + fileLabel;
 
         byte[] raw = File.ReadAllBytes(filePath);
         CipherTool.Decryption(ref raw);
 
-        byte[] bytes = CmgmFileFormat.Unpack(
-            raw, CmgmFileKind.Config, tableName + Consts.CMGMFILE_EXTENSION, out var header);
+        byte[] payload = CmgmFileFormat.Unpack(raw, CmgmFileKind.Config, fileLabel, out var header);
+        string keyName = Codec.Decode(payload, containerObj, rowType);
 
-        //用于记录当前读取了多少字节了
-        int index = 0;
-
-        //读取多少行数据
-        int count = BitConverter.ToInt32(bytes, index);
-        index += 4;
-
-        //读取主键的名字
-        int keyNameLength = BitConverter.ToInt32(bytes, index);
-        index += 4;
-        string keyName = Encoding.UTF8.GetString(bytes, index, keyNameLength);
-        index += keyNameLength;
-
-        //通过反射 得到数据结构类 所有字段的信息
-        FieldInfo[] infos = rowType.GetFields();
-
-        //读取每一行的信息
-        for (int i = 0; i < count; i++)
-        {
-            foreach (FieldInfo info in infos)
-            {
-                if (info.FieldType == typeof(int))
-                {
-                    info.SetValue(dataObj, BitConverter.ToInt32(bytes, index));
-                    index += 4;
-                }
-                else if (info.FieldType == typeof(float))
-                {
-                    info.SetValue(dataObj, BitConverter.ToSingle(bytes, index));
-                    index += 4;
-                }
-                else if (info.FieldType == typeof(bool))
-                {
-                    info.SetValue(dataObj, BitConverter.ToBoolean(bytes, index));
-                    index += 1;
-                }
-                else if (info.FieldType == typeof(string))
-                {
-                    int length = BitConverter.ToInt32(bytes, index);
-                    index += 4;
-                    info.SetValue(dataObj, Encoding.UTF8.GetString(bytes, index, length));
-                    index += length;
-                }
-            }
-
-            MethodInfo mInfo = dicObject.GetType().GetMethod("Add");
-            object keyValue = rowType.GetField(keyName).GetValue(dataObj);
-            mInfo.Invoke(dicObject, new object[] { keyValue, dataObj });
-        }
-
-        tableDic.Add(tableName, contaninerObj);
-        CmgmFileVersionDebugLog.LogConfigTableIfNeeded(
-            tableName + Consts.CMGMFILE_EXTENSION, header, contaninerObj, rowType, keyName);
-        #endregion
+        tableDic.Add(tableName, containerObj);
+        CmgmFileVersionDebugLog.LogConfigTableIfNeeded(fileLabel, header, containerObj, rowType, keyName);
     }
 
     /// <summary>

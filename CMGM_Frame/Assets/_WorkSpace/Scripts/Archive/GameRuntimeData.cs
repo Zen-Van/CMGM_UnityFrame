@@ -6,7 +6,6 @@ namespace CMGM.Game
     /// <summary>
     /// 游戏运行时存档数据（仅在 <see cref="CMGM.Data.ArchiveManager"/> 中持有唯一实例）。
     /// </summary>
-    [System.Serializable]
     public class GameRuntimeData : ISaveable
     {
         #region 场景数据

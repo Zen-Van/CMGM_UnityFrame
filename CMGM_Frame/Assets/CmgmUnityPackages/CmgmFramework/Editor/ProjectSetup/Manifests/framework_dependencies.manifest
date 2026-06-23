@@ -6,6 +6,7 @@
 
 registry	com.unity.addressables
 registry	com.unity.inputsystem
+registry	com.unity.nuget.newtonsoft-json
 any	com.unity.textmeshpro|Assets/TextMesh Pro
 asset	Assets/XLua/Src
 asset	Assets/Plugins/UniTask/Runtime/UniTask.asmdef
