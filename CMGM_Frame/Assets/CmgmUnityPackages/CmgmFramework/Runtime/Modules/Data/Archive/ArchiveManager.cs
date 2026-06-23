@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.Serialization.Formatters.Binary;
 using Cysharp.Threading.Tasks;
 using CMGM.Core;
 using UnityEngine;
@@ -17,6 +16,8 @@ public class ArchiveManager : BootSingleton<ArchiveManager>
     /// 存档元数据名
     /// </summary>
     private static string ARCHIVE_META_NAME = "ArchiveMeta";
+
+    private static readonly IArchiveSerializer Serializer = new BinaryFormatterArchiveSerializer();
 
     private ArchiveManager() { }
 
@@ -36,7 +37,7 @@ public class ArchiveManager : BootSingleton<ArchiveManager>
     /// <para>包括有几个存档、和每个存档UI界面上显示的数据</para>
     /// </summary>
     [System.Serializable]
-    public class ArchiveMetaDataSet : I_Saveable
+    public class ArchiveMetaDataSet : ISaveable
     {
         [System.Serializable]
         public struct SingleArchiveMeta
@@ -60,7 +61,7 @@ public class ArchiveManager : BootSingleton<ArchiveManager>
     private void LoadArchiveMeta()
     {
         //找不到元文件就new一个并save了
-        if (!File.Exists(Consts.Paths.ARCHIVE_PATH + ARCHIVE_META_NAME + Consts.DATAFILE_EXTENSION))
+        if (!File.Exists(Consts.Paths.ARCHIVE_PATH + ARCHIVE_META_NAME + Consts.CMGMFILE_EXTENSION))
         {
             ArchiveMeta = new ArchiveMetaDataSet();
             SaveArchiveMeta();
@@ -119,9 +120,9 @@ public class ArchiveManager : BootSingleton<ArchiveManager>
     #endregion
 
     #region 运行时数据管理
-    public I_Saveable RuntimeDataInstance { get; private set; } = null;
+    public ISaveable RuntimeDataInstance { get; private set; } = null;
 
-    public T GetRuntimeData<T>() where T : class, I_Saveable => RuntimeDataInstance as T;
+    public T GetRuntimeData<T>() where T : class, ISaveable => RuntimeDataInstance as T;
 
     /// <summary>
     /// 清除当前游戏运行时档案
@@ -136,7 +137,7 @@ public class ArchiveManager : BootSingleton<ArchiveManager>
     /// </summary>
     /// <param name="runtimeData">游戏层创建的存档数据实例</param>
     /// <param name="initArchive">初始化 RuntimeData 数据</param>
-    public void NewRuntimeData(I_Saveable runtimeData, UnityAction initArchive)
+    public void NewRuntimeData(ISaveable runtimeData, UnityAction initArchive)
     {
         initArchive?.Invoke();
         RuntimeDataInstance = runtimeData;
@@ -146,12 +147,12 @@ public class ArchiveManager : BootSingleton<ArchiveManager>
     /// 读取游戏运行时档案，将硬盘存档文件读入 RuntimeDataInstance
     /// </summary>
     /// <param name="archiveID">存档 id</param>
-    public void LoadRuntimeData<T>(int archiveID) where T : class, I_Saveable
+    public void LoadRuntimeData<T>(int archiveID) where T : class, ISaveable
     {
-        if (!File.Exists(Consts.Paths.ARCHIVE_PATH + GetArchiveNameFromId(archiveID) + Consts.DATAFILE_EXTENSION))
+        if (!File.Exists(Consts.Paths.ARCHIVE_PATH + GetArchiveNameFromId(archiveID) + Consts.CMGMFILE_EXTENSION))
         {
             CmgmLog.fError("试图读取不存在的文件："
-            + Consts.Paths.ARCHIVE_PATH + GetArchiveNameFromId(archiveID) + Consts.DATAFILE_EXTENSION);
+            + Consts.Paths.ARCHIVE_PATH + GetArchiveNameFromId(archiveID) + Consts.CMGMFILE_EXTENSION);
             return;
         }
 
@@ -187,47 +188,35 @@ public class ArchiveManager : BootSingleton<ArchiveManager>
     /// </summary>
     /// <param name="obj">继承了接口I_Saveable的类对象</param>
     /// <param name="fileName">存档名</param>
-    private void Save(I_Saveable obj, string fileName)
+    private void Save(ISaveable obj, string fileName)
     {
-        //先判断路径文件夹有没有
         if (!Directory.Exists(Consts.Paths.ARCHIVE_PATH))
             Directory.CreateDirectory(Consts.Paths.ARCHIVE_PATH);
 
-        using (MemoryStream ms = new MemoryStream())
-        {
-            BinaryFormatter bf = new BinaryFormatter();
+        byte[] payload = Serializer.Serialize(obj);
+        byte[] container = CmgmFileFormat.Pack(CmgmFileKind.Archive, payload);
+        CipherTool.Encryption(ref container);
 
-            bf.Serialize(ms, obj);
-            byte[] data = ms.GetBuffer();
-
-            CipherTool.Encryption(ref data);
-
-            File.WriteAllBytes(Consts.Paths.ARCHIVE_PATH + fileName + Consts.DATAFILE_EXTENSION, data);
-            ms.Close();
-        }
+        File.WriteAllBytes(Consts.Paths.ARCHIVE_PATH + fileName + Consts.CMGMFILE_EXTENSION, container);
     }
+
     /// <summary>
     /// 数据反序列化成类的对象
     /// </summary>
     /// <typeparam name="T">读取数据的类</typeparam>
     /// <param name="fileName">存档名</param>
-    private T Load<T>(string fileName) where T : class, I_Saveable
+    private T Load<T>(string fileName) where T : class, ISaveable
     {
-        //如果不存在这个文件 就直接返回泛型对象的默认值
-        if (!File.Exists(Consts.Paths.ARCHIVE_PATH + fileName + Consts.DATAFILE_EXTENSION))
+        if (!File.Exists(Consts.Paths.ARCHIVE_PATH + fileName + Consts.CMGMFILE_EXTENSION))
             return default;
 
-        byte[] data = File.ReadAllBytes(Consts.Paths.ARCHIVE_PATH + fileName + Consts.DATAFILE_EXTENSION);
-        CipherTool.Decryption(ref data);
+        byte[] raw = File.ReadAllBytes(Consts.Paths.ARCHIVE_PATH + fileName + Consts.CMGMFILE_EXTENSION);
+        CipherTool.Decryption(ref raw);
 
-        T obj;
-        using (MemoryStream ms = new MemoryStream(data))
-        {
-            BinaryFormatter bf = new BinaryFormatter();
-            obj = bf.Deserialize(ms) as T;
-            ms.Close();
-        }
-
+        byte[] payload = CmgmFileFormat.Unpack(
+            raw, CmgmFileKind.Archive, fileName + Consts.CMGMFILE_EXTENSION, out var header);
+        T obj = Serializer.Deserialize<T>(payload);
+        CmgmFileVersionDebugLog.LogArchiveIfNeeded(fileName + Consts.CMGMFILE_EXTENSION, header, obj);
         return obj;
     }
     #endregion

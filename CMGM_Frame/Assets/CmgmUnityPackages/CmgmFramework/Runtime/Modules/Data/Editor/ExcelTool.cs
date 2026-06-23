@@ -296,10 +296,10 @@ public class ExcelTool
             if (!string.IsNullOrEmpty(EmptyPosInfo))
                 CmgmLog.fNegative($"数据表{table.TableName}中：{EmptyPosInfo}处的值为空，写入了对应类型变量的默认值");
 
-            //加密并写入数据
-            byte[] data = ms.GetBuffer();
-            CipherTool.Encryption(ref data);
-            File.WriteAllBytes(Consts.Paths.ConfigData + table.TableName + Consts.DATAFILE_EXTENSION, data);
+            byte[] payload = ms.ToArray();
+            byte[] container = CmgmFileFormat.Pack(CmgmFileKind.Config, payload);
+            CipherTool.Encryption(ref container);
+            File.WriteAllBytes(Consts.Paths.ConfigData + table.TableName + Consts.CMGMFILE_EXTENSION, container);
 
             ms.Close();
         }

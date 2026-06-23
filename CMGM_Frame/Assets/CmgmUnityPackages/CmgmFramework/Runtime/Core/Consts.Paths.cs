@@ -7,7 +7,7 @@ namespace CMGM.Core
     /// </summary>
     public static class Consts
     {
-        public const string DATAFILE_EXTENSION = ".cmgm";
+        public const string CMGMFILE_EXTENSION = ".cmgm";
 
         public static class Paths
         {

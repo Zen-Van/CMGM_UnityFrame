@@ -2,7 +2,7 @@
 
 > 本文档是框架化改造的长期参考（「北极星」）。  
 > 目标：将当前工程从「带 Demo 的原型项目」逐步改造为「可跨项目迁移的框架」。  
-> 最后更新：2026-06-20 — **存档格式优化** 扩展为 **`.cmgm` 统一容器**（Archive + Config 同头分 kind）；脚手架 **1.5 ✅**。
+> 最后更新：2026-06-19 — **存档格式优化 1.1 / 1.1b / 1.3 / 1.3b ✅**；`.cmgm` 统一容器读策略（无 Legacy、version 告警）落地。
 
 ---
 
@@ -248,7 +248,7 @@ InitScene（CmgmFrameBoot.Awake）
 |------|------|----------|
 | namespace / asmdef | Core/UI/Data/Audio/Input/Editor 已闭环；Lua/Bootstrap/Scene 临时宿主 无 asmdef | §7.2 ✅ |
 | `BinaryFormatter` 序列化 | `ArchiveManager` | **存档格式优化1.2** |
-| 配表 `.cmgm` 无统一文件头 | `ExcelTool` / `ConfigTableManager` | **存档格式优化1.1b ~ 1.3b** |
+| 配表 payload 读写分散 | `ExcelTool` / `ConfigTableManager` | **存档格式优化1.2b** |
 | 无 GameState 状态机 | — | 支线「GameState系统」 |
 | 无事件总线 | `OptionalSystem/` | 支线「事件总线系统」 |
 
@@ -561,6 +561,8 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | 项目脚手架1.2b | `ProjectSetup/Seeds` 模板 + 游戏层种子；TestSpace 仅顶层 ✅ |
 | 项目脚手架1.2c | `project_layer.manifest` 补全 + 重命名 ✅ |
 | 项目脚手架1.5 | 空工程迁移验证 ✅ |
+| **存档格式优化1.1 / 1.1b** | `CmgmFileFormat` 统一壳；Archive / Config 双侧 `Pack` / `Unpack`；`IArchiveSerializer` + BF 实现 ✅ |
+| **存档格式优化1.3 / 1.3b** | 读侧 **fail-fast**：无 CMGM 头或 version/kind 不匹配即报错；**不**兼容无头旧档；开发期清档 / 重导表 ✅ |
 | 框架 Resources + Runtime 三分 | Settings/UI/Logo/Font → `Resources/`；代码 → `Runtime/` ✅ |
 | 迭代模型 | 主线/支线重排；旧 0→9 归档 |
 
@@ -617,7 +619,7 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | 支线系统 | 最前节点 | 解锁条件 | 状态 |
 |----------|----------|----------|------|
 | **Loading系统** | Loading系统1.1 | Core ✅ + UI ✅ | 已解锁 |
-| **存档格式优化** | **存档格式优化1.1** | Data ✅ | 已解锁 |
+| **存档格式优化** | **存档格式优化1.2** | Data ✅；**1.1 / 1.1b / 1.3 / 1.3b ✅** | 已解锁 |
 | **存档升级系统** | 存档升级系统1.1 | **存档格式优化** 全线完成（含 **1.1b~1.3b**） | 🔒 待解锁 |
 | **Lua系统** | Lua系统1.1 | 编译边界2.6 ✅ | 已解锁 |
 | **Audio系统** | Audio系统1.1 | 编译边界2.7 ✅ | 已解锁 |
@@ -655,28 +657,36 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 > **目标：** `.cmgm` = **统一容器头** + **分类型 payload**；头里标识 `Archive` / `Config`，各自走自己的编解码器。  
 > **范围：** 不含 `ISaveChunk`、完整 Migrator 链（属 **存档升级系统**）。配表 **payload 语义**（行/列二进制布局）本阶段可保持不变，只统一「外壳 + 编解码入口」。
 
-**统一容器头 v1（计划形态，实现时落于 `CmgmFileFormat` 或等价）**
+**统一容器头 v1（`CmgmFileFormat`）**
 
 | 字段 | 说明 |
 |------|------|
-| `magic` | 固定四字节（如 `CMGM`），标识 CMGM 容器文件 |
-| `version` | `uint32`，容器格式版本（v1 起） |
-| `kind` | `uint32`：`Archive` / `Config`（枚举） |
-| `payload` | 正文；**Archive** → `IArchiveSerializer`；**Config** → `IConfigTableCodec`（Excel 表二进制） |
+| `magic` | 固定四字节 `CMGM` |
+| `version` | `uint32` LE，容器格式版本（当前运行时 `ContainerVersion = 1`） |
+| `kind` | `uint8`：`0=Archive`，`1=Config` |
+| `payload` | 正文；**Archive** → `IArchiveSerializer`；**Config** → 表二进制（**1.2b** 收口为 `IConfigTableCodec`） |
 
-读写顺序（与现网一致）：`Pack(header+payload)` → `CipherTool` → 写盘；读盘反向。  
-**Archive** 落盘：`persistentDataPath/Archives/`；**Config** 落盘：`StreamingAssets/TableConfig/`。
+**读侧策略（1.1 / 1.1b / 1.3 / 1.3b 已落地）：**
 
-| 子步 | 内容 | 验收 | 解决的问题 |
-|------|------|------|------------|
-| **存档格式优化1.1** | 实现 **统一容器头** + `Pack`/`Unpack`；Archive 侧接入 + `IArchiveSerializer` 抽象；`ArchiveManager` 不再直接 `BinaryFormatter` | 新存档文件带 `CMGM` 头且 `kind=Archive`；Save/Load 经统一入口 | 存档可识别、可 versioning；序列化可替换 |
-| **存档格式优化1.1b** | Config 侧接入同一容器：`ExcelTool` 导出、`ConfigTableManager.LoadTable` 读入均 `Unpack` 后按 `kind=Config` 分支 | 导出的 `TableConfig/*.cmgm` 带相同头；`LoadTable` 与导表一致 | 配表/存档不再「同名不同物」；误读文件可报错 |
-| **存档格式优化1.2** | Archive **payload**：新序列化（如 Newtonsoft，支持 `Dictionary`） | `ArchiveMeta` + `GameRuntimeData` 读写正常；工程无 `BinaryFormatter` | 去掉过时 API 与安全/平台风险 |
-| **存档格式优化1.2b** | Config **payload**：`IConfigTableCodec` 收口 `ExcelTool` 写表二进制与 `ConfigTableManager` 读表逻辑（布局可与现网一致） | 导表 + 运行时 `LoadTable` 行为不变；编解码只经 Codec 一处 | Excel 读写不再散落两处；后续改表格式只改 Codec |
-| **存档格式优化1.3** | Archive **旧档**：开发期清 `Archives/`，或可选 Legacy（无头 / BF）→ v1 一次性迁移 | Demo 存档策略明确 | 1.2 上线后不 silent fail |
-| **存档格式优化1.3b** | Config **旧档**：无头旧 `StreamingAssets` 配表 — 约定 **重新导表**（推荐），或可选 Legacy 直读旧二进制 | 文档 + 菜单/说明；误用旧包可识别 | 与 1.1b 配套，避免混用旧表数据 |
+| 情况 | 行为 |
+|------|------|
+| 非 CMGM（无魔数 / 头 truncated / kind 非法） | `CmgmLog.fError` + 抛异常，**不**读 payload |
+| `version ≠ ContainerVersion` | `CmgmLog.fWarning`（可能解码错误）→ **仍读 payload** → 解码后 `CmgmFileVersionDebugLog` 打印预览供核对 |
+| `kind` 与调用方期望不符 | `CmgmLog.fError` + 抛异常 |
+| 无头旧档 / BF 裸 blob | **不支持**；开发期删 `Archives/` 或 **重新导表** |
 
-> **子步顺序建议：** `1.1 → 1.1b`（先定壳、双侧接入）→ `1.2 ∥ 1.2b`（payload 可并行）→ `1.3 ∥ 1.3b`（旧档策略）。
+读写顺序：`Pack` → `CipherTool` → 写盘；读盘反向 → `Unpack(expectedKind, out header)` → 各 Codec。
+
+| 子步 | 内容 | 验收 | 状态 |
+|------|------|------|------|
+| **存档格式优化1.1** | 统一容器头 + Archive 接入 + `IArchiveSerializer` | 新存档带 `CMGM` 头且 `kind=Archive` | ✅ |
+| **存档格式优化1.1b** | Config 侧 `ExcelTool` / `ConfigTableManager` 同壳 | 导表与运行时读表一致 | ✅ |
+| **存档格式优化1.2** | Archive payload：Newtonsoft 等替换 BF | 无 `BinaryFormatter` | 待做 |
+| **存档格式优化1.2b** | Config payload：`IConfigTableCodec` 收口读写 | 导表 + LoadTable 经 Codec | 待做 |
+| **存档格式优化1.3** | Archive 旧档策略：**fail-fast**，开发期清档 | 无头档直接报错 | ✅ |
+| **存档格式优化1.3b** | Config 旧档策略：**fail-fast**，开发期重导表 | 无头配表直接报错 | ✅ |
+
+> **子步顺序建议：** `1.1 → 1.1b → 1.3 / 1.3b`（读策略）✅ → **`1.2 ∥ 1.2b`**（payload，当前最前）→ 全线完成后解锁 **存档升级系统**。
 
 #### 存档升级系统（🔒 解锁：**存档格式优化 1.1~1.3 与 1.1b~1.3b** 全线完成）
 
@@ -828,7 +838,7 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 |----|----------|------|----------|------------|----------|
 | **主线（编译边界 + 启动编排）** | — | ✅ 全线完成 | — | — | — |
 | **项目脚手架与包体迁移** | **项目脚手架1.6**（远期） | 远期按需 | 1.5 ✅ | **大**（模块导入向导） | ★★★★ |
-| **存档格式优化** | **存档格式优化1.1** | 已解锁 | Data ✅ | **中~略大**（统一头；Archive **1.1~1.3** + Config **1.1b~1.3b**） | ★★★☆ |
+| **存档格式优化** | **存档格式优化1.2** | 已解锁 | Data ✅；**1.1 / 1.1b / 1.3 / 1.3b ✅** | **中**（换 Archive 序列化） | ★★★☆ |
 | **存档升级系统** | 存档升级系统1.1 | 🔒 待解锁 | **存档格式优化** 全线完成（含 **1.1b~1.3b**） | **中~大**（chunk + 迁移） | ★★★★ |
 | **GameState系统** | GameState系统1.1 | 已解锁 | 启动编排3.3 ✅ | **中**（接口 + 状态机骨架 3~6 文件） | ★★★☆ |
 | **Loading系统** | Loading系统1.1 | 已解锁 | Core + UI ✅ | **中**（新 `CMGM.Loading` + 进度 UI） | ★★★☆ |
@@ -841,13 +851,13 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | **模块启动Registry系统** | 模块启动Registry系统1.1 | 🔒 远期 | 3.3 ✅ **且** Boot 链 ≥10 | **大** | ★★★★ |
 | **网游预埋** | 网游预埋1.1 | 🔒 远期 | **存档升级系统** 完成 **且** GameState 完成 | **大** | ★★★★★ |
 
-> **说明：** 脚手架 **1.5 ✅** 已完成。数据向建议按 **存档格式优化** 子步顺序推进（含配表 **1.1b~1.3b**）。并行时各选不同支线最前节点即可。
+> **说明：** **存档格式优化 1.1 / 1.1b / 1.3 / 1.3b ✅**；本线最前节点 **1.2**（Archive payload）或 **1.2b**（Config Codec，可并行）。
 
 ### 7.7 推荐推进顺序（2026-06-20，**1.5 ✅ 后更新**）
 
 | 阶段 | 建议支线 | 理由 |
 |------|----------|------|
-| **D0 · 数据前置（优先）** | **存档格式优化**：`1.1→1.1b` → `1.2∥1.2b` → `1.3∥1.3b` | 统一 `.cmgm` 容器；Archive 去 BF；Config 导表/读表同壳 |
+| **D0 · 数据前置（优先）** | **存档格式优化 1.2 ∥ 1.2b** | 壳与读策略 ✅；待换 payload 编解码 |
 | **A · 竖切** | **Loading系统1.1 → 1.2 → 1.3** | 可与 D0 串行：格式优化完成后再做；1.3 前复盘 **GameBootstrap 归属** |
 | **B · 流程** | **GameState系统1.1 → 1.2 → 1.3** | 与 Loading 二选一作「中~大」主轨 |
 | **D1 · 数据拓展** | **存档升级系统**（**存档格式优化** 完成后） | chunk、Migrator、异步写盘 |
@@ -953,7 +963,9 @@ Editor/
 | **共享模块** | 容器 `Pack`/`Unpack` 放 Data 模块（如 `CmgmFileFormat`）；`ArchiveManager`、`ExcelTool`、`ConfigTableManager` 只调壳 + 各自 Codec |
 | **CipherTool** | 仍包裹 **整文件**（头+payload）；改加密算法须 bump `version` 或 kind 内子版本 |
 | **1.1b** | 配表导出/读表与存档 **同步** 上头，避免只改一侧导致 `.cmgm` 仍两种形态 |
-| **1.3b 默认** | Config 旧档优先 **重新导表**；Legacy 直读仅作开发期可选项 |
+| **1.3b 默认** | Config 旧档：**重导表**；读侧 **fail-fast**，无 Legacy |
+| **读侧 fail-fast** | 无 CMGM 头 → 报错；**不**兼容无头 / BF 裸 blob |
+| **version 告警** | 头可读但 `version ≠ ContainerVersion` → **Warning** 后继续解码，并打印预览；正式迁移留 **存档升级系统** Migrator |
 
 **设计决策记录 · 2026-06-20（存档 · 格式优化 vs 升级拓展）**
 
@@ -962,7 +974,7 @@ Editor/
 | **拆线** | 原「存档升级系统」拆为两条：**存档格式优化**（最小包，前置）+ **存档升级系统**（拓展） |
 | **格式优化** | 1.1~1.3（Archive）+ **1.1b~1.3b**（Config）；**不含** `ISaveChunk` |
 | **升级拓展** | 原 1.2~1.6 重编号为 **存档升级系统1.1~1.4**；解锁 = 格式优化 **含 b 子步** 全线完成 |
-| **旧档** | Archive：清 `Archives/` 或 BF Legacy；Config：**重导表** 为主；Migrator 链在 **存档升级系统1.2** |
+| **旧档** | **不支持 Legacy**；开发期清 `Archives/` / 重导表；跨 version 迁移在 **存档升级系统1.2** Migrator |
 
 **设计决策记录 · 2026-06-20（脚手架 · 游戏层种子 vs 框架层）** ✅ 1.2b
 
@@ -1011,25 +1023,26 @@ Excel（Excels/）
   → ExcelTool 导出（IConfigTableCodec 写 payload）
   → Pack(CmgmFileFormat, kind=Config) → CipherTool
   → StreamingAssets/TableConfig/*.cmgm
-  → ConfigTableManager：CipherTool → Unpack → kind 校验 → Codec 读入 dataDic
+  → ConfigTableManager：CipherTool → Unpack(Config) → 表二进制读入 dataDic
 ```
 
 - 容器类必须有 `Dictionary<K, VRow> dataDic` 字段
 - `ConfigTableManager` 通过反射读 `dataDic` 泛型参数推断行类型
-- **计划（1.1b~1.3b）：** 与存档共用 `.cmgm` 头；旧无头配表见 **存档格式优化1.3b**（默认重新导表）
+- 无 CMGM 头或 version/kind 不合法 → **报错**（开发期用「清除并构建 Excel 数据」）
 
 ### 存档管线
 
 ```
 GameRuntimeData（I_Saveable）
-  → IArchiveSerializer 写 payload
+  → IArchiveSerializer（当前 BF）写 payload
   → Pack(CmgmFileFormat, kind=Archive) → CipherTool
   → persistentDataPath/Archives/*.cmgm
+  → 读：CipherTool → Unpack(Archive) → Deserialize
 ```
 
-> **计划：** Archive 仍为 `BinaryFormatter`（1.2 替换）；配表为无头 Excel 二进制（**1.1b** 上头）。统一后 **§存档格式优化** 全线完成，再开 **存档升级系统**。
+> Archive payload 仍为 **BinaryFormatter**（**1.2** 替换）；配表 payload 布局未变（**1.2b** 收口 Codec）。
 
-### `.cmgm` 统一容器（计划 · v1）
+### `.cmgm` 统一容器（v1 · 已落地）
 
 ```
 ┌──────────────────────────────────────────┐
@@ -1044,7 +1057,7 @@ GameRuntimeData（I_Saveable）
               .cmgm 文件
 ```
 
-**涉及代码（实现时，本文档仅计划）：** `CmgmFileFormat`、`ArchiveManager`、`ExcelTool`、`ConfigTableManager`、`CipherTool`（调用顺序不变）。
+**涉及代码：** `CmgmFileFormat`（`Pack` / `Unpack`）、`CmgmFileVersionDebugLog`、`ArchiveManager`、`ExcelTool`、`ConfigTableManager`、`CipherTool`。
 
 ### Game 层目录约定（Archive / Config 并列）
 
@@ -1116,4 +1129,4 @@ CmgmFrameSettings.ROOT_LUA_URI（如 main.lua.txt）
 
 ---
 
-*脚手架 1.5 ✅。数据向最前节点：**存档格式优化1.1**（统一 `.cmgm` 头 + Archive）；随后 **1.1b**（Config）。详见 §7.4 / §7.7 / §8。*
+*脚手架 1.5 ✅。数据向最前节点：**存档格式优化1.2**（Archive payload）∥ **1.2b**（Config Codec）。壳 + 读策略见 §7.4 / §8。*

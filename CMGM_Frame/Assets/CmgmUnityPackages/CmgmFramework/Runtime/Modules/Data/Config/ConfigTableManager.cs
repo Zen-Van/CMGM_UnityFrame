@@ -69,78 +69,68 @@ public class ConfigTableManager : LazySingleton<ConfigTableManager>
         #endregion
 
         #region 读取硬盘数据
-        //读取 excel表对应的2进制文件 来进行解析
-        using (FileStream fs = File.Open(
-            Consts.Paths.ConfigData + typeof(T).Name + Consts.DATAFILE_EXTENSION,
-            FileMode.Open, FileAccess.Read))
+        string tableName = typeof(T).Name;
+        string filePath = Consts.Paths.ConfigData + tableName + Consts.CMGMFILE_EXTENSION;
+
+        byte[] raw = File.ReadAllBytes(filePath);
+        CipherTool.Decryption(ref raw);
+
+        byte[] bytes = CmgmFileFormat.Unpack(
+            raw, CmgmFileKind.Config, tableName + Consts.CMGMFILE_EXTENSION, out var header);
+
+        //用于记录当前读取了多少字节了
+        int index = 0;
+
+        //读取多少行数据
+        int count = BitConverter.ToInt32(bytes, index);
+        index += 4;
+
+        //读取主键的名字
+        int keyNameLength = BitConverter.ToInt32(bytes, index);
+        index += 4;
+        string keyName = Encoding.UTF8.GetString(bytes, index, keyNameLength);
+        index += keyNameLength;
+
+        //通过反射 得到数据结构类 所有字段的信息
+        FieldInfo[] infos = rowType.GetFields();
+
+        //读取每一行的信息
+        for (int i = 0; i < count; i++)
         {
-            byte[] bytes = new byte[fs.Length];
-            fs.Read(bytes, 0, bytes.Length);
-            fs.Close();
-            //解密
-            CipherTool.Decryption(ref bytes);
-
-            //用于记录当前读取了多少字节了
-            int index = 0;
-
-            //读取多少行数据
-            int count = BitConverter.ToInt32(bytes, index);
-            index += 4;
-
-            //读取主键的名字
-            int keyNameLength = BitConverter.ToInt32(bytes, index);
-            index += 4;
-            string keyName = Encoding.UTF8.GetString(bytes, index, keyNameLength);
-            index += keyNameLength;
-
-            //通过反射 得到数据结构类 所有字段的信息
-            FieldInfo[] infos = rowType.GetFields();
-
-            //读取每一行的信息
-            for (int i = 0; i < count; i++)
+            foreach (FieldInfo info in infos)
             {
-                foreach (FieldInfo info in infos)
+                if (info.FieldType == typeof(int))
                 {
-                    if (info.FieldType == typeof(int))
-                    {
-                        //相当于就是把2进制数据转为int 然后赋值给了对应的字段
-                        info.SetValue(dataObj, BitConverter.ToInt32(bytes, index));
-                        index += 4;
-                    }
-                    else if (info.FieldType == typeof(float))
-                    {
-                        info.SetValue(dataObj, BitConverter.ToSingle(bytes, index));
-                        index += 4;
-                    }
-                    else if (info.FieldType == typeof(bool))
-                    {
-                        info.SetValue(dataObj, BitConverter.ToBoolean(bytes, index));
-                        index += 1;
-                    }
-                    else if (info.FieldType == typeof(string))
-                    {
-                        //读取字符串字节数组的长度
-                        int length = BitConverter.ToInt32(bytes, index);
-                        index += 4;
-                        info.SetValue(dataObj, Encoding.UTF8.GetString(bytes, index, length));
-                        index += length;
-                    }
+                    info.SetValue(dataObj, BitConverter.ToInt32(bytes, index));
+                    index += 4;
                 }
-
-                //读取完一行的数据了 应该把这个数据添加到容器对象中
-                //通过字典对象得到其中的 Add方法
-                MethodInfo mInfo = dicObject.GetType().GetMethod("Add");
-                //得到数据结构类对象中 指定主键字段的值
-                object keyValue = rowType.GetField(keyName).GetValue(dataObj);
-                mInfo.Invoke(dicObject, new object[] { keyValue, dataObj });
-
+                else if (info.FieldType == typeof(float))
+                {
+                    info.SetValue(dataObj, BitConverter.ToSingle(bytes, index));
+                    index += 4;
+                }
+                else if (info.FieldType == typeof(bool))
+                {
+                    info.SetValue(dataObj, BitConverter.ToBoolean(bytes, index));
+                    index += 1;
+                }
+                else if (info.FieldType == typeof(string))
+                {
+                    int length = BitConverter.ToInt32(bytes, index);
+                    index += 4;
+                    info.SetValue(dataObj, Encoding.UTF8.GetString(bytes, index, length));
+                    index += length;
+                }
             }
 
-            //把读取完的表记录下来
-            tableDic.Add(typeof(T).Name, contaninerObj);
-
-            fs.Close();
+            MethodInfo mInfo = dicObject.GetType().GetMethod("Add");
+            object keyValue = rowType.GetField(keyName).GetValue(dataObj);
+            mInfo.Invoke(dicObject, new object[] { keyValue, dataObj });
         }
+
+        tableDic.Add(tableName, contaninerObj);
+        CmgmFileVersionDebugLog.LogConfigTableIfNeeded(
+            tableName + Consts.CMGMFILE_EXTENSION, header, contaninerObj, rowType, keyName);
         #endregion
     }
 

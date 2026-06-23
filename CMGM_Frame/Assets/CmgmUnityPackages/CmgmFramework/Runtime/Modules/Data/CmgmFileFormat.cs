@@ -1,12 +1,10 @@
 using System;
 using System.IO;
 using System.Text;
+using CMGM.Core;
 
 namespace CMGM.Data
 {
-    /// <summary>
-    /// .cmgm 磁盘文件种类；写入文件头 offset 8 处的 uint8。
-    /// </summary>
     public enum CmgmFileKind : byte
     {
         Archive = 0,
@@ -14,7 +12,7 @@ namespace CMGM.Data
     }
 
     /// <summary>
-    /// v1 容器头只读视图（不含 payload）。
+    /// 从文件头读出的 version + kind（不含 payload）。
     /// </summary>
     public readonly struct CmgmFileHeader
     {
@@ -29,26 +27,21 @@ namespace CMGM.Data
     }
 
     /// <summary>
-    /// .cmgm 统一容器：固定文件头 + 分类型 payload。
-    /// <para>读写顺序（接入方）：<c>Pack</c> → <see cref="CipherTool"/> → 写盘；读盘反向。</para>
-    /// <para>本类不处理加解密，也不解析 payload 正文。</para>
+    /// .cmgm 统一容器：9 字节头 + payload。不处理 CipherTool，不解析 payload 正文。
+    /// <para>写：<see cref="Pack"/> → CipherTool → 写盘。</para>
+    /// <para>读：读盘 → CipherTool → <see cref="Unpack"/> → 各 Codec。</para>
     /// </summary>
     public static class CmgmFileFormat
     {
         public const uint ContainerVersion = 1;
-
-        /// <summary>文件头总字节数：magic(4) + version(4) + kind(1)。</summary>
         public const int HeaderSize = 4 + 4 + 1;
 
-        private const int MagicOffset = 0;
         private const int VersionOffset = 4;
         private const int KindOffset = 8;
 
         private static readonly byte[] MagicBytes = Encoding.ASCII.GetBytes("CMGM");
 
-        /// <summary>
-        /// 将 payload 封装为带 v1 文件头的完整容器字节（未加密）。
-        /// </summary>
+        /// <summary>拼容器字节（未加密）。</summary>
         public static byte[] Pack(CmgmFileKind kind, byte[] payload)
         {
             payload ??= Array.Empty<byte>();
@@ -61,37 +54,58 @@ namespace CMGM.Data
         }
 
         /// <summary>
-        /// 解析容器字节，返回头信息与 payload（未加密输入）。
+        /// 校验头并取出 payload。kind 不合法时抛异常；version 与运行时不一致时仅警告并仍返回 payload。
         /// </summary>
-        /// <exception cref="ArgumentNullException"><paramref name="containerBytes"/> 为 null。</exception>
-        /// <exception cref="InvalidDataException">魔数、版本或 kind 不合法。</exception>
-        public static CmgmFileHeader Unpack(byte[] containerBytes, out byte[] payload)
+        /// <param name="header">读出的容器头（含文件中的 version）。</param>
+        public static byte[] Unpack(
+            byte[] containerBytes,
+            CmgmFileKind expectedKind,
+            string fileLabel,
+            out CmgmFileHeader header)
         {
             if (containerBytes == null)
                 throw new ArgumentNullException(nameof(containerBytes));
 
-            var header = ReadHeader(containerBytes, out payload);
-            return header;
+            if (!TryReadHeader(containerBytes, out header))
+            {
+                CmgmLog.fError($"文件 {fileLabel} 不是合法的 CMGM 容器，无法读取。");
+                throw new InvalidDataException($"File '{fileLabel}' is not a valid CMGM container.");
+            }
+
+            if (header.Kind != expectedKind)
+            {
+                CmgmLog.fError($"文件 {fileLabel} 的 kind 为 {header.Kind}，期望 {expectedKind}。");
+                throw new InvalidDataException(
+                    $"File '{fileLabel}' has kind {header.Kind}, expected {expectedKind}.");
+            }
+
+            if (header.Version != ContainerVersion)
+            {
+                CmgmLog.fWarning(
+                    $"文件 {fileLabel} 的 CMGM 容器 version={header.Version}，当前运行时期望 version={ContainerVersion}；"
+                    + "仍将按当前 payload Codec 尝试解码，结果可能错误，解码后将打印到控制台供核对。");
+            }
+
+            return SlicePayload(containerBytes);
         }
 
-        /// <summary>
-        /// 尝试解析；失败时 <paramref name="payload"/> 为 null。
-        /// </summary>
-        public static bool TryUnpack(byte[] containerBytes, out CmgmFileHeader header, out byte[] payload)
+        /// <summary>能否读出 magic + version + kind（不表示 version 受支持）。</summary>
+        private static bool TryReadHeader(ReadOnlySpan<byte> bytes, out CmgmFileHeader header)
         {
             header = default;
-            payload = null;
 
-            if (!TryReadHeader(containerBytes, out header, out payload))
+            if (bytes.Length < HeaderSize || !HasMagic(bytes))
                 return false;
 
+            byte kindValue = bytes[KindOffset];
+            if (!Enum.IsDefined(typeof(CmgmFileKind), kindValue))
+                return false;
+
+            header = new CmgmFileHeader(ReadUInt32(bytes, VersionOffset), (CmgmFileKind)kindValue);
             return true;
         }
 
-        /// <summary>
-        /// 缓冲区开头是否为 v1 魔数 <c>CMGM</c>（用于区分无头旧档）。
-        /// </summary>
-        public static bool HasMagic(ReadOnlySpan<byte> bytes)
+        private static bool HasMagic(ReadOnlySpan<byte> bytes)
         {
             if (bytes.Length < MagicBytes.Length)
                 return false;
@@ -105,62 +119,20 @@ namespace CMGM.Data
             return true;
         }
 
-        /// <summary>
-        /// 仅读取文件头，不拷贝 payload。
-        /// </summary>
-        public static CmgmFileHeader ReadHeaderOnly(ReadOnlySpan<byte> containerBytes)
-        {
-            if (!TryReadHeader(containerBytes, out var header, out _))
-                throw new InvalidDataException("Not a valid CMGM container file.");
-
-            return header;
-        }
-
         private static void WriteHeader(byte[] buffer, uint version, CmgmFileKind kind)
         {
-            Buffer.BlockCopy(MagicBytes, 0, buffer, MagicOffset, MagicBytes.Length);
+            Buffer.BlockCopy(MagicBytes, 0, buffer, 0, MagicBytes.Length);
             WriteUInt32(buffer, VersionOffset, version);
             buffer[KindOffset] = (byte)kind;
         }
 
-        private static CmgmFileHeader ReadHeader(byte[] containerBytes, out byte[] payload)
+        private static byte[] SlicePayload(ReadOnlySpan<byte> containerBytes)
         {
-            if (!TryReadHeader(containerBytes, out var header, out payload))
-                throw new InvalidDataException("Not a valid CMGM container file.");
+            int length = containerBytes.Length - HeaderSize;
+            if (length <= 0)
+                return Array.Empty<byte>();
 
-            return header;
-        }
-
-        private static bool TryReadHeader(ReadOnlySpan<byte> containerBytes, out CmgmFileHeader header, out byte[] payload)
-        {
-            header = default;
-            payload = null;
-
-            if (!HasMagic(containerBytes))
-                return false;
-
-            if (containerBytes.Length < HeaderSize)
-                return false;
-
-            uint version = ReadUInt32(containerBytes, VersionOffset);
-            if (version != ContainerVersion)
-                return false;
-
-            byte kindValue = containerBytes[KindOffset];
-            if (!Enum.IsDefined(typeof(CmgmFileKind), kindValue))
-                return false;
-
-            header = new CmgmFileHeader(version, (CmgmFileKind)kindValue);
-
-            int payloadLength = containerBytes.Length - HeaderSize;
-            if (payloadLength <= 0)
-            {
-                payload = Array.Empty<byte>();
-                return true;
-            }
-
-            payload = containerBytes.Slice(HeaderSize, payloadLength).ToArray();
-            return true;
+            return containerBytes.Slice(HeaderSize, length).ToArray();
         }
 
         private static void WriteUInt32(byte[] buffer, int offset, uint value)
