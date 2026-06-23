@@ -247,7 +247,7 @@ public class ExcelTool
         byte[] payload = ConfigCodec.Encode(encodeInput);
         byte[] container = CmgmFileFormat.Pack(CmgmFileKind.Config, payload);
         CipherTool.Encryption(ref container);
-        File.WriteAllBytes(Consts.Paths.ConfigData + table.TableName + Consts.CMGMFILE_EXTENSION, container);
+        File.WriteAllBytes(Consts.Paths.ConfigData + "/" + table.TableName + Consts.CMGMFILE_EXTENSION, container);
 
         AssetDatabase.Refresh();
     }

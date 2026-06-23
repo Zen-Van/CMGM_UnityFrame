@@ -12,6 +12,9 @@ namespace CMGM.Core
         public static class Paths
         {
             /// <summary>
+            /// 目录路径约定：末尾不含斜杠；拼接子路径或文件名时由调用方加 <c>"/"</c>。
+            /// </summary>
+            /// <summary>
             /// 游戏层工作区根目录（默认 Assets/_WorkSpace，见 CmgmFrameSettings.WORK_SPACE_ROOT）
             /// </summary>
             public static string WorkSpace
@@ -56,7 +59,7 @@ namespace CMGM.Core
             public static string ARCHIVE_PATH => Application.persistentDataPath + "/Archives";
 
             /// <summary>配表二进制输出目录（StreamingAssets）</summary>
-            public static string ConfigData => Application.streamingAssetsPath + "/TableConfig/";
+            public static string ConfigData => Application.streamingAssetsPath + "/TableConfig";
 
             /// <summary>框架目录（Resources + Editor + Runtime 三分）</summary>
             public static class Framework

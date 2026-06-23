@@ -41,7 +41,7 @@ public class ConfigTableManager : LazySingleton<ConfigTableManager>
 
         string tableName = typeof(T).Name;
         string fileLabel = tableName + Consts.CMGMFILE_EXTENSION;
-        string filePath = Consts.Paths.ConfigData + fileLabel;
+        string filePath = Consts.Paths.ConfigData + "/" + fileLabel;
 
         byte[] raw = File.ReadAllBytes(filePath);
         CipherTool.Decryption(ref raw);

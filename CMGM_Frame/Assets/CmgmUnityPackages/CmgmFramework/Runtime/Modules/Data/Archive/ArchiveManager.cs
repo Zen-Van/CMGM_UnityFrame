@@ -59,7 +59,7 @@ public class ArchiveManager : BootSingleton<ArchiveManager>
     private void LoadArchiveMeta()
     {
         //找不到元文件就new一个并save了
-        if (!File.Exists(Consts.Paths.ARCHIVE_PATH + ARCHIVE_META_NAME + Consts.CMGMFILE_EXTENSION))
+        if (!File.Exists(Consts.Paths.ARCHIVE_PATH + "/" + ARCHIVE_META_NAME + Consts.CMGMFILE_EXTENSION))
         {
             ArchiveMeta = new ArchiveMetaDataSet();
             SaveArchiveMeta();
@@ -113,7 +113,7 @@ public class ArchiveManager : BootSingleton<ArchiveManager>
     }
     private void SaveArchiveMeta()
     {
-        Save(ArchiveMeta, ARCHIVE_META_NAME);
+        Save(ArchiveMeta,ARCHIVE_META_NAME);
     }
     #endregion
 
@@ -147,10 +147,10 @@ public class ArchiveManager : BootSingleton<ArchiveManager>
     /// <param name="archiveID">存档 id</param>
     public void LoadRuntimeData<T>(int archiveID) where T : class, ISaveable
     {
-        if (!File.Exists(Consts.Paths.ARCHIVE_PATH + GetArchiveNameFromId(archiveID) + Consts.CMGMFILE_EXTENSION))
+        if (!File.Exists(Consts.Paths.ARCHIVE_PATH + "/" + GetArchiveNameFromId(archiveID) + Consts.CMGMFILE_EXTENSION))
         {
             CmgmLog.fError("试图读取不存在的文件："
-            + Consts.Paths.ARCHIVE_PATH + GetArchiveNameFromId(archiveID) + Consts.CMGMFILE_EXTENSION);
+            + Consts.Paths.ARCHIVE_PATH + "/" + GetArchiveNameFromId(archiveID) + Consts.CMGMFILE_EXTENSION);
             return;
         }
 
@@ -195,7 +195,7 @@ public class ArchiveManager : BootSingleton<ArchiveManager>
         byte[] container = CmgmFileFormat.Pack(CmgmFileKind.Archive, payload);
         CipherTool.Encryption(ref container);
 
-        File.WriteAllBytes(Consts.Paths.ARCHIVE_PATH + fileName + Consts.CMGMFILE_EXTENSION, container);
+        File.WriteAllBytes(Consts.Paths.ARCHIVE_PATH + "/" + fileName + Consts.CMGMFILE_EXTENSION, container);
     }
 
     /// <summary>
@@ -205,10 +205,10 @@ public class ArchiveManager : BootSingleton<ArchiveManager>
     /// <param name="fileName">存档名</param>
     private T Load<T>(string fileName) where T : class, ISaveable
     {
-        if (!File.Exists(Consts.Paths.ARCHIVE_PATH + fileName + Consts.CMGMFILE_EXTENSION))
+        if (!File.Exists(Consts.Paths.ARCHIVE_PATH + "/" + fileName + Consts.CMGMFILE_EXTENSION))
             return default;
 
-        byte[] raw = File.ReadAllBytes(Consts.Paths.ARCHIVE_PATH + fileName + Consts.CMGMFILE_EXTENSION);
+        byte[] raw = File.ReadAllBytes(Consts.Paths.ARCHIVE_PATH + "/" + fileName + Consts.CMGMFILE_EXTENSION);
         CipherTool.Decryption(ref raw);
 
         byte[] payload = CmgmFileFormat.Unpack(
