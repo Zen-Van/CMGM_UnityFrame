@@ -828,8 +828,8 @@ GameFlowMachine.Start();       // Startup 态内 Run(StartupFrameworkProfile)
 
 | 子步 | 内容 | 验收 |
 |------|------|------|
-| **GameFlow系统1.1** | `IGameFlowState`：`Enter` / `Exit` / `Update`（可选） | 基础态可切换 |
-| **GameFlow系统1.2** | `GameFlowMachine`：Push / Pop / Replace | 日志可追踪栈 |
+| **GameFlow系统1.1** ✅ | `IGameFlowState`：`Enter` / `Exit` / `Update`（可选） | 基础态可切换 |
+| **GameFlow系统1.2** ✅ | `GameFlowMachine`：Push / Pop / SwitchTo | 栈操作日志可追踪 |
 | **GameFlow系统1.3** | 基础态 **`Startup`** / `MainMenu` / `Gameplay`（及按需 `WorldMap` / `Battle`）；**在态 `Enter` / 同态过渡 API 内触发 Loading Profile**（§6.5b，**无** `Loading` 宏观态）；接管 `GoToMainScene` / `QuitGame`（`ScenesManager` 缩退） | 流程 + Loading 衔接 |
 | **GameFlow系统1.3b** | **Editor：`DirectToTest`** — `CmgmInitializer` 完成后若存在 **`EditorPlayRequest`**，**跳过 MainMenu / MainScene**，`LoadSceneAsync(目标场景)`；可选追加 Profile（与 **Editor测试系统1.2~1.3** 同期） | Editor 与 Runtime 分支 |
 | **GameFlow系统1.4** | 预留态 `Pause` / `Cutscene` / `Battle` 空壳或最小实现 | JRPG / SRPG 可扩展 |
@@ -959,10 +959,10 @@ GameFlowMachine.Start();       // Startup 态内 Run(StartupFrameworkProfile)
 
 | 线 | 最前节点 | 状态 | 解锁条件 | 预估变更量 | 教学难度 |
 |----|----------|------|----------|------------|----------|
-| **★ 启动竖切（§7.7）** | **GameFlow系统1.2** | **#2 ✅** | 启动编排3.3 ✅ | 见 §7.7 | ★★☆ |
+| **★ 启动竖切（§7.7）** | **Loading系统1.2** | **#3 ✅** | 见 §7.7 | 见 §7.7 | ★★★☆ |
 | **主线（编译边界 + 启动编排）** | **启动编排3.4** | 3.3 ✅；3.4 待做（**并入 §7.7 阶段 C**） | Loading **≥1.2** | **中** | ★★★☆ |
-| **Loading系统** | Loading系统1.2 | **§7.7 #4** | Loading 1.1 ✅ | **中** | ★★★☆ |
-| **GameFlow系统** | GameFlow系统1.2 | **§7.7 #3** | GameFlow 1.1 ✅ | **小** | ★★☆ |
+| **Loading系统** | Loading系统1.2 | **§7.7 #4 ← 当前** | Loading 1.1 ✅ | **中** | ★★★☆ |
+| **GameFlow系统** | GameFlow系统1.3 | **§7.7 #8** | GameFlow 1.2 ✅ | **中** | ★★★☆ |
 | **Editor测试系统** | Editor测试系统1.1 | **§7.7 阶段 D 前置** | Loading **1.1** ✅ | **小~中** | ★★☆ |
 | **存档升级系统** | 存档升级系统1.1 | ⏸ 竖切完成后 | 存档格式优化 ✅ | **中~大** | ★★★★ |
 | **Lua系统** | Lua系统1.1 | ⏸ 竖切完成后 | 2.6 ✅ | **小~中** | ★★★☆ |
@@ -997,10 +997,10 @@ GameFlowMachine.Start();       // Startup 态内 Run(StartupFrameworkProfile)
 
 | # | 阶段 | 步骤 ID | 内容 | 前置 | 验收标准 | 主要产出 | 变更量 | 状态 |
 |---|------|---------|------|------|----------|----------|--------|------|
-| **1** | **A · 执行器** | **Loading系统1.1** | `Modules/Loading`（`CMGM.Loading` asmdef）+ `LoadingManager.Run(tasks)` + 单条进度 UI；用硬编码/假任务跑通 | Core ✅ + UI ✅ | Play 后能看到进度条走完一组任务 | `LoadingManager`、`LoadingPanel`（或复用 UI 层）、asmdef | **中** | **✅ 待 Play 验收** |
+| **1** | **A · 执行器** | **Loading系统1.1** | `Modules/Loading`（`CMGM.Loading` asmdef）+ `LoadingManager.Run(tasks)` + 单条进度 UI；用硬编码/假任务跑通 | Core ✅ + UI ✅ | Play 后能看到进度条走完一组任务 | `LoadingManager`、`LoadingPanel`（或复用 UI 层）、asmdef | **中** | **✅** |
 | **2** | A · 并行 | **GameFlow系统1.1** | `IGameFlowState`：`Enter` / `Exit` / `Update`（可选） | 启动编排3.3 ✅ | 两个空态可手动切换，日志可追踪 | `Modules/GameFlow/`、`CMGM.GameFlow` asmdef | **中** | **✅** |
-| **3** | A · 并行 | **GameFlow系统1.2** | `GameFlowMachine`：Push / Pop / Replace | **#2** ✅ | 栈操作日志正确 | `GameFlowMachine.cs` | **小** | **待做 ← 当前** |
-| **4** | **A · 任务模型** | **Loading系统1.2** | `ILoadTask` + `Weight` 加权进度；**`ManagerInitLoadTask`**（包 `BootSingleton.InitAsync`） | **#1** ✅ | 多任务加权进度正确；至少 1 个 Manager 经 Task 初始化 | `ILoadTask`、`ManagerInitLoadTask`、`DelegateTask`（过渡） | **中** | 待做 |
+| **3** | A · 并行 | **GameFlow系统1.2** | `GameFlowMachine`：Push / Pop / SwitchTo | **#2** ✅ | 栈操作日志正确 | `GameFlowMachine.cs` | **小** | **✅** |
+| **4** | **A · 任务模型** | **Loading系统1.2** | `ILoadTask` + `Weight` 加权进度；**`ManagerInitLoadTask`**（包 `BootSingleton.InitAsync`） | **#1** ✅ | 多任务加权进度正确；至少 1 个 Manager 经 Task 初始化 | `ILoadTask`、`ManagerInitLoadTask`、`DelegateTask`（过渡） | **中** | **待做 ← 当前** |
 | **5** | **B · 业务竖切** | **Loading系统1.3** | 接通「进游戏」：`MainPanel` → `LoadingManager.Run(EnterGameplay…)`；过渡期 **`DelegateTask` 包旧 `GameBootstrap`** | **#4** ✅；（**#3** 建议 ✅） | 主界面点进游戏走 Loading + 进度条，行为与现 `GameBootstrap` 等价 | `MainPanel` 改调 Loading；临时 EnterGameplay 任务列表 | **中** | 待做 |
 | **6** | **C · 启动重构** | **Loading系统1.4** | **`LoadingProfile` SO**：`StartupFramework` / `EnterGameplay` 静态清单 + 动态追加；清单吸收原 **`CmgmFrameBoot` Init 链**（Manager / 预载 / Wwise 壳等） | **#4** ✅ + **#5** ✅ | 启动任务可配在 SO；不再硬编码长链 | `LoadingProfile.cs`、`.asset` 资源 | **中** | 待做 |
 | **7** | C · 同里程碑 | **启动编排3.4** | `CmgmFrameBoot` → **`Runtime/CmgmInitializer.cs`**；废止 `Bootstrap/`；Initializer **仅** Logo + `await UIManager.InitAsync()` → 交 GameFlow | **#6** 同步进行 | InitScene 上 Boot 脚本瘦身；长 Init 不在 Initializer 内 | `CmgmInitializer.cs`；删/废 `CmgmFrameBoot` | **中** | 待做 |

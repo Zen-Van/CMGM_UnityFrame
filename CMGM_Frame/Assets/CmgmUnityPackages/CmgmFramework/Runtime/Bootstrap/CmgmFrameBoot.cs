@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using CMGM.Audio;
 using CMGM.Core;
 using CMGM.Data;
+using CMGM.GameFlow;
 using CMGM.Loading;
 using CMGM.Scene;
 using CMGM.UI;
@@ -19,8 +20,12 @@ namespace CMGM.Bootstrap
         public bool SHOW_LOGO = true;
 
         [Header("Loading 1.1 验收")]
-        [Tooltip("Init 完成后、进主界面前跑演示 Loading 任务（#1 验收通过后可关）")]
+        [Tooltip("Init 完成后、进主界面前跑演示 Loading 任务（#1 已验收，可关）")]
         public bool runLoadingAcceptanceDemo = true;
+
+        [Header("GameFlow 1.2 验收")]
+        [Tooltip("进主界面前跑 SwitchTo / Push / Pop 日志演示（#3 验收通过后可关）")]
+        public bool runGameFlowAcceptanceDemo = true;
 
         [Header("Logo 展示")]
         [Tooltip("InitScene 上用于 Logo 视频/图片的全屏 Canvas（sortingOrder 较高，Loading 前须隐藏）")]
@@ -110,6 +115,9 @@ namespace CMGM.Bootstrap
                         new LoadingRunOptions { ShowProgress = true });
                 }
 
+                if (runGameFlowAcceptanceDemo)
+                    RunGameFlowAcceptanceDemo();
+
                 //跳转至主界面
                 await ScenesManager.Instance.GoToMainScene();
 
@@ -133,6 +141,19 @@ namespace CMGM.Bootstrap
                 await UniTask.Yield();
 
             logoRoot.SetActive(false);
+        }
+
+        private static void RunGameFlowAcceptanceDemo()
+        {
+            var flow = GameFlowMachine.Instance;
+            var mainMenu = new LogGameFlowState("MainMenu");
+            var gameplay = new LogGameFlowState("Gameplay");
+            var pause = new LogGameFlowState("Pause");
+
+            flow.SwitchTo(mainMenu);
+            flow.Push(pause);
+            flow.Pop();
+            flow.SwitchTo(gameplay);
         }
 
     }
