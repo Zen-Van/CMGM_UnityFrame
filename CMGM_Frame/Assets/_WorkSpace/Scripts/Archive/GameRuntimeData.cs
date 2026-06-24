@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using CMGM.Data;
 
-namespace CMGM.Game
+namespace CMGM.Workspace
 {
     /// <summary>
     /// 游戏运行时存档数据（仅在 <see cref="CMGM.Data.ArchiveManager"/> 中持有唯一实例）。

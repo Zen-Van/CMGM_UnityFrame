@@ -10,7 +10,7 @@ namespace CMGM.Scene
 /// <summary>
 /// 场景 / 流程临时宿主（2.5c 决策后）：
 /// <para>· 场景加载原语已下沉至 <see cref="AddressablesResMgr.LoadSceneAsync"/>（Core）。</para>
-/// <para>· <see cref="GoToMainScene"/> / <see cref="QuitGame"/> 属「流程控制」，待 **阶段 5 GameState** 接管。</para>
+/// <para>· <see cref="GoToMainScene"/> / <see cref="QuitGame"/> 属「流程控制」，待 **GameFlow系统** 接管。</para>
 /// <para>· Scene 不再是独立 asmdef 模块；若未来需要 Additive / 流式 / 场景持久化，再扩为完整 Scene 模块。</para>
 /// </summary>
 public class ScenesManager : LazySingleton<ScenesManager>
@@ -19,7 +19,7 @@ public class ScenesManager : LazySingleton<ScenesManager>
 
     /// <summary>
     /// 回到主界面：主 Panel / 主场景名见 <see cref="CmgmFrameSettings"/>。
-    /// <para>TODO（阶段 5）：迁入 GameState 的 MainMenu 态。</para>
+    /// <para>TODO（GameFlow系统1.3）：迁入 GameFlow 的 MainMenu 态。</para>
     /// </summary>
     public async UniTask GoToMainScene()
     {
@@ -37,7 +37,7 @@ public class ScenesManager : LazySingleton<ScenesManager>
 
     /// <summary>
     /// 退出游戏的方法。
-    /// <para>TODO（阶段 5）：迁入 GameState。</para>
+    /// <para>TODO（GameFlow系统1.3）：迁入 GameFlow。</para>
     /// </summary>
     public void QuitGame() => CmgmApplication.Quit();
 

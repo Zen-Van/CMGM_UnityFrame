@@ -15,7 +15,7 @@ namespace CMGM.Core
             /// 目录路径约定：末尾不含斜杠；拼接子路径或文件名时由调用方加 <c>"/"</c>。
             /// </summary>
             /// <summary>
-            /// 游戏层工作区根目录（默认 Assets/_WorkSpace，见 CmgmFrameSettings.WORK_SPACE_ROOT）
+            /// 业务层（Workspace）工作区根目录（默认 Assets/_WorkSpace，见 CmgmFrameSettings.WORK_SPACE_ROOT）
             /// </summary>
             public static string WorkSpace
             {
@@ -34,7 +34,7 @@ namespace CMGM.Core
             /// <summary>公共资源根目录（默认 Assets/_PublicRes）</summary>
             public const string PublicRes = "Assets/_PublicRes";
 
-            /// <summary>游戏层脚本根（_WorkSpace/Scripts）</summary>
+            /// <summary>业务层脚本根（_WorkSpace/Scripts）</summary>
             public static string ScriptsPath => WorkSpace + "/Scripts";
 
             /// <summary>测试层脚本根（_TestSpace/Scripts）</summary>
@@ -87,13 +87,13 @@ namespace CMGM.Core
                 }
             }
 
-            /// <summary>_WorkSpace/Scripts 下子目录（游戏层代码；无 Scripts/Game 中间层）</summary>
+            /// <summary>_WorkSpace/Scripts 下子目录（业务层代码；无 Scripts/Game 中间层）</summary>
             public static class WorkSpaceScripts
             {
                 public static string Root => ScriptsPath;
                 public static string Bootstrap => Root + "/Bootstrap";
                 public static string UI_Panels => Root + "/UI/Panels";
-                /// <summary>游戏运行时存档结构脚本（如 GameRuntimeData）</summary>
+                /// <summary>业务层运行时存档结构脚本（如 GameRuntimeData）</summary>
                 public static string Archive => Root + "/Archive";
                 /// <summary>框架/工具链自动生成的脚本（勿手改）</summary>
                 public static string Generated => Root + "/_Generated";

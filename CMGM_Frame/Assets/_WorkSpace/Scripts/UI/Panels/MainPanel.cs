@@ -6,7 +6,7 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace CMGM.Game
+namespace CMGM.Workspace
 {
 public class MainPanel : BasePanel
 {
@@ -41,7 +41,7 @@ public class MainPanel : BasePanel
     private async UniTaskVoid EnterGameplayAsync()
     {
         await GameBootstrap.EnterGameplayAsync();
-        // TODO 2.5c：Loading 完成后切 Gameplay 场景 / GameState
+        // TODO 2.5c：Loading 完成后切 Gameplay 场景 / GameFlow
     }
 }
 }

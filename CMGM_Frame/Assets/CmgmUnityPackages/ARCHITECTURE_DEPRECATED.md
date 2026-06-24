@@ -67,7 +67,7 @@
 | **3** Bootstrap | 3.5 `CmgmFrameBoot` 迁至 `Framework/Bootstrap/`（**`CMGM.Bootstrap`** 组合根）；按 Order await 注册模块 | 重排为主线「启动组合根3.2」一部分 |
 | **3** Bootstrap | 3.6 游戏项目在 `GameBootstrap` 注册自己的 Module | 同上 |
 | **4** 存档升级 | 4.1~4.6 分块存档、`ISaveChunk`、版本头、替换 `BinaryFormatter`、迁移示例 | 2026-06-20 拆为「**存档格式优化**」（前置最小包）+「**存档升级系统**」（拓展）；见 `ARCHITECTURE.md` §7.4 |
-| **5** GameState | 5.1~5.5 状态机基础态 + Pause/Cutscene/Battle 预留 | 重排为支线「GameState系统」 |
+| **5** GameState | 5.1~5.5 状态机基础态 + Pause/Cutscene/Battle 预留 | 重排为支线「GameFlow系统」（2026-06-19 更名） |
 | **6** 事件总线 | 6.1~6.4 `IEventBus` 落地 OptionalSystem，替代一处直接调用 | 重排为支线「事件总线系统」 |
 | **7** 依赖抽象 | 7.1 `IAudioService` → **Audio系统1.1**；7.2 `ILuaBridgeRegistry` → **Lua系统1.1**；7.3 Odin 降级 → **依赖抽象系统1.1**；7.4 URP/RP 抽象 → **依赖抽象系统1.2** | 重排为支线（拆入相关系统 + 依赖抽象系统） |
 | **7** 依赖抽象 | 7.5 `CmgmModuleManifest`：模块 id、Core/Modules 分级、依赖链 | 重排为主线「启动组合根3.2」 |
@@ -245,7 +245,9 @@
 | ~~独立 `Modules/Loading` + 2.9 M7~~（曾延后，2026-06-19 复活为支线「Loading系统」） | — | — | — |
 | 框架层 `Game*` 类名 | **2.5 起废止**新命名 | — | `CmgmFrameBoot`、`ArchiveManager`、`ConfigTableManager`；游戏层保留 `GameBootstrap` 等 |
 
-**记录时间：** 2026-06-15（`I_Saveable` 提前迁移；`CMGM.Game` asmdef 移除）；2026-06-16（2.4 废止 GameFlow；Loading 不单独建 Modules；框架层去 Game 命名）
+**记录时间：** 2026-06-15（`I_Saveable` 提前迁移；`CMGM.Game` asmdef 移除）；2026-06-16（2.4 废止旧 `IGameFlowHandler` / GameFlow 方案；Loading 不单独建 Modules；框架层去 Game 命名）
+
+**2026-06-19 命名修订（现行见 `ARCHITECTURE.md` §8）：** 中文「游戏层」→ **业务层**；`namespace CMGM.Game` → **`CMGM.Workspace`**；支线 GameState → **GameFlow系统**（`Modules/GameFlow/`，`CMGM.GameFlow`）。此处历史条目中的 `CMGM.Game` / GameState 仅作归档，以现行文档为准。
 
 ---
 

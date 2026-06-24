@@ -172,7 +172,7 @@ public class ExcelTool
         //写入代码，先写入一行数据的容器类，再用一个以主键为key的字典去存它
         string str =
             "using System.Collections.Generic;\n\n" +
-            "namespace CMGM.Game\n{\n" +
+            "namespace CMGM.Workspace\n{\n" +
             "/// <summary>\n" +
             $"/// {table.TableName}表中一行数据的存储类\n" +
             "/// </summary>\n" +

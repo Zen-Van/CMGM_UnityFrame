@@ -1,43 +1,20 @@
-# 游戏层工作区说明
+# 业务层工作区说明（Workspace）
 
-> **本文档随游戏项目**，描述 `_WorkSpace` 约定。框架见 `Assets/CmgmUnityPackages/ARCHITECTURE.md`。
+> 框架架构见 `Assets/CmgmUnityPackages/ARCHITECTURE.md`。
 
 ---
 
-## 1. 目录角色
+## 目录角色
 
-| 目录 | 角色 |
+| 目录 | 说明 |
 |------|------|
-| **`CmgmFramework/Resources/`** | 框架内置：Settings、UI 基建、Logo、字体 |
-| **`_WorkSpace/`** | 游戏层：Scripts、HotRes、Excels |
+| **`_WorkSpace/`** | 业务层（Workspace）：Scripts、HotRes、Excels |
 | **`_TestSpace/`** | 测试层 |
 
 ---
 
-## 2. 推荐 `_WorkSpace` 结构
+## 命名
 
-项目初始化会创建目录，并写入 main.lua、InitScene、MainPanel、GameBootstrap 等种子（缺失时）。
-
-```
-_WorkSpace/
-├── GAME_WORKSPACE.md
-├── Excels/
-├── HotRes/
-│   ├── Lua/
-│   ├── Scenes/
-│   └── UI/Panels/
-└── Scripts/
-    ├── Bootstrap/
-    ├── UI/Panels/
-    ├── Archive/
-    └── _Generated/
-        └── Config/
-```
-
-框架配置：`CmgmFramework/Resources/CmgmFrameSettings.asset`。
-
----
-
-## 3. 本项目专有说明
-
-（题材、特殊目录、配表清单等）
+| 项 | 约定 |
+|----|------|
+| **namespace** | 业务层脚本默认 `CMGM.Workspace` |

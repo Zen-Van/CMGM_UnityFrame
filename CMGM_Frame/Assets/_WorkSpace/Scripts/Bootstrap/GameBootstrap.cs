@@ -2,10 +2,10 @@ using CMGM.Core;
 using CMGM.Data;
 using Cysharp.Threading.Tasks;
 
-namespace CMGM.Game
+namespace CMGM.Workspace
 {
     /// <summary>
-    /// 游戏层「进游戏」入口：在 Loading 进度条阶段加载 gameplay 所需内容（2.5 定位修订）。
+    /// 业务层「进游戏」入口：在 Loading 进度条阶段加载 gameplay 所需内容（2.5 定位修订）。
     /// <para>Logo → 主界面 仅走框架 <see cref="CMGM.Bootstrap.CmgmFrameBoot"/>，不在此预加载角色表等大资源。</para>
     /// <para>进游戏 Loading 归属 Scene 模块（ScenesManager），见 ARCHITECTURE 2.5c。</para>
     /// </summary>

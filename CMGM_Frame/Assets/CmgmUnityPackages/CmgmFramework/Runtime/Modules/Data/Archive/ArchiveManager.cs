@@ -133,7 +133,7 @@ public class ArchiveManager : BootSingleton<ArchiveManager>
     /// <summary>
     /// 新建游戏运行时档案，由调用方提供存档数据实例
     /// </summary>
-    /// <param name="runtimeData">游戏层创建的存档数据实例</param>
+    /// <param name="runtimeData">业务层创建的存档数据实例</param>
     /// <param name="initArchive">初始化 RuntimeData 数据</param>
     public void NewRuntimeData(ISaveable runtimeData, UnityAction initArchive)
     {
@@ -161,7 +161,7 @@ public class ArchiveManager : BootSingleton<ArchiveManager>
     /// 存储游戏运行时档案，将 RuntimeDataInstance 写入硬盘（会同时写入 ArchiveMeta）
     /// </summary>
     /// <param name="archiveIdx">存档栏位</param>
-    /// <param name="mainQuestIdForMeta">写入存档元数据的主线任务 ID（游戏层提供）</param>
+    /// <param name="mainQuestIdForMeta">写入存档元数据的主线任务 ID（业务层提供）</param>
     public void SaveRuntimeData(int archiveIdx, int? mainQuestIdForMeta = null)
     {
         if (RuntimeDataInstance == null)

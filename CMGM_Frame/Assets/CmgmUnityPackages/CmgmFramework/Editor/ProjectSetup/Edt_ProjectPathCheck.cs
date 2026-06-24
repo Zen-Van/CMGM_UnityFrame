@@ -2,7 +2,7 @@ using UnityEditor;
 using CMGM.Core;
 
 /// <summary>
-/// 启动时校验工程路径（游戏层 manifest + 框架 manifest；不自动创建）。
+/// 启动时校验工程路径（业务层 manifest + 框架 manifest；不自动创建）。
 /// </summary>
 [InitializeOnLoad]
 public class Edt_ProjectPathCheck

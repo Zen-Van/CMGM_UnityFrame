@@ -4,7 +4,7 @@ using CMGM.UI;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace CMGM.Game
+namespace CMGM.Workspace
 {
 public class zzzTextPanel : BasePanel
 {

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace CMGM.Game
+namespace CMGM.Workspace
 {
 /// <summary>
 /// RoleInfo表中一行数据的存储类
