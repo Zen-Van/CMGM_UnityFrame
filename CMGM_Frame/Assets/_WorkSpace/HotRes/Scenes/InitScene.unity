@@ -544,6 +544,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   SHOW_LOGO: 0
+  runLoadingAcceptanceDemo: 1
+  logoPresentationCanvas: {fileID: 2057797841}
   videoPlayer: {fileID: 1355495676}
   Logos:
   - {fileID: 32900000, guid: b8a4cae3cd9ae404f99e3430d222cc6c, type: 3}
@@ -559,6 +561,7 @@ GameObject:
   - component: {fileID: 2057797841}
   - component: {fileID: 2057797840}
   - component: {fileID: 2057797839}
+  - component: {fileID: 2057797843}
   m_Layer: 0
   m_Name: Canvas
   m_TagString: Untagged
@@ -649,6 +652,18 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!225 &2057797843
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2057797838}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

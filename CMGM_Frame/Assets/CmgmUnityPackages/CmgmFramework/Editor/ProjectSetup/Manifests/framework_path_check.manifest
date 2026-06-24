@@ -6,9 +6,11 @@ Assets/CmgmUnityPackages/CmgmGameKits
 Assets/CmgmUnityPackages/CmgmFramework/Runtime
 Assets/CmgmUnityPackages/CmgmFramework/Runtime/Core
 Assets/CmgmUnityPackages/CmgmFramework/Runtime/Modules
+Assets/CmgmUnityPackages/CmgmFramework/Runtime/Modules/Loading
 Assets/CmgmUnityPackages/CmgmFramework/Runtime/Modules/Data/Archive
 Assets/CmgmUnityPackages/CmgmFramework/Runtime/Modules/Data/Config
 Assets/CmgmUnityPackages/CmgmFramework/Runtime/Modules/Data/Editor
 Assets/CmgmUnityPackages/CmgmFramework/Resources
 Assets/CmgmUnityPackages/CmgmFramework/Resources/UI
+Assets/CmgmUnityPackages/CmgmFramework/Resources/UI/Panels
 Assets/CmgmUnityPackages/CmgmFramework/Editor

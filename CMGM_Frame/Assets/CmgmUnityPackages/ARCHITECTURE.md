@@ -2,7 +2,7 @@
 
 > 本文档是框架化改造的长期参考（「北极星」）。  
 > 目标：将当前工程从「带 Demo 的原型项目」逐步改造为「可跨项目迁移的框架」。  
-> 最后更新：2026-06-19 — **存档格式优化全线 ✅**（含 1.2b Config Codec）；**存档升级系统** 已解锁。
+> 最后更新：2026-06-19 — **当前聚焦 §7.7 启动竖切大表**（Loading / GameFlow / Editor / 3.4）；完成前**暂停**其它支线新功能。
 
 ---
 
@@ -29,10 +29,10 @@ Assets/
 │   │   ├── Resources/              Settings、UI、Logo、字体
 │   │   ├── Editor/                 框架 Editor、脚手架
 │   │   └── Runtime/                运行时代码 ✅
+│   │       ├── CmgmInitializer.cs    InitScene 薄组合根（**启动编排3.4** 自 Bootstrap/ 迁入）
 │   │       ├── Core/
 │   │       ├── Modules/
-│   │       ├── Integrations/
-│   │       └── Bootstrap/
+│   │       └── Integrations/
 │   └── CmgmGameKits/
 ├── _WorkSpace/                     **业务层**：脚本、HotRes、Excels（无 Resources）
 ├── _TestSpace/                     **测试层**
@@ -143,7 +143,7 @@ Packages/（项目脚手架1.6 远期 UPM）
 | `LuaManager` | LuaEnv 生命周期、Loader 链、脚本执行；实现 `ILuaService` | `Assembly-CSharp` | ★★★ |
 | `LuaBridge` | C# ↔ Lua 桥接（Talk / Wait / DebugLog）；保留全局 namespace（`main.lua` 调 `CS.LuaBridge`） | `Assembly-CSharp` | ★★ |
 
-> **现状（2026-06-19 决策，见 §7.5）：** Lua **不单独建 asmdef**。XLua 退回官方 master（无 asmdef、待在 `Assembly-CSharp`）；契约 `ILuaService` 放 `CMGM.Core`，实现放 `Runtime/Integrations/Lua/`；Boot **显式** `await LuaManager.InitAsync()`（§6.5）。被 asmdef 封装的 Module 只依赖契约，不碰 XLua（依赖倒置）。
+> **现状（2026-06-19 决策，见 §7.5）：** Lua **不单独建 asmdef**。XLua 退回官方 master（无 asmdef、待在 `Assembly-CSharp`）；契约 `ILuaService` 放 `CMGM.Core`，实现放 `Runtime/Integrations/Lua/`；`LuaManager.InitAsync()` 在 **Loading `StartupFramework` Profile** 中执行（§6.5）。被 asmdef 封装的 Module 只依赖契约，不碰 XLua（依赖倒置）。
 
 **Lua 加载策略：**
 
@@ -152,15 +152,17 @@ Packages/（项目脚手架1.6 远期 UPM）
 | 热重载（Editor） | 跳过 `LoadLuaMapper` | Loader 1 / `GetLuaContent` 直读磁盘 |
 | 正式包体 | `LoadLuaMapper` → `luaMapper` | Loader 3 查内存字典 |
 
-### 3.5 启动编排（`CmgmFrameBoot` + `GameBootstrap`，见 §6.5）
+### 3.5 启动三分工（`CmgmInitializer` + **Loading** + **GameFlow**，见 §6.5）
 
 | 组件 | 职责 | 成熟度 |
 |------|------|--------|
-| `CmgmFrameBoot` | InitScene **框架组合根**：Logo + **`await BootSingleton.InitAsync()`** + 进主界面 | ★★ |
-| `GameBootstrap` | **业务层组合根**（`_WorkSpace/Scripts/Bootstrap/`）：进游戏 Loading 链里的 `EnterGameplayAsync` | ★★ |
+| **`CmgmInitializer`** | InitScene **薄组合根**：Logo + **保证能显示东西**（至少 `UIManager.InitAsync`）→ 交 **GameFlow** | ★（**3.4 待做**；运行时过渡仍为 `CmgmFrameBoot`） |
+| **`LoadingManager`** | **一切可编排异步准备**：`ILoadTask`（Manager Init / 资源 / 场景 / 业务回调）+ Profile + 可选进度 UI | ☆（支线 Loading系统） |
+| **`GameFlow`** | **何时跑哪份 Loading Profile**；宏观态切换（`Startup` / `MainMenu` / `Gameplay` / …）；**Editor** 下 `DirectToTest`（见 **Editor测试系统**） | ☆（支线 GameFlow系统） |
 
-> **设计决策（2026-06-19）：** **显式 Boot 优先** + **`LazySingleton` / `BootSingleton`**（§6.5a）；Boot 型 **`await InitAsync()`**。
-> **当前位置（项目脚手架1.4 ✅）：** `Assets/CmgmUnityPackages/CmgmFramework/Runtime/Bootstrap/CmgmFrameBoot.cs`（`namespace CMGM.Bootstrap`，**无 asmdef**，落默认 `Assembly-CSharp`——Boot 须直接 `await LuaManager.InitAsync()` 等，见 §6.5 / §7.5）。
+> **过渡（3.3 ✅）：** 业务层仍有 **`GameBootstrap.cs`** 与 `MainPanel` 直调；**Loading系统1.4b** 废止该文件，清单并入 **`EnterGameplay` LoadingProfile**（§7.4）。  
+> **目标位置：** `CmgmFramework/Runtime/CmgmInitializer.cs`（**无**独立 `Bootstrap/` 目录、**无**单独 namespace；`Assembly-CSharp` 组合根）。  
+> **设计决策（2026-06-19 修订）：** 废止「双 Boot 组合根」目标形态。除 **`CmgmInitializer`** 外，原 `CmgmFrameBoot` 内 Init / 加载列表 **全部迁入 Loading Profile**；**`GameBootstrap.cs` 计划废止**（清单 = **`EnterGameplay` Profile SO**，见 **Loading系统1.4b**）。**`BootSingleton` 仍保留**（生命周期 guard），但 **`InitAsync` 只允许**在 `CmgmInitializer`（最小集）或 **Loading 任务**中调用。
 
 ### 3.6 场景加载与流程（**不建 Scene 模块**；`ScenesManager` 为临时宿主）
 
@@ -187,39 +189,83 @@ Packages/（项目脚手架1.6 远期 UPM）
 
 ---
 
-## 4. 启动流程（当前）
+## 4. 启动流程
+
+### 4.1 目标形态（**启动编排3.4** + Loading / GameFlow 落地后）
 
 ```
-InitScene（CmgmFrameBoot.Awake）
+InitScene（CmgmInitializer.Awake）
+    │
+    ├─ Logo（Video / Texture）
+    ├─ await UIManager.InitAsync()          ← 唯一必须在 Initializer 内完成的 Manager
+    │
+    └─ GameFlow.Start() / Startup 态
+            │
+            └─ LoadingManager.Run(StartupFrameworkProfile, silent: true)   ← 可与 Logo 并行
+                    ├─ ManagerInitTask: ArchiveManager, LuaManager, …
+                    ├─ AssetPreloadTask: 主场景 / UI 包
+                    ├─ Wwise 壳子 Init（gameplay Bank 不在此）
+                    └─ GoToMainSceneTask（或 GameFlow → MainMenu.Enter）
+            │
+            └─ GameFlow.MainMenu          ← 正式包体 / 非 Editor 测试路径
+
+主界面 → 进游戏：
+    GameFlow.StartGame() → Loading 态
+        └─ LoadingManager.Run(EnterGameplayProfile, showProgress: true)
+                ├─ LoadTable / 关卡 Addressables / Bank / Gameplay 场景 …（**Profile SO 清单**，无 `GameBootstrap.cs`）
+        └─ GameFlow.Gameplay
+```
+
+### 4.3 Editor 测试启动（**Editor测试系统** + **GameFlow.DirectToTest**）
+
+> **目标：** 在 Editor 中从**任意已打开场景** Play，仍先走 **`CmgmInitializer`**，但**不强制** `GoToMainScene` / MainMenu；Startup 结束后 **直接进入 Editor 启动场景**。
+
+```
+Editor：用户打开 TestScene.unity → 菜单「从当前场景 Play」/ Play Mode Start Scene = InitScene
+    │
+    ├─ EditorPlayRequest 写入：TargetScenePath、SkipLogo、StartupProfile 裁剪、可选追加 Profile
+    │
+InitScene（CmgmInitializer）
+    ├─ await UIManager.InitAsync()
+    └─ GameFlow.Start()  ── Editor 分支 ──► DirectToTest（或 Startup 态内检测 EditorPlayRequest）
+            │
+            └─ Run(StartupFrameworkProfile, silent, editorTrim: true)   ← 可跳过 GoToMainScene 任务
+            │
+            └─ LoadSceneAsync(EditorPlayRequest.TargetScenePath)        ← **不**加载 MainScene
+            │
+            └─ （可选）Run(EnterGameplay / EnterBattle / 场景内 TestSceneEntry 声明的 Profile)
+```
+
+| 项 | 结论 |
+|----|------|
+| **能否跳过 MainScene** | **可以**；`StartupFramework` 在 Editor 测试路径**不包含** `GoToMainScene` / `MAIN_SCENE` 预载（或整 Profile 换用 **`StartupFrameworkEditorTrim`**） |
+| **落点场景** | **`EditorPlayRequest.TargetScenePath`** = 点 Play 前 **Editor 当前打开场景** 的路径 |
+| **进场景后再 Loading** | **支持**；由场景上可选 **`TestSceneEntry`**（`_TestSpace` / 业务层）或菜单勾选「追加 EnterGameplay Profile」在 `LoadSceneAsync` **之后**再 `Run` |
+| **与正式路径关系** | 共用 Initializer + Loading + GameFlow；仅 **GameFlow 分支**与 Profile 裁剪不同 |
+
+### 4.2 当前运行时（过渡 · **启动编排3.3 ✅**）
+
+```
+InitScene（CmgmFrameBoot.Awake）          ← 待 3.4 更名为 CmgmInitializer 并瘦身
     │
     ├─ 显示 Logo（Video / Texture）
     │
     └─ InitGame()  ── UniTask 并行 ──┐
                                       │
-        ┌─────────────────────────────┘
-        │
-        ├─ AddressablesResMgr.PreloadAssetsAsync("MainScene")
+        ├─ PreloadAssetsAsync(MAIN_SCENE)
         ├─ await UIManager.InitAsync()
         ├─ await ArchiveManager.InitAsync()
         ├─ await LuaManager.InitAsync()
-        ├─ WwiseAudioManager（Mono，维持现状；Audio 支线再定）
-        │
-        _gameInitFinished = true
+        ├─ WwiseAudioManager.Init()
         │
         └─ ScenesManager.GoToMainScene()
 
-主界面 → 进游戏（点击「开始」等，**非** Logo 链）：
-    MainPanel / GameFlow.MainMenu
-        └─ 支线「Loading系统」编排进度（Loading系统1.3 接通）
-              └─ GameBootstrap.EnterGameplayAsync()（业务层加载清单）
-                    ├─ LoadTable<RoleInfo> 等配表
-                    ├─ 预载关卡场景 / Addressables
-                    └─ Wwise Bank 等
-        └─ 进入 Gameplay 场景 / GameFlow.Gameplay（GameFlow系统）
+主界面 → 进游戏：
+    MainPanel 直接 await GameBootstrap.EnterGameplayAsync()   ← Loading系统1.3 待接通
 ```
 
-> **资源分层（§8）**：Logo→主界面尽量轻；角色表、关卡资源、音频 Bank 在「进游戏 Loading」阶段加载。  
-> **待优化**：启动链中 `PreloadAssetsAsync(MAIN_SCENE_NAME)` 是否保留仅主界面体量，Loading系统落地后再收敛。
+> **资源分层（§8）**：Logo→主界面尽量轻；角色表、关卡、gameplay Bank 在 **EnterGameplay Profile**。  
+> **收敛项（3.4 / Loading 1.4）：** 上段长 Init 链迁入 `StartupFrameworkProfile`；`CmgmFrameBoot` 仅保留 Logo + `UIManager`。
 
 ### 已知生命周期问题（启动编排3.2 已解决 · 纯 C#）
 
@@ -246,7 +292,7 @@ InitScene（CmgmFrameBoot.Awake）
 
 | 问题 | 位置 | 计划归属 |
 |------|------|----------|
-| namespace / asmdef | Core/UI/Data/Audio/Input/Editor 已闭环；Lua/Bootstrap/Scene 临时宿主 无 asmdef | §7.2 ✅ |
+| namespace / asmdef | Core/UI/Data/Audio/Input/Editor 已闭环；Lua / `CmgmInitializer`（过渡 `CmgmFrameBoot`）/ Scene 临时宿主 无 asmdef | §7.2 ✅ |
 | ~~`BinaryFormatter` 序列化~~ | ~~`ArchiveManager`~~ | **存档格式优化1.2 ✅**（`JsonArchiveSerializer`） |
 | 配表 payload 读写分散 | ~~`ExcelTool` / `ConfigTableManager`~~ | **存档格式优化1.2b ✅** |
 | 无 GameFlow 状态机 | — | 支线「GameFlow系统」 |
@@ -260,12 +306,12 @@ InitScene（CmgmFrameBoot.Awake）
 ┌─────────────────────────────────────────────────┐
 │  YourGame.Runtime（每个项目独有）                  │
 │  GameRuntimeData / 配表 Container / Panel /       │
-│  GameBootstrap.EnterGameplayAsync                 │
+│  EnterGameplay LoadingProfile + Workspace LoadTask 类           │
 └───────────────────────┬─────────────────────────┘
                         │ 依赖
 ┌───────────────────────▼─────────────────────────┐
 │  CMGM.Modules（可选框架模块）                      │
-│  UI / Data / Lua / Audio / Input / Loading …      │
+│  UI / Data / Lua / Audio / Input / Loading / GameFlow …      │
 └───────────────────────┬─────────────────────────┘
                         │ 依赖
 ┌───────────────────────▼─────────────────────────┐
@@ -274,8 +320,8 @@ InitScene（CmgmFrameBoot.Awake）
 └───────────────────────┬─────────────────────────┘
                         │ 组合（Core + 已选 Modules + Integrations）
 ┌───────────────────────▼─────────────────────────┐
-│  Bootstrap（组合根，§6.5；同 Assembly-CSharp）     │
-│  CmgmFrameBoot：InitScene 入口                     │
+│  CmgmInitializer（薄组合根；§6.5；Assembly-CSharp）  │
+│  InitScene：Logo + UIManager → GameFlow            │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -287,7 +333,7 @@ Assets/CmgmUnityPackages/
     Resources/
     Editor/
     Runtime/
-      Bootstrap/
+      CmgmInitializer.cs          （目标；过渡：Bootstrap/CmgmFrameBoot.cs）
       Core/
       Modules/
       Integrations/
@@ -297,7 +343,7 @@ Assets/_WorkSpace/
   GAME_WORKSPACE.md
   HotRes/  Excels/
   Scripts/
-    Bootstrap/
+    Bootstrap/                    ← 过渡；Loading 1.4b 后改 LoadingProfiles/ 或废止
     UI/Panels/
     Archive/
     _Generated/
@@ -329,6 +375,7 @@ Assets/_WorkSpace/Scripts/
 | **Modules** | `…/Data/` | `Data` | 推荐 | `CMGM.Data` ✅ |
 | **—** | `Modules/Scene/` | — | **不建模块** | **临时** `ScenesManager`（`Assembly-CSharp`）；流程待 GameFlow 接管（§3.6） |
 | **Modules** | `…/Loading/` | `Loading` | 可选 | 支线「Loading系统」；`CMGM.Loading` |
+| **Modules** | `…/GameFlow/` | `GameFlow` | 推荐 | 支线「GameFlow系统」；`CMGM.GameFlow`；触发 Loading Profile |
 | **Integrations** | `CmgmFramework/Runtime/Integrations/Lua/` | `Lua` | 可选 | **不建 asmdef**，契约 `ILuaService` 入 Core（§7.5） |
 | **Modules** | `…/Audio/` | `Audio` | 可选 | `CMGM.Audio`（编译边界2.7） |
 | **Modules** | `…/Input/` | `Input` | 可选 | `CMGM.Input`（编译边界2.8） |
@@ -340,8 +387,8 @@ Assets/_WorkSpace/Scripts/
 | 归属 | 内容 |
 |------|------|
 | **已完成基线** | 物理目录 + 去 `Game*` 前缀；UI / Data / Audio / Input / Editor asmdef 闭环 |
-| **主线 编译边界2.6~2.9** ✅ | Lua（Integrations，**无** asmdef）/ Audio / Input / Editor 有 asmdef；Bootstrap / Scene 临时宿主 / Integrations 无 asmdef |
-| **主线 启动编排3.3** ✅ | `CmgmFrameBoot` → `Runtime/Bootstrap/`；显式 InitAsync（已验收） |
+| **主线 编译边界2.6~2.9** ✅ | Lua（Integrations，**无** asmdef）/ Audio / Input / Editor 有 asmdef；`CmgmInitializer` / Scene 临时宿主 / Integrations 无 asmdef |
+| **主线 启动编排3.3** ✅ | `CmgmFrameBoot` → `Runtime/Bootstrap/`（过渡）；**3.4** 迁 `CmgmInitializer` 并废止 Bootstrap 目录 |
 | **内容扩展1.5 / 项目脚手架1.6** | Editor 模块导入向导（远期） |
 
 最小 JRPG 示例：`Core` + `UI` + `Data` + `Lua`（+ `Integrations`）  
@@ -394,111 +441,106 @@ Assets/_WorkSpace/Scripts/
 | **搬迁** | **项目脚手架1.4 ✅** 已迁入 `CmgmUnityPackages/CmgmGameKits/`（与功能计划无关，仅是物理位置） |
 | **详细子步** | 见 §7.4「GameKits【仅作参考】」 |
 
-### 6.5 Bootstrap 与组合根（显式 Boot 优先）
+### 6.5 启动三分工：`CmgmInitializer` · Loading · GameFlow
 
-**组合根（Composition Root）** 在本框架中指：**整个应用里少数几个固定入口，负责决定「谁先 Init、谁后 Init」**——不是必须上 `IGameModule` + Registry。  
-当前采用 **显式 Boot 优先** + **单例双基类**（§6.5a）：Boot 型统一 **`await XxxManager.InitAsync()`**（含 Lua 异步）；Lazy 型仅 `Instance`。
+**组合根（Composition Root）** 在本框架中**收窄为单一薄入口**：**`CmgmInitializer`**（`Runtime/CmgmInitializer.cs`，无独立目录 / namespace）。  
+其余「谁先 Init、加载什么资源」**不再**维护第二、第三个 Boot 文件，统一为 **Loading Profile** 内的 **`ILoadTask`** 列表，由 **GameFlow** 决定在何时 `LoadingManager.Run(profile)`。
 
-**Boot 不能放进 `CMGM.Core`：** Core 若直接引用 `UIManager` 等具体类型，会 **Core → Modules 依赖倒置**（§6.1 禁止）。
+```
+GameFlow（何时、处于哪一宏观态）
+    → LoadingManager.Run(Profile, options)
+        → ILoadTask[]（ManagerInit / 资源 / 场景 / 业务回调）
+    → 目标态 Enter / Exit
+```
 
-#### 6.5a Manager 单例双基类（启动编排3.2 · **仅纯 C#**）
+| 层 | 回答的问题 | 典型产物 |
+|----|------------|----------|
+| **`CmgmInitializer`** | 进程如何 Awake？谁能**先显示 UI**？ | Logo + `await UIManager.InitAsync()` → `GameFlow.Start()` |
+| **Loading** | 本阶段跑哪些异步任务？进度如何？ | `ILoadTask`、`LoadingProfile` SO、`LoadingManager` |
+| **GameFlow** | 现在在主菜单还是进游戏中？何时触发哪份 Profile？ | `IGameFlowState`、`GameFlowMachine` |
 
-> **范围（2026-06-19）：** 本步只落地 **`LazySingleton<T>` / `BootSingleton<T>`**（替代现 `Singleton<T>`）。  
-> **Mono 单例**（`SingletonMono` / `SingletonAutoMono`、`WwiseAudioManager`、`InputManager` 等）**本步不碰**，与 **Audio系统支线** 一并讨论后再定 Lazy/Boot/场景挂载策略。
+**Initializer 不能放进 `CMGM.Core`：** 与旧 Boot 相同，Core 若直接引用 `UIManager` 等具体类型会 **Core → Modules 依赖倒置**（§6.1 禁止）。`CmgmInitializer` 落 **`Assembly-CSharp`**，与 Integrations / Scene 临时宿主同级。
 
-| 基类 | Boot | 业务使用 |
-|------|------|----------|
+#### 6.5a Manager 单例双基类（启动编排3.2 ✅ · **仅纯 C#**）
+
+> **范围（2026-06-19）：** **`LazySingleton<T>` / `BootSingleton<T>`**（替代旧 `Singleton<T>`）。类名暂保留 `BootSingleton`（表示须显式 Init、未就绪 guard）；**调用点**从「Boot 文件」改为 **Initializer 最小集** 或 **Loading 的 `ManagerInitLoadTask`**。  
+> **Mono 单例**（`WwiseAudioManager`、`InputManager` 等）策略见 **Audio系统支线**。
+
+| 基类 | 显式 Init | 业务使用 |
+|------|-----------|----------|
 | **`LazySingleton<T>`** | 默认不写 | `XxxManager.Instance` |
-| **`BootSingleton<T>`** | **`await XxxManager.InitAsync()`** | `InitAsync` 完成后 `Instance` 可用（未就绪 guard 报错） |
+| **`BootSingleton<T>`** | **`await XxxManager.InitAsync()`**（仅 Initializer 或 Loading 任务） | `InitAsync` 完成后 `Instance` 可用 |
 
-- **私有 ctor 不写业务逻辑**；Boot 型重活全在 **`protected virtual UniTask OnInitAsync()`**。
-- 同步 Manager：`OnInitAsync()` 内同步干完，`return UniTask.CompletedTask`。
-- **Lua**（Boot 型）：`async OnInitAsync()` 内 `await LoadLuaMapper` / `ExecuteLua`——Boot 只 **`await LuaManager.InitAsync()`**，无单独 `WaitUntil(IsInited)`；就绪 = 基类 **`IsReady`**（`ILuaService.IsInited` 可对齐）。
-- **FrameBoot 本步示例**（音频仍维持现状，不改 Wwise 调用）：
+- **私有 ctor 不写业务逻辑**；重活在 **`protected virtual UniTask OnInitAsync()`**。
+- **Lua**（Boot 型）：`OnInitAsync` 内 `LoadLuaMapper` / `ExecuteLua`——在 **`StartupFramework` Profile** 的 `ManagerInitLoadTask` 中 `await LuaManager.InitAsync()`。
+
+**纪律（3.4 目标；3.2 已落地 InitAsync 机制）：**
+
+- **`BootSingleton`**：只允许 **`CmgmInitializer`（`UIManager` 等最小集）** 或 **Loading `ManagerInitLoadTask`** 调用 `InitAsync()`。
+- **禁止**在 Panel / 场景脚本里 Init `BootSingleton`。
+- **`LazySingleton`**：不进 Profile，首次 `Instance` 使用。
+
+#### Loading Profile（取代原「双 Boot 清单」）
+
+| Profile（计划名） | 触发方（GameFlow） | UI | 典型 `ILoadTask` |
+|-------------------|-------------------|-----|------------------|
+| **`StartupFramework`** | `Startup` 态（可与 Logo 并行，**静默**） | 无条或仅 Logo | `ArchiveManager`、`LuaManager`、`PreloadAssetsAsync(主场景)`、Wwise 壳子、`GoToMainScene`… |
+| **`EnterGameplay`** | `MainMenu` → `StartGame` | **进度条** | `LoadTable`、Gameplay 场景、gameplay Bank…（**`_WorkSpace` 内 `EnterGameplay` Profile SO + `ILoadTask` 实现类**） |
+| **（按需）** `EnterBattle` 等 | `Gameplay` → `Battle` | 可配置 | 战斗资源、战斗 Manager… |
+
+> **业务层清单：** **不**再维护 `GameBootstrap.cs`（**Loading系统1.4b** 废止）。进游戏任务 = **`_WorkSpace/.../LoadingProfiles/EnterGameplay.asset`**（及同目录下 `*LoadTask.cs`）；框架 Loading 经 **`IWorkspaceLoadRegistrar`**（Core 契约，Workspace 实现）注册任务，**不**引用 `CMGM.Workspace` 具体类型。
+
+**`CmgmInitializer` 最小集（3.4 验收）：**
 
 ```csharp
-await AddressablesResMgr.Instance.PreloadAssetsAsync(...);  // 现 LazySingleton，非 Boot 纪律重点
-await UIManager.InitAsync();
-await ArchiveManager.InitAsync();
-await LuaManager.InitAsync();
-// WwiseAudioManager：维持现状直至 Audio系统支线
-await ScenesManager.Instance.GoToMainScene();
+// Runtime/CmgmInitializer.cs — 无 namespace 或 CMGM 根下薄类
+await UIManager.InitAsync();   // 保证 Loading 进度 Panel、主菜单 Panel 可 Show
+GameFlowMachine.Start();       // Startup 态内 Run(StartupFrameworkProfile)
 ```
 
-**3.2 迁移清单（纯 C#）：** 新增双基类 → `UIManager` / `ArchiveManager` / `LuaManager` 改 Boot 型 → 其余现 `Singleton` 改 Lazy 型（如 `AddressablesResMgr`、`ConfigTableManager`、`ScenesManager`、`MonoMgr` 等）→ 更新 `CmgmFrameBoot` 为 `InitAsync` 链。
+#### 程序集边界（废止独立 `Bootstrap/` 目录）
 
-#### 两个组合根 + 三档 Init 时机
+| 方案 | 位置 | 本框架 |
+|------|------|--------|
+| **A. `Assembly-CSharp` + `Runtime/CmgmInitializer.cs`** | 组合根与 Integrations 同程序集 | **目标（3.4）** |
+| **B. 独立 asmdef** | 曾为 `CMGM.Bootstrap` | **不做**（Lua / 显式 Init 与 asmdef 冲突，见 3.3 回退记录） |
+| **C. 仅引 Core + Registry** | 远期可选 | **模块启动Registry系统** |
 
-| 组合根 | 文件（当前） | 调用时机 | 典型 Init 内容 |
-|--------|--------------|----------|----------------|
-| **框架 Boot** | `Runtime/Bootstrap/CmgmFrameBoot.cs`（`Assembly-CSharp`） | InitScene / Logo 链 | UI、Archive、Lua 等 **`BootSingleton`**；Addressables 预载 |
-| **业务 Boot** | `_WorkSpace/Scripts/Bootstrap/GameBootstrap.cs` | 进游戏 Loading 链 | 配表、关卡资源、gameplay Bank 等 |
-| **懒加载** | 不进 Boot 文件 | 首次业务使用前 | **`LazySingleton`**（纯 C#；Mono 见 Audio 支线） |
+#### Manifest / 模块裁剪（Loading Profile 下）
 
-**纪律（启动编排3.1 / 3.2）：**
-
-- **Boot 型**：只在 `CmgmFrameBoot` / `GameBootstrap` 里 **`await InitAsync()`**。
-- **Lazy 型**：Boot **默认不调用**；禁止在 Panel / 场景脚本里 **Init Boot 型** Manager。
-- **就绪**：Boot 型 **`InitAsync` await 完成 = 可用**；不再单独记 Lua 的 `WaitUntil(IsInited)`。
-
-#### `CmgmFrameBoot` 迁到哪？
-
-| 阶段 | 路径 |
+| 手段 | 做法 |
 |------|------|
-| **启动编排3.3 ✅** | `Assets/CmgmUnityPackages/CmgmFramework/Runtime/Bootstrap/CmgmFrameBoot.cs`（目录归位；**不**建 `CMGM.Bootstrap.asmdef`） |
-| **项目脚手架1.4 ✅** | 同上（物理搬迁至 `CmgmUnityPackages/CmgmFramework/`） |
+| **Editor 向导（推荐）** | 勾选 Modules → 生成 / 改写 **`LoadingProfile` SO** 与 `ManagerInitLoadTask` 列表（**内容扩展1.5** / **项目脚手架1.6**） |
+| **`#if CMGM_MODULE_XXX`** | 向导按勾选注入 Profile 条目 |
+| **运行时 Registry** | Profile 任务数 **≥10** 且难维护时再评估（§7.2b） |
 
-与 `GameBootstrap` 对称：框架 Boot 在 **`CmgmFramework/Runtime/Bootstrap/`**，业务 Boot 在 **`_WorkSpace/Scripts/Bootstrap/`**。
+#### 模块数量 → Registry 阈值（改为 Profile 任务数）
 
-#### Boot 程序集边界：三种方案对比
+| Loading Profile 内任务数（含 ManagerInit） | 建议 |
+|------------------------------------------|------|
+| **&lt; 10** | **Profile SO + 显式任务列表** 足够 |
+| **≥ 10** | 评估 **模块启动Registry系统** 或 Editor 生成 Profile |
+| **≥ 12** | 强烈建议生成器或 Registry |
+| **≥ 15** | 应上 Registry（或等价生成器） |
 
-| 方案 | Boot 位置 / 程序集 | 优点 | 缺点 | 本框架 |
-|------|-------------------|------|------|--------|
-| **A. 默认程序集 + Bootstrap 目录** | `Runtime/Bootstrap/CmgmFrameBoot.cs`，无 asmdef → `Assembly-CSharp` | **Boot 内可写全 Init 列表**（含 Lua / Scene）；与显式 Boot 纪律一致；目录仍清晰 | Boot 与 Integrations 等同程序集，编译边界较松 | **当前（3.3 ✅）** |
-| **B. Bootstrap asmdef** | `Runtime/Bootstrap/` + `CMGM.Bootstrap.asmdef`，`references` 勾选已选 Modules | Boot 程序集边界清晰；适合随 `CmgmFramework` 打包 | asmdef **不能**引用 `Assembly-CSharp`；Lua/Scene 需注册桥接或内联，**违背显式 Boot**；仅当 Boot 不碰 Integrations 时值得 | **可选远期**（Editor 生成 Boot 或 Lua 可 asmdef 时再评估） |
-| **C. Bootstrap 仅引 Core** | `CMGM.Bootstrap` 只 `references CMGM.Core` | Core 边界最严 | 必须 Registry / 反射 / 代码生成 | **不做默认**；见远期支线「模块启动Registry系统」 |
+> 计数含各 Profile 中出现的 ManagerInit、资源预载、Bank、场景等；纯 `LazySingleton` 不计入。
 
-```
-Modules ──► Core                    ✅
-Core ──► Modules                    ❌（Boot 若进 Core 且直接调 Manager）
-Bootstrap ──► Core + 已选 Modules   ✅ 方案 B（可选远期）
-Bootstrap ──► 同 Assembly-CSharp   ✅ 方案 A（当前）
-Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
-```
+#### 主线「启动编排」
 
-#### Manifest / 模块勾选裁剪（显式 Boot 下）
-
-**可以**在「显式 Boot 优先」下做模块裁剪，**不必**先上 Registry。
-
-| 手段 | 做法 | 说明 |
+| 步骤 | 内容 | 状态 |
 |------|------|------|
-| **Editor 向导（推荐）** | 勾选 Modules → 生成/改写 `CmgmFrameBoot` 内 Init 块；**可选**同步 `CMGM.Bootstrap.asmdef` references | 归属 **内容扩展1.5** / **项目脚手架1.6**；Manifest 为 Editor **输入**，输出 Boot **源码**（显式 Init），不是运行时 Registry |
-| **注释掉未选 Init 行** | 手动或向导注释 `// UIManager.Instance.Init();` | **可行、直观**；缺点是易漏改 asmdef、易 merge 冲突；适合模块少时 |
-| **`#if CMGM_MODULE_XXX`** | 向导按勾选注入预处理器符号 + 条件编译 | 比纯注释更不易误编译进未选模块；仍保持显式列表 |
-| **运行时 Registry** | `IGameModule` + `Register` + `InitAllAsync` | 模块 **≥10** 且 Boot 链过长时再评估（§7.2b 阈值） |
+| **启动编排3.1** ✅ | 文档约定 Init 纪律 + 三档时机（已被 6.5 修订吸收） | 完成 |
+| **启动编排3.2** ✅ | `LazySingleton` / `BootSingleton` + `InitAsync`；UI / Archive / Lua 迁移 | 完成 |
+| **启动编排3.3** ✅ | `CmgmFrameBoot` → `Runtime/Bootstrap/`（过渡）；Play 验收 | 完成 |
+| **启动编排3.4** | `CmgmFrameBoot` → **`Runtime/CmgmInitializer.cs`**；废止 `Bootstrap/`；长链迁入 **`StartupFramework` Profile**；仅保留 Logo + `UIManager` | **待做**（依赖 Loading系统 **≥1.2**） |
 
-未勾选模块时还应：**不引用其 asmdef**、不复制其 `Modules/*` 目录（或整包删除），否则仅注释 Init 仍会编译进程序集。
+**当前运行时：** 仍为 **3.3** 过渡版 `CmgmFrameBoot`；**目标契约** 见 §4.1、本节。
 
-#### 模块数量 → 是否引入 Registry（提醒阈值）
+<details>
+<summary>归档：原「双 Boot 组合根」（2026-06-19 前，见 DEPRECATED）</summary>
 
-| Boot 链中需 Init 的框架模块数 | 建议 |
-|------------------------------|------|
-| **&lt; 10** | **显式 Boot 足够**；Maintain `CmgmFrameBoot` + `GameBootstrap` 两个文件 |
-| **≥ 10** | **评估**是否启动远期支线「模块启动Registry系统」；若 Boot 文件已难维护或多次漏 Init，开始设计 |
-| **≥ 12** | **强烈建议**规划 Registry 或 Boot **代码生成**（Editor 从 Manifest 生成 Init 列表，仍可不引入运行时 Registry） |
-| **≥ 15** | **应上** Registry（或等价：Manifest + 生成器），否则顺序/漏项/merge 风险过高 |
-
-> 计数含 Addressables 预载、UI、Data、Lua、Audio、Input、Loading、Optional 等**出现在 FrameBoot 或 GameBoot 链**中的项；纯懒加载模块不计入。
-
-#### 主线「启动编排」（显式 Boot，无 Registry）
-
-| 步骤 | 内容 |
-|------|------|
-| **启动编排3.1** ✅ | 文档约定：两组合根 + Init 纪律 + 三档时机（§6.5）；**不改运行时行为** |
-| **启动编排3.2** ✅ | 同上 §6.5a（**范围：仅纯 C# 单例**） |
-| **启动编排3.3** ✅ | `CmgmFrameBoot` → `Runtime/Bootstrap/`（方案 A：目录 + 显式 InitAsync，**无** Bootstrap asmdef） |
-
-**当前：** Boot 在 `Runtime/Bootstrap/`（方案 A ✅）；启动编排主线至此冻结。
+曾采用 `CmgmFrameBoot` + `GameBootstrap` 两文件显式 `InitAsync` 链。已由 **Initializer + Loading Profile** 取代；`GameBootstrap.cs` 待 **Loading系统1.4b** 删除。
+</details>
 
 ---
 
@@ -537,7 +579,7 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | 禁止为修编译改业务 | 不得删改 Panel 按钮逻辑、场景跳转等；边界问题用迁移 / 接口 / 引用解决 |
 | 动功能前先确认 | 任何可能影响运行时行为的改法，先与用户确认 |
 | XLua 不建 asmdef | 官方 `feature/asmdef` 已被回滚（PR#1067 加、PR#1068 删），XLua 留官方 master、待在 `Assembly-CSharp`；Lua 模块改走「契约入 Core / 实现入 `Integrations`」，不给 XLua 套 asmdef（§7.5） |
-| **asmdef 按需、不强迫** | asmdef 是编译边界工具，**不是**每个目录的必选项。能加且收益大于成本（如 UI/Data/Audio 已闭环）则加；若导致 Boot 注册桥接、破坏显式 Init、或与第三方（XLua）冲突，则**保持 `Assembly-CSharp` + namespace 分层**（§7.5） |
+| **asmdef 按需、不强迫** | asmdef 是编译边界工具，**不是**每个目录的必选项。若导致组合根注册桥接、破坏显式 Init、或与第三方（XLua）冲突，则**保持 `Assembly-CSharp` + namespace 分层**（§7.5） |
 | 小步验证 | 每模块闭环后编译 + 主流程 Play 一次，再开下一模块 |
 
 > 主线「编译边界2.6~2.8」即按此四步推进。
@@ -550,10 +592,10 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | 框架/业务分层 | `CmgmUnityPackages/` + `_WorkSpace/Scripts/`；Panel / 配表 / 存档在业务层脚本目录 |
 | UI / Data / Audio / Input / Editor | 各模块 asmdef 闭环（Editor 含 `CMGM.Editor`、`CMGM.UI.Editor`、`CMGM.Data.Editor`） |
 | Lua | `Integrations/Lua/` + `ILuaService`（**无** Lua asmdef，方案 C） |
-| 启动编排 | `LazySingleton` / `BootSingleton` + `InitAsync`；`CmgmFrameBoot` → `CmgmUnityPackages/CmgmFramework/Runtime/Bootstrap/`（无 Bootstrap asmdef）；**Play 已验收 ✅** |
+| 启动编排 | `LazySingleton` / `BootSingleton` + `InitAsync`；过渡 `CmgmFrameBoot`；目标 **`CmgmInitializer`** + Loading Profile（§6.5、**3.4 待做**） |
 | 项目脚手架1.4 | Framework + GameKits → `CmgmUnityPackages`；`Paths.Package` 收口 ✅ |
 | Lua Boot 修复 | 根脚本 Init 阶段不走 `LuaBridge.Instance`，内部 `CompleteCurrentExecution` |
-| 进游戏入口 | `ScenesManager` 配置化 + **`ScenesManager` 仅临时流程宿主**（§3.6）；`GameBootstrap.EnterGameplayAsync` |
+| 进游戏入口 | `EnterGameplay` LoadingProfile（**Loading系统1.4b** 废止 `GameBootstrap`） |
 | 项目脚手架1.1 | `CmgmUnityPackages/` 占位 + README |
 | 项目脚手架1.3 | `_WorkSpace/GAME_WORKSPACE.md` 业务层文档 ✅ |
 | Editor 四分法 | `ProjectSetup` / `AssetTemplates` / `QuickSearch` / `Tools`；`project_layer.manifest` ✅ |
@@ -580,29 +622,30 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | **编译边界2.9** ✅ | Editor 闭环（`CMGM.Editor`） | 编译边界2.8 完成 ✅ | **已完成** |
 | **启动编排3.1** ✅ | 文档约定：两组合根 + Init 纪律 + 三档时机 + Boot 三方案对比 + Registry 阈值（§6.5、§7.2b）；**不改运行时** | 编译边界2.9 完成 ✅ | **完成 ✅（2026-06-19）** |
 | **启动编排3.2** ✅ | **仅纯 C#**：`LazySingleton` / `BootSingleton` + `InitAsync`；迁移 UI / Archive / Lua；Mono 单例留 Audio 支线 | 启动编排3.1 完成 ✅ | **完成 ✅（已验收）** |
-| **启动编排3.3** ✅ | `CmgmFrameBoot` → `Runtime/Bootstrap/`；显式 InitAsync（无 Bootstrap asmdef） | 启动编排3.2 完成 ✅ | **完成 ✅（已验收）** |
+| **启动编排3.3** ✅ | `CmgmFrameBoot` → `Runtime/Bootstrap/`（过渡）；显式 InitAsync（无 Bootstrap asmdef） | 启动编排3.2 完成 ✅ | **完成 ✅（已验收）** |
+| **启动编排3.4** | `CmgmInitializer`：`Runtime/CmgmInitializer.cs`；废止 `Bootstrap/`；长 Init 链 → `StartupFramework` Profile | Loading系统 **≥1.2** ✅ | **待做** |
 
-> 主线 **启动编排3.3** 已完成，启动契约（显式 Boot）冻结；物理搬迁见 **项目脚手架1.4**。Registry 非主线，见 §7.2b + 远期支线。
+> 主线 **启动编排3.3** 已完成（过渡运行时）；**3.4** 与 **Loading / GameFlow** 衔接，见 §6.5。Registry 非主线，见 §7.2b。
 
 #### 7.2b 启动编排 · Registry 阈值与远期支线
 
-> **原则：** 默认 **显式 Boot**（§6.5）；Registry 是模块变多后的**可选升级**，不是入门必做。
+> **原则：** 默认 **Loading Profile + 显式任务列表**（§6.5）；Registry 是 Profile 任务过多后的**可选升级**。
 
-| Boot 链模块数 | 动作 |
-|---------------|------|
-| **&lt; 10** | 维持 `CmgmFrameBoot` + `GameBootstrap` 显式 `Init()` |
-| **≥ 10** | 复盘 Boot 可维护性；评估是否启动「模块启动Registry系统」 |
-| **≥ 12** | 强烈建议 Registry **或** Editor 从 Manifest **生成** Boot 源码（仍可不引入运行时 Register） |
-| **≥ 15** | 应上 Registry（或等价生成器），避免漏 Init / 顺序错误 |
+| Profile 内任务数（含 ManagerInit） | 动作 |
+|----------------------------------|------|
+| **&lt; 10** | 维持 Profile SO + `ManagerInitLoadTask` / 资源任务显式列表 |
+| **≥ 10** | 复盘可维护性；评估「模块启动Registry系统」 |
+| **≥ 12** | 强烈建议 Registry **或** Editor 从 Manifest **生成 Profile** |
+| **≥ 15** | 应上 Registry（或等价生成器） |
 
-**远期支线「模块启动Registry系统」**（非主线；解锁：启动编排3.3 完成 **且** Boot 链 ≥10 模块 **或** 导入向导需要运行时动态裁剪）：
+**远期支线「模块启动Registry系统」**（非主线；解锁：启动编排3.4 完成 **且** Profile 任务 ≥10 **或** 导入向导需要运行时动态裁剪）：
 
 | 子步 | 内容 |
 |------|------|
-| **模块启动Registry系统1.1** | Core：`IGameModule` + `InitPhase`（FrameworkBoot / GameBoot）+ `CmgmModuleRegistry` |
-| **模块启动Registry系统1.2** | 各 Module 适配器 + BeforeSceneLoad Register；Boot 改为 `InitAllAsync(phase)` |
+| **模块启动Registry系统1.1** | Core：`IGameModule` + `InitPhase`（`StartupFramework` / `EnterGameplay`）+ `CmgmModuleRegistry` |
+| **模块启动Registry系统1.2** | 各 Module 适配器 + Register；`LoadingManager` 从 Registry 拼 `ILoadTask` |
 | **模块启动Registry系统1.3** | `CmgmModuleManifest` ScriptableObject + Editor 勾选 ↔ Registry 条目 |
-| **模块启动Registry系统1.4** | Bootstrap **方案 C**（`CMGM.Bootstrap` 仅引 Core）可选评估 |
+| **模块启动Registry系统1.4** | 仅引 Core 的薄组合根 + Registry 可选评估 |
 
 #### 7.2a 编译边界2.7 展开（Audio 解耦三步：先断依赖 → 再挪位置 → 后上 asmdef）
 
@@ -630,7 +673,8 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | **依赖抽象系统** | 依赖抽象系统1.1 | 编译边界2.8 ✅ | 已解锁（按需） |
 | **项目脚手架与包体迁移** | **项目脚手架1.6**（远期） | 1.5 ✅ | 已解锁 |
 | **GameKits** | GameKits1.1 | 未定（草案写 **项目脚手架1.4** 后，**非可靠**） | 🔒【仅作参考】 |
-| **模块启动Registry系统** | 模块启动Registry系统1.1 | 启动编排3.3 ✅ **且** Boot 链 ≥10 | 🔒 远期 |
+| **Editor测试系统** | Editor测试系统1.1 | GameFlow系统1.1 进行中 **或** Loading系统1.1 ✅ | 已解锁 |
+| **模块启动Registry系统** | 模块启动Registry系统1.1 | 启动编排3.4 ✅ **且** Profile 任务 ≥10 | 🔒 远期 |
 | **网游预埋** | 网游预埋1.1 | **存档升级系统** 完成 **且** GameFlow 完成 | 🔒 远期 |
 | **内容扩展** | 内容扩展1.1 | 按需 | 按需 |
 
@@ -640,18 +684,21 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 
 #### Loading系统（已解锁）
 
-定位：**通用加载服务**——任意位置可调用，可选「显示全屏面板 / 后台静默」，聚合多源进度。横切 UI / 资源 / 音频等，属编排层（不进 Core）。
+定位：**通用加载编排**——`ILoadTask` 执行器 + 加权进度 + Profile 清单；**取代原双 Boot 长链**（§6.5）。横切 UI / 资源 / Manager Init，属编排层（不进 Core）。**不引用** `CMGM.Workspace` 具体类型（业务任务用回调注入）。
 
 | 子步 | 内容 | 学习点 |
 |------|------|--------|
 | **Loading系统1.1** | 模块骨架：`Modules/Loading`（`CMGM.Loading`）+ `LoadingManager.Run(tasks)` + 单条进度面板；跑通「执行一组任务并显示进度」 | 模块 asmdef、接口基础 |
-| **Loading系统1.2** | `ILoadTask`（加载步骤抽象）+ 加权进度聚合（`权重 × 段内进度`，无内部进度的任务直接跳段） | 接口/多态、进度算法 |
-| **Loading系统1.3** | 接通「进游戏」加载点：替代 MainPanel 直接 await，由 Loading 编排 `GameBootstrap` 回调（Loading **不**引用 `CMGM.Workspace`） | 模块协作、回调注入 |
-| **Loading系统1.4** | 加载点 Profile（每加载点一个 ScriptableObject 静态清单）+ 程序化动态补充任务 | 数据驱动、策划友好 |
-| **Loading系统1.5+** | 后台静默加载、转场动画、动态拼任务（按敌人 ID 等） | 进阶 |
+| **Loading系统1.2** | `ILoadTask` + 加权进度；**`ManagerInitLoadTask`**（包装 `BootSingleton.InitAsync`） | 接口/多态、Manager 与资源统一任务模型 |
+| **Loading系统1.3** | 接通「进游戏」：`GameFlow` / MainPanel → `EnterGameplay` Profile；过渡期可暂用 `DelegateTask` 包装旧 `GameBootstrap` | 模块协作、Profile 驱动 |
+| **Loading系统1.4** | **`LoadingProfile` SO**：`StartupFramework` / `EnterGameplay` 静态清单 + 动态追加；**吸收原 `CmgmFrameBoot` Init 链**（配合 **启动编排3.4**） | 数据驱动、与 Initializer 分工 |
+| **Loading系统1.4b** | **废止 `GameBootstrap.cs`**：业务进游戏清单迁入 **`EnterGameplay` Profile** + Workspace 侧 `ILoadTask` 实现；`IWorkspaceLoadRegistrar` 注册；更新脚手架种子 / `project_layer.manifest`（**不再**生成 `Scripts/Bootstrap/GameBootstrap.cs`） | 业务清单与框架编排统一 |
+| **Loading系统1.5+** | 后台静默加载、转场动画、动态拼任务（`EnterBattle` 等） | 进阶 |
 
-> **进度模型（1.2 起）：** 每个 `ILoadTask` 带 `Weight`；总进度 = `Σ(已完成权重) + 当前任务权重 × 当前任务内部进度`。Addressables/场景用真实 `PercentComplete`；Bank/Init 等无中间进度者完成即跳段（必要时加假进度补间防卡顿感）。显示推荐「单条 + 当前阶段文案」，不展示多条并行子进度。  
-> **配置形态（1.4）：** 不做全局大表；**每个加载点一个 `.asset`（ScriptableObject）** 配静态资源，运行时按上下文（敌人 ID 等）程序化追加 `ILoadTask`。统一的是「执行器」，分散的是「清单」。
+> **进度模型（1.2 起）：** 每个 `ILoadTask` 带 `Weight`；总进度 = `Σ(已完成权重) + 当前任务权重 × 当前任务内部进度`。  
+> **Profile（1.4）：** 每个加载点一个 `.asset`；**`StartupFramework`** 默认静默（可与 Logo 并行）；**`EnterGameplay`** 显示进度条。  
+> **与 Initializer 分工：** 仅 **`UIManager.InitAsync`** 留在 `CmgmInitializer`；其余 Manager Init 走 **`ManagerInitLoadTask`**。  
+> **`GameBootstrap`：** 过渡文件；**1.4b** 删除后，改维护 **`EnterGameplay` Profile**（`_WorkSpace` 内 SO，不进 `CmgmFramework`）。
 
 #### 存档格式优化（✅ 全线完成 · **存档升级系统前置**）
 
@@ -711,7 +758,7 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 
 #### Audio系统（已解锁）
 
-> **与启动编排衔接：** `SingletonMono` / `SingletonAutoMono`、`WwiseAudioManager`、`InputManager` 的 Lazy/Boot/场景挂载策略 **不在启动编排3.2**；在本支线（建议 **Audio系统1.1** 同期）与 Wwise Boot 链、`FrameBoot` 是否预热一并定案。
+> **与启动编排衔接：** `WwiseAudioManager`、`InputManager` 等 Mono 单例策略在 **Audio系统1.1** 定案；是否放入 **`StartupFramework` Profile**（非 `CmgmInitializer`）一并写入 Profile 文档。
 
 | 子步 | 内容 | 验收 |
 |------|------|------|
@@ -727,16 +774,34 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 |------|------|------|
 | **GameFlow系统1.1** | `IGameFlowState`：`Enter` / `Exit` / `Update`（可选） | 基础态可切换 |
 | **GameFlow系统1.2** | `GameFlowMachine`：Push / Pop / Replace | 日志可追踪栈 |
-| **GameFlow系统1.3** | 基础态 `Boot` / `MainMenu` / `Gameplay` / `Loading`；**接管**原 `GoToMainScene` / `QuitGame`（`ScenesManager` 缩退或删除） | 流程不再依赖 Scene 模块 |
+| **GameFlow系统1.3** | 基础态 **`Startup`** / `MainMenu` / `Gameplay` / `Loading`；**触发 Loading Profile**；接管 `GoToMainScene` / `QuitGame`（`ScenesManager` 缩退） | 流程 + Loading 衔接 |
+| **GameFlow系统1.3b** | **Editor：`DirectToTest`** — `CmgmInitializer` 完成后若存在 **`EditorPlayRequest`**，**跳过 MainMenu / MainScene**，`LoadSceneAsync(目标场景)`；可选追加 Profile（与 **Editor测试系统1.2~1.3** 同期） | Editor 与 Runtime 分支 |
 | **GameFlow系统1.4** | 预留态 `Pause` / `Cutscene` / `Battle` 空壳或最小实现 | JRPG / SRPG 可扩展 |
 | **GameFlow系统1.5** | 与 UI / 输入：状态切换时 UI 层、输入 map 切换策略 | 暂停时输入正确 |
+
+> **与 Loading：** `Startup.Enter` → `Run(StartupFramework)` → `MainMenu`（正式路径）。**Editor 测试：** `DirectToTest` → `Run(StartupFramework, editorTrim)` → **目标场景**（§4.3）。  
+> **宏观态名 `Startup`：** 避免与已废止的 Boot 组合根混淆。
+
+#### Editor测试系统（已解锁）
+
+> **定位：** **框架 Editor**（`CmgmFramework/Editor/`）提供跨项目通用的 Play 测试钩子；**不**把具体战斗/关卡测试逻辑放进 Core。领域可复用辅助放 **GameKits**（远期）；本工程实验场景放 **`_TestSpace`**。
+
+| 子步 | 内容 | 验收 |
+|------|------|------|
+| **Editor测试系统1.1** | **`EditorPlayRequest`**（Editor 静态/Session）：`TargetScenePath`、`SkipLogo`、`EditorTrimStartup`、`AppendProfiles`；文档约定 **Play Mode Start Scene = InitScene** | 任意场景 Play 先进 InitScene |
+| **Editor测试系统1.2** | 菜单 **「草木句萌 / 从当前场景 Play」**（`CMGM.Editor`）：写入 `EditorPlayRequest` → 进入 Play | 不打开 InitScene 也能从当前场景测 |
+| **Editor测试系统1.3** | 与 **GameFlow系统1.3b** 对接：`DirectToTest` 在 Startup Profile 后 **`LoadSceneAsync(TargetScenePath)`**，**不** `GoToMainScene` | 空场景 / 测试场景可达 |
+| **Editor测试系统1.4** | 可选 **`TestSceneEntry`**（`_TestSpace` 或业务层 MonoBehaviour）：`Start` 时声明本场景追加的 Profile（如 `EnterGameplay` / `EnterBattle`） | 进场景后再 Loading |
+| **Editor测试系统1.5** | **`StartupFrameworkEditorTrim` Profile**（或 Profile 变体）：Editor 下跳过 MainScene 预载 / Logo 等 | 迭代更快 |
+
+> **分层：** **框架** = `EditorPlayRequest` + 菜单 + `GameFlow.DirectToTest`；**GameKits** = 可复用玩法测试模板（远期）；**`_TestSpace`** = 本项目 `TableTest`、测试场景与 `TestSceneEntry` 实例。
 
 #### 事件总线系统（已解锁）
 
 | 子步 | 内容 | 验收 |
 |------|------|------|
 | **事件总线系统1.1** | `IEventBus`：`Subscribe` / `Publish` / `Unsubscribe` + 线程/退订生命周期约定 | 规则文档 + 空实现可编译 |
-| **事件总线系统1.2** | 落地 `OptionalSystem/EventSystem`；在 `CmgmFrameBoot` 显式 `Init()`（或懒加载，见 §6.5） | 无全局静态散落 |
+| **事件总线系统1.2** | 落地 `OptionalSystem/EventSystem`；在 **`StartupFramework` Profile** 或懒加载 Init（见 §6.5） | 无全局静态散落 |
 | **事件总线系统1.3** | 选 1~2 处 Manager 直连改事件（如场景切换完成） | 行为不变、解耦 |
 
 #### 依赖抽象系统（已解锁 / 按需）
@@ -756,7 +821,7 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | **内容扩展1.2** | 场景持久化：进出场景对象 Save/Load 钩子（按需；**非**预建 Scene 模块） | 进出场景状态保留 |
 | **内容扩展1.3** | 配表类型扩展：多键表、嵌套结构、本地化列 | ExcelTool 支持 |
 | **内容扩展1.4** | SRPG 接口：网格 / 回合 / 技能预留（与 GameFlow Battle 衔接） | 与 Battle 态衔接 |
-| **内容扩展1.5** | Editor 模块导入向导：勾选 `Runtime/Modules/*` → 改写 Boot `Init()` 源码 + 依赖报告（**可选**生成 `CMGM.Bootstrap.asmdef`；与 **项目脚手架1.6** 合并） | 复制到新工程可裁剪 |
+| **内容扩展1.5** | Editor 模块导入向导：勾选 `Runtime/Modules/*` → 生成 **`LoadingProfile` SO** 任务列表 + 依赖报告（与 **项目脚手架1.6** 合并） | 复制到新工程可裁剪 |
 
 > **去向说明：** 旧 8.4「Lua 懒加载」→ **Lua系统1.2**；旧 8.5「MUG」→ 2.7b 目录暂存（非 GameKits 正式计划）。
 
@@ -775,7 +840,7 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | **项目脚手架1.2b** ✅ | 业务层种子 + `project_layer.manifest`；模板源 `Editor/ProjectSetup/Seeds/` | 脚手架可写最简闭环 |
 | **项目脚手架1.2c** ✅ | manifest 补全（`GAME_WORKSPACE.md`、`_Generated/Config/`、`GameBootstrap.cs`）；`work_space_scaffold` → **`project_layer.manifest`** | PathCheck 与菜单一致 |
 | **项目脚手架1.5** ✅ | 空工程迁移验证 | 可复制 |
-| **项目脚手架1.6**（远期） | Manifest 驱动勾选 → 生成 Boot Init（+ 可选 asmdef） | 按勾选裁剪 |
+| **项目脚手架1.6**（远期） | Manifest 驱动勾选 → 生成 **LoadingProfile** 任务（+ 可选 asmdef） | 按勾选裁剪 |
 | **项目脚手架1.7**（按需） | 路径扫描自动生成 / 校验（与 **Lua系统1.3** / §2b **E** 衔接） | 路径少手写 |
 
 > **废止说明：** 独立支线「常量与配置体系」已并入本支线（1.1 盘点、1.4 路径收口、1.7 自动生成）；详见 `ARCHITECTURE_DEPRECATED.md` **归档块 D**。
@@ -791,20 +856,20 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | 文本 | `HotRes/Lua/main.lua.txt`、`HotRes/BuildSource/RELEASE_NOTE.txt` |
 | 场景 | `HotRes/Scenes/InitScene.unity`、`MainScene.unity` |
 | UI | `HotRes/UI/Panels/MainPanel.prefab`、`Scripts/UI/Panels/MainPanel.cs` |
-| Boot（业务侧） | `Scripts/Bootstrap/GameBootstrap.cs`（种子已纳入清单，**归属待讨论**，见下表） |
+| Boot（业务侧，**过渡**） | `Scripts/Bootstrap/GameBootstrap.cs`（**Loading系统1.4b** 废止 → **`LoadingProfiles/EnterGameplay.asset`**） |
 
-| **GameBootstrap（⚠️ 待讨论）** | **现状：** 已写入 `project_layer.manifest` 与 `Seeds/`，脚手架会创建最简模板。**未决：** 是否应随框架创建、或迁至 `Runtime/Bootstrap/` 与 `CmgmFrameBoot` 并列。**触发复盘：** 实现 `EnterGameplayAsync` 具体加载逻辑时，或推进 **Loading系统1.3** 接通进游戏链之前，**必须**与用户讨论归属后再定稿。 |
+| **GameBootstrap → Profile** | **1.2c 种子仍含 `GameBootstrap.cs`（过渡）**；**Loading系统1.4b** 改为种子 **`LoadingProfiles/EnterGameplay.asset`** + 示例 `ILoadTask`；自 `project_layer.manifest` **移除** `GameBootstrap.cs` |
 
 #### 模块启动Registry系统（🔒 远期，见 §7.2b）
 
-> 默认不做。Boot 链模块 **≥10** 时评估；**≥15** 时建议必做。与显式 Boot 二选一或并存（Manifest 生成 Init 列表 vs 运行时 Register）。
+> 默认不做。Profile 任务 **≥10** 时评估；**≥15** 时建议必做。与 Loading Profile 显式列表二选一或并存。
 
 | 子步 | 内容 |
 |------|------|
 | **模块启动Registry系统1.1** | `IGameModule` + `InitPhase` + `CmgmModuleRegistry` |
-| **模块启动Registry系统1.2** | Module 适配器 + Register；Boot → `InitAllAsync(phase)` |
+| **模块启动Registry系统1.2** | Module 适配器 + Register；`LoadingManager` 从 Registry 拼 Profile 任务 |
 | **模块启动Registry系统1.3** | `CmgmModuleManifest` + Editor 勾选 |
-| **模块启动Registry系统1.4** | Bootstrap 方案 C（仅引 Core）可选 |
+| **模块启动Registry系统1.4** | 薄组合根 + Registry 可选评估 |
 
 #### GameKits（🔒【仅作参考】· 非可靠计划）
 
@@ -834,41 +899,91 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 
 ### 7.6 下一步一览（各线最前节点）
 
-> **用法：** 每次报告「下一步」以本表为准。每条线**一行、一个最前节点**（带完整支线前缀）。  
-> **变更量：** 小 ≈ 1~3 文件 / 纯文档；中 ≈ 新模块或 5~15 文件；大 ≈ 全工程路径或架构级。  
-> **教学难度：** ★ 入门 · ★★ 熟悉 Unity · ★★★ 需理解 asmdef/异步 · ★★★★ 序列化/迁移 · ★★★★★ 架构级。
+> **用法：** 日常推进以 **§7.7 启动竖切大表** 为准（**当前唯一活跃主线**）。本表保留全仓索引；非 §7.7 涉及支线在完成竖切前**仅修 bug，不新开功能**。
 
 | 线 | 最前节点 | 状态 | 解锁条件 | 预估变更量 | 教学难度 |
 |----|----------|------|----------|------------|----------|
-| **主线（编译边界 + 启动编排）** | — | ✅ 全线完成 | — | — | — |
-| **项目脚手架与包体迁移** | **项目脚手架1.6**（远期） | 远期按需 | 1.5 ✅ | **大**（模块导入向导） | ★★★★ |
-| **存档格式优化** | — | ✅ 全线完成 | Data ✅ | — | — |
-| **存档升级系统** | 存档升级系统1.1 | 已解锁 | **存档格式优化** ✅ | **中~大**（chunk + 迁移） | ★★★★ |
-| **GameFlow系统** | GameFlow系统1.1 | 已解锁 | 启动编排3.3 ✅ | **中**（接口 + 状态机骨架 3~6 文件） | ★★★☆ |
-| **Loading系统** | Loading系统1.1 | 已解锁 | Core + UI ✅ | **中**（新 `CMGM.Loading` + 进度 UI） | ★★★☆ |
-| **Lua系统** | Lua系统1.1 | 已解锁 | 2.6 ✅ | **小~中**（Registry 接口 + 游戏侧注册示例） | ★★★☆ |
-| **Audio系统** | Audio系统1.1 | 已解锁 | 2.7 ✅ | **中**（`IAudioService` + Wwise 包装 + Boot 策略文档） | ★★★☆ |
-| **事件总线系统** | 事件总线系统1.1 | 已解锁 | 3.3 ✅ | **小~中**（`IEventBus` + Optional 空实现） | ★★☆☆ |
-| **依赖抽象系统** | 依赖抽象系统1.1 | 已解锁（按需） | 2.8 ✅ | **小~中**（Odin 条件编译 / asmdef 引用清理） | ★★☆☆ |
+| **★ 启动竖切（§7.7）** | **Loading系统1.2** | **#1 待 Play 验收** | Core + UI ✅ | 见 §7.7 | ★★★☆ |
+| **主线（编译边界 + 启动编排）** | **启动编排3.4** | 3.3 ✅；3.4 待做（**并入 §7.7 阶段 C**） | Loading **≥1.2** | **中** | ★★★☆ |
+| **Loading系统** | Loading系统1.1 | **§7.7 阶段 A** | Core + UI ✅ | **中** | ★★★☆ |
+| **GameFlow系统** | GameFlow系统1.1 | **§7.7 阶段 A 并行** | 启动编排3.3 ✅ | **中** | ★★★☆ |
+| **Editor测试系统** | Editor测试系统1.1 | **§7.7 阶段 D 前置** | Loading **1.1** ✅ | **小~中** | ★★☆ |
+| **存档升级系统** | 存档升级系统1.1 | ⏸ 竖切完成后 | 存档格式优化 ✅ | **中~大** | ★★★★ |
+| **Lua系统** | Lua系统1.1 | ⏸ 竖切完成后 | 2.6 ✅ | **小~中** | ★★★☆ |
+| **Audio系统** | Audio系统1.1 | ⏸ 竖切完成后 | 2.7 ✅ | **中** | ★★★☆ |
+| **事件总线系统** | 事件总线系统1.1 | ⏸ 竖切完成后 | 3.3 ✅ | **小~中** | ★★☆☆ |
+| **项目脚手架与包体迁移** | **项目脚手架1.6**（远期） | 远期按需 | 1.5 ✅ | **大** | ★★★★ |
 | **内容扩展** | 内容扩展1.1 | 按需 | 各子项依赖对系统 | **不一** | ★★~★★★★ |
-| **GameKits** | GameKits1.1 | 🔒【仅作参考】 | **未定**（草案：**项目脚手架1.4** 后；非可靠） | **未定** | **未定** |
-| **模块启动Registry系统** | 模块启动Registry系统1.1 | 🔒 远期 | 3.3 ✅ **且** Boot 链 ≥10 | **大** | ★★★★ |
+| **GameKits** | GameKits1.1 | 🔒【仅作参考】 | **未定** | **未定** | **未定** |
+| **模块启动Registry系统** | 模块启动Registry系统1.1 | 🔒 远期 | **启动编排3.4** ✅ **且** Profile 任务 ≥10 | **大** | ★★★★ |
 | **网游预埋** | 网游预埋1.1 | 🔒 远期 | **存档升级系统** 完成 **且** GameFlow 完成 | **大** | ★★★★★ |
 
-> **说明：** **存档格式优化 ✅** 已完成。数据向最前节点：**存档升级系统1.1**。
+> **说明：** **存档格式优化 ✅** 已完成；**存档升级**等数据/抽象线在 §7.7 全线 ✅ 前不新开。
 
-### 7.7 推荐推进顺序（2026-06-20，**1.5 ✅ 后更新**）
+### 7.7 启动竖切 · 主流程大表（Loading + GameFlow + Editor + 3.4）
 
-| 阶段 | 建议支线 | 理由 |
-|------|----------|------|
-| **D1 · 数据拓展（优先）** | **存档升级系统1.1** | 格式优化 ✅；chunk / Migrator |
-| **A · 竖切** | **Loading系统1.1 → 1.2 → 1.3** | 1.3 前复盘 **GameBootstrap 归属** |
-| **B · 流程** | **GameFlow系统1.1 → 1.2 → 1.3** | 与 Loading 二选一作「中~大」主轨 |
-| **C · 基础设施** | **Lua系统1.1**、**Audio系统1.1**、**事件总线系统1.1** | 可并行小线 |
-| **按需** | **依赖抽象系统**、**内容扩展**、**项目脚手架1.6** | 遇痛点再做 |
-| **暂缓** | **GameKits**（仅参考）、**Registry**、**网游预埋** | 见 §7.3 |
+> **决策（2026-06-19）：** 在 **§7.7 全部步骤 ✅** 之前，**不新开**存档升级、Lua、Audio、事件总线、脚手架 1.6 等支线功能（紧急 bugfix 除外）。  
+> **推进方式：** 按 **#** 顺序逐步验收；同一 **阶段** 内标注「可并行」的步骤可同时做，但 **# 更小者优先合入**（避免 Init 链冲突）。
 
-> **并行原则：** 同一时期 **1 条「中~大」线** + **1~2 条「小」线**；**存档格式优化**与 Loading/GameFlow 不宜三条同时开大。
+#### 总览
+
+```
+阶段 A ──► Loading 1.1 ──► 1.2 ──► 1.3
+              ∥ 并行        GameFlow 1.1 ──► 1.2
+阶段 B ──► （A 全部 ✅ 后进入）
+阶段 C ──► Loading 1.4 + 启动编排 3.4 + GameFlow 1.3        （同里程碑，一并验收）
+阶段 D ──► Editor 1.1 ──► GameFlow 1.3b + Editor 1.2~1.3
+阶段 E ──► Loading 1.4b（废止 GameBootstrap）
+可选 ──► Editor 1.4~1.5、Loading 1.5+
+```
+
+#### 逐步明细
+
+| # | 阶段 | 步骤 ID | 内容 | 前置 | 验收标准 | 主要产出 | 变更量 | 状态 |
+|---|------|---------|------|------|----------|----------|--------|------|
+| **1** | **A · 执行器** | **Loading系统1.1** | `Modules/Loading`（`CMGM.Loading` asmdef）+ `LoadingManager.Run(tasks)` + 单条进度 UI；用硬编码/假任务跑通 | Core ✅ + UI ✅ | Play 后能看到进度条走完一组任务 | `LoadingManager`、`LoadingPanel`（或复用 UI 层）、asmdef | **中** | **✅ 待 Play 验收** |
+| **2** | A · 并行 | **GameFlow系统1.1** | `IGameFlowState`：`Enter` / `Exit` / `Update`（可选） | 启动编排3.3 ✅ | 两个空态可手动切换，日志可追踪 | `Modules/GameFlow/`、`CMGM.GameFlow` asmdef | **中** | 待做 |
+| **3** | A · 并行 | **GameFlow系统1.2** | `GameFlowMachine`：Push / Pop / Replace | **#2** ✅ | 栈操作日志正确 | `GameFlowMachine.cs` | **小** | 待做 |
+| **4** | **A · 任务模型** | **Loading系统1.2** | `ILoadTask` + `Weight` 加权进度；**`ManagerInitLoadTask`**（包 `BootSingleton.InitAsync`） | **#1** ✅ | 多任务加权进度正确；至少 1 个 Manager 经 Task 初始化 | `ILoadTask`、`ManagerInitLoadTask`、`DelegateTask`（过渡） | **中** | 待做 |
+| **5** | **B · 业务竖切** | **Loading系统1.3** | 接通「进游戏」：`MainPanel` → `LoadingManager.Run(EnterGameplay…)`；过渡期 **`DelegateTask` 包旧 `GameBootstrap`** | **#4** ✅；（**#3** 建议 ✅） | 主界面点进游戏走 Loading + 进度条，行为与现 `GameBootstrap` 等价 | `MainPanel` 改调 Loading；临时 EnterGameplay 任务列表 | **中** | 待做 |
+| **6** | **C · 启动重构** | **Loading系统1.4** | **`LoadingProfile` SO**：`StartupFramework` / `EnterGameplay` 静态清单 + 动态追加；清单吸收原 **`CmgmFrameBoot` Init 链**（Manager / 预载 / Wwise 壳等） | **#4** ✅ + **#5** ✅ | 启动任务可配在 SO；不再硬编码长链 | `LoadingProfile.cs`、`.asset` 资源 | **中** | 待做 |
+| **7** | C · 同里程碑 | **启动编排3.4** | `CmgmFrameBoot` → **`Runtime/CmgmInitializer.cs`**；废止 `Bootstrap/`；Initializer **仅** Logo + `await UIManager.InitAsync()` → 交 GameFlow | **#6** 同步进行 | InitScene 上 Boot 脚本瘦身；长 Init 不在 Initializer 内 | `CmgmInitializer.cs`；删/废 `CmgmFrameBoot` | **中** | 待做 |
+| **8** | C · 同里程碑 | **GameFlow系统1.3** | 宏观态 **`Startup` / `MainMenu` / `Gameplay` / `Loading`**；`Startup.Enter` → `Run(StartupFramework)` → `MainMenu`；**接管** `GoToMainScene` / `QuitGame`（`ScenesManager` 缩退） | **#6** **#7** + **#3** ✅ | 正式包体：Init → Startup Profile → 主界面；无 FrameBoot 直调 Scene | `StartupState`、`MainMenuState` 等；`ScenesManager` 缩退 | **中** | 待做 |
+| **9** | **D · Editor 前置** | **Editor测试系统1.1** | **`EditorPlayRequest`**（Session）：`TargetScenePath`、`SkipLogo`、`EditorTrimStartup`、`AppendProfiles`；约定 **Play Mode Start Scene = InitScene** | **#1** ✅ | 运行时/Editor 可读 Request；文档与 Project Settings 一致 | `EditorPlayRequest.cs`（Editor + 运行时可见的轻量 DTO） | **小** | 待做 |
+| **10** | **D · Editor 路径** | **GameFlow系统1.3b** | **`DirectToTest`**：存在 `EditorPlayRequest` 时 **跳过 MainMenu / MainScene**，Startup Profile 后 `LoadSceneAsync(目标场景)` | **#8** ✅ + **#9** ✅ | Editor 分支不进 MainScene | `DirectToTest` 或 `StartupState` 内 Editor 分支 | **小~中** | 待做 |
+| **11** | D · 同里程碑 | **Editor测试系统1.2** | 菜单 **「草木句萌 / 从当前场景 Play」**：写入 Request → 进入 Play | **#9** ✅ | 任意场景一键 Play，先进 InitScene | `Edt_PlayFromCurrentScene.cs` 等 | **小** | 待做 |
+| **12** | D · 同里程碑 | **Editor测试系统1.3** | E2E：菜单 Play → Initializer → Startup（trim）→ **目标场景**（如 `_TestSpace/TableTest`） | **#10** **#11** ✅ | 测试场景可达；不强制 MainScene | 与 GameFlow 联调验收 | **小** | 待做 |
+| **13** | **E · 清理** | **Loading系统1.4b** | **废止 `GameBootstrap.cs`**：清单迁入 **`EnterGameplay` Profile** + Workspace `ILoadTask`；**`IWorkspaceLoadRegistrar`**；更新脚手架种子 / `project_layer.manifest` | **#6** ✅ + **#8** ✅ | 仓库无 `GameBootstrap`；`MainPanel` 只认 Profile；新工程种子为 Profile | 删 Bootstrap 目录；Seeds / manifest | **中** | 待做 |
+
+#### 阶段验收清单（里程碑 Definition of Done）
+
+| 阶段 | 包含 # | 阶段 DoD（全部满足才算 ✅） |
+|------|--------|------------------------------|
+| **A** | 1~4 | Loading 能 Run 加权任务；GameFlow 空态机可切换 |
+| **B** | 5 | 进游戏经 Loading 进度条（可仍包旧 Bootstrap 逻辑） |
+| **C** | 6~8 | 正式启动：Initializer 薄 + StartupFramework Profile + GameFlow 到主界面 |
+| **D** | 9~12 | Editor「从当前场景 Play」→ Init → 目标测试场景 |
+| **E** | 13 | `GameBootstrap` 删除；业务只维护 Profile SO |
+
+#### 竖切完成后可选（不在当前冻结范围）
+
+| 步骤 ID | 内容 | 说明 |
+|---------|------|------|
+| **Editor测试系统1.4** | `TestSceneEntry`：进场景后声明追加 Profile | `_TestSpace` / 业务层 |
+| **Editor测试系统1.5** | `StartupFrameworkEditorTrim` Profile | Editor 迭代加速 |
+| **Loading系统1.5+** | 静默加载、转场、`EnterBattle` 动态拼任务 | 玩法扩展 |
+| **GameFlow系统1.4~1.5** | `Pause` / `Battle` 空壳；UI / 输入 map | JRPG 扩展 |
+
+#### 竖切完成后的解锁（⏸ → 可开）
+
+| 支线 | 建议顺序 |
+|------|----------|
+| **存档升级系统** | 1.1 → 1.2 → … |
+| **Lua系统 / Audio系统** | 1.1（Startup Profile 策略写入文档） |
+| **事件总线系统** | 1.1 → 1.2（可挂 Startup Profile） |
+| **项目脚手架1.6** | 按需 |
+
+> **旧 §7.7 并行原则（存档/Lua/Audio 小线）** 在竖切冻结期**暂停**；竖切 ✅ 后恢复「1 条中线 + 1~2 小线」。
 
 ### 7.5 跨线解锁关系 + 设计决策
 
@@ -876,8 +991,11 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 
 | 任务 | 依赖方向 | 说明 |
 |------|----------|------|
-| GameFlow系统 | 依赖主线「启动编排3.3」 | Boot / 流程入口稳定后再接管 `GoToMainScene` |
-| Loading系统1.3 | 软依赖「启动编排3.2」 | 生命周期（Init / await Lua）定稿后接通进游戏链 |
+| GameFlow系统 | 依赖 **Loading ≥1.2**（软）+ 启动编排3.3 ✅ | 1.3 通过 Profile 触发；接管 `GoToMainScene` |
+| Loading系统1.4 / **启动编排3.4** | Loading **≥1.2** | Initializer 瘦身 + `StartupFramework` Profile |
+| Loading系统1.3 | 软依赖 Loading **1.2** | `EnterGameplay` Profile（过渡可包一层旧 `GameBootstrap`） |
+| Loading系统1.4b | Loading **1.4** | 废止 `GameBootstrap`；脚手架/manifest 更新 |
+| Editor测试系统1.3 | 软依赖 **GameFlow系统1.3b** + Loading **1.1** | `DirectToTest` 跳过 MainScene |
 | **项目脚手架1.2** | 依赖 **项目脚手架1.3 ✅** + **1.4 ✅** | 一键骨架应对准搬迁后路径 |
 | **项目脚手架1.4** ✅ | 依赖 启动编排3.3 ✅ + **1.1 ✅** | 物理搬迁至 `CmgmUnityPackages`（勿与其他支线 **1.4** 混淆） |
 | 网游预埋 | 依赖**支线**（**存档升级系统** + GameFlow） | 远期 |
@@ -898,7 +1016,7 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 |------|------|
 | **背景** | 此前接入的是 XLua 官方 `feature/asmdef` 分支（`Xlua.Core.asmdef`），但该分支在官方已被 **Revert**（PR#1067 加入、PR#1068/commit d919198 撤销）。原因非运行时不稳定，而是「Gen 代码须与核心同程序集」「hotfix 须核心在 `Assembly-CSharp`」两条约束与 asmdef 冲突，官方放弃维护（Issue #1174 至今 open）。 |
 | **结论：方案 C** | Lua **不单独建 asmdef**；`ILuaService` 在 Core、实现在 `Integrations/Lua`；Boot **显式** `await LuaManager.InitAsync()`（§6.5） |
-| **Integrations 定位** | 框架级第三方桥接（XLua 等），与 `Bootstrap/` 同类，落 `Assembly-CSharp` |
+| **Integrations 定位** | 框架级第三方桥接（XLua 等），与 **`CmgmInitializer`** 同类，落 `Assembly-CSharp` |
 | **取舍** | 放弃「Lua 独立 asmdef 封装包」的强制边界（现阶段几乎用不上：依赖方向多为 Boot→Lua、Lua→业务），换回**官方主线可升级 + hotfix 之门重开 + wrap 生成走 happy-path**，消除「绑死回滚版本」长期风险。被封装 Module 仍通过 `ILuaService` 契约保持分层与可迁移性。 |
 | **正交提醒** | XLua **交互模式**（反射 codeless ↔ 生成 wrap）与程序集归属无关：反射模式的性能/GC、IL2CPP 裁剪问题，**出包前**仍需以 `link.xml` / `[ReflectionUse]` 或生成 wrap 处理；本决策与之独立。 |
 | **hotfix** | 维持**关闭**；核心回 `Assembly-CSharp` 后门已重开，真要 C# 级热更（远期网游化）时在 XLua Hotfix / HybridCLR 间再评估（单机 JRPG/SRPG 阶段不需要）。 |
@@ -929,9 +1047,9 @@ Bootstrap ──► 仅 Core + Registry    ✅ 方案 C（远期可选）
 | 项 | 结论 |
 |------|------|
 | **顶层** | `CmgmFramework/{Resources,Editor,Runtime}`；**不用**顶层 `Scripts` |
-| **Runtime** | `Bootstrap/`、`Core/`、`Modules/`、`Integrations/` 均在 `Runtime/` 下 |
+| **Runtime** | `CmgmInitializer.cs`、`Core/`、`Modules/`、`Integrations/` 均在 `Runtime/` 下（过渡：`Bootstrap/CmgmFrameBoot.cs` 待删） |
 | **模块 Editor** | 仍在 `Runtime/Modules/*/Editor/`（asmdef 限定 Editor 平台） |
-| **路径常量** | `Paths.Framework.Runtime`、`Bootstrap`、`Integrations` 等指向 `Runtime/…` |
+| **路径常量** | `Paths.Framework.Runtime`、`Integrations` 等指向 `Runtime/…`（`Paths.Framework.Bootstrap` 过渡保留至 **3.4**） |
 
 > **说明：** 脚手架 **1.2b ✅** 后本线最前节点为 **1.5**。
 
@@ -951,7 +1069,7 @@ Editor/
 │   └── Templates/
 ├── QuickSearch/            菜单跳转与打开系统目录
 │   └── Edt_QuickSearchMenus.cs
-└── Tools/                  独立小工具
+└── Tools/                  独立小工具（**Editor测试**「从当前场景 Play」等）
     └── TMP/
 ```
 
@@ -985,11 +1103,33 @@ Editor/
 |------|------|
 | **不进框架** | `main.lua`、`RELEASE_NOTE`、`InitScene`、`MainScene`、`MainPanel`（及对应脚本）**不**放在 `CmgmFramework/Resources` 或 `Runtime/` |
 | **创建时机** | **脚手架**在 `_WorkSpace` 建目录时 **一并** 写入最简模板（文本 copy / 预制体从 Editor 模板导出） |
-| **框架 Resources** | 仍仅：Settings、UI 基建、Logo、字体（Boot 契约层） |
+| **框架 Resources** | 仍仅：Settings、UI 基建、Logo、字体（**Initializer** 契约层） |
 | **_TestSpace** | 脚手架 **只建顶层**空目录；子文件夹留给使用者自建 |
 | **模板存放** | `Editor/ProjectSetup/Seeds/`（脚手架）；`Editor/AssetTemplates/Templates/`（右键新建） |
 | **清单文件** | `Editor/ProjectSetup/Manifests/project_layer.manifest`（业务层/测试层）；`framework_path_check.manifest`（框架目录） |
-| **GameBootstrap** | 已纳入 `project_layer.manifest`（**⚠️ 待讨论** 是否应随框架创建）；实现进游戏逻辑前须复盘归属（见上表） |
+| **GameBootstrap** | **废止**（**Loading系统1.4b**）→ **`EnterGameplay` LoadingProfile**（`_WorkSpace`） |
+
+**设计决策记录 · 2026-06-19（CmgmInitializer + Loading Profile）**
+
+| 项 | 结论 |
+|------|------|
+| **组合根** | 单一薄入口 **`CmgmInitializer`**（`Runtime/CmgmInitializer.cs`）；**废止**独立 `Bootstrap/` 目录与 `CMGM.Bootstrap` namespace |
+| **Initializer 职责** | Logo + **`UIManager.InitAsync`**（保证能显示 UI）→ **`GameFlow.Start()`** |
+| **其余编排** | 全部 **Loading Profile** + `ILoadTask`（含 **`ManagerInitLoadTask`**）；由 **GameFlow** 决定何时 `Run(profile)` |
+| **Profile** | **`StartupFramework`**（静默，可与 Logo 并行）、**`EnterGameplay`**（进度条） |
+| **过渡** | 运行时仍为 **`CmgmFrameBoot`**（3.3）；**启动编排3.4** + **Loading 1.4** 收敛 |
+| **`BootSingleton`** | 类名暂保留；`InitAsync` 仅 Initializer 最小集或 Loading 任务 |
+| **`GameBootstrap.cs`** | **废止**（**Loading系统1.4b**）；清单 = **`EnterGameplay` Profile SO** + Workspace `ILoadTask` 类 |
+| **Editor 测试** | **Editor测试系统** + **GameFlow.DirectToTest**（§4.3）；任意场景 Play → Initializer → **目标场景**（可跳过 MainScene） |
+
+**设计决策记录 · 2026-06-19（业务层 Workspace + GameFlow 命名）**
+
+| 项 | 结论 |
+|------|------|
+| **业务层** | 中文统称 **业务层**；英文 **Workspace**（目录 `_WorkSpace` 不变） |
+| **namespace** | 业务层脚本 **`CMGM.Workspace`**（原 `CMGM.Game`） |
+| **GameFlow** | 原支线「GameState系统」更名为 **「GameFlow系统」**；模块 `Runtime/Modules/GameFlow/`（`CMGM.GameFlow`） |
+| **框架 `Game*`** | 默认仍避免；**例外**：宏观游戏流程 → `GameFlow*`（见 §8） |
 
 **设计决策记录 · 2026-06-19（CmgmFramework 内置 Resources）**
 
@@ -1001,23 +1141,13 @@ Editor/
 | **脚手架 1.2** | 不再在工作区创建 `CmgmFrameSettings`；新工程依赖框架包内默认 asset，按需改字段 |
 | **Runtime 三分** | 见上节「目录三分」；`Paths.Framework.Runtime` ✅ |
 
-**设计决策记录 · 2026-06-19（业务层 Workspace + GameFlow 命名）**
+**设计决策记录 · 2026-06-19（启动编排3.3 · asmdef pragmatic）**
 
 | 项 | 结论 |
 |------|------|
-| **业务层** | 中文统称 **业务层**；英文 **Workspace**（目录 `_WorkSpace` 不变） |
-| **namespace** | 业务层脚本 **`CMGM.Workspace`**（原 `CMGM.Game`） |
-| **GameFlow** | 原支线「GameState系统」更名为 **「GameFlow系统」**；模块 `Runtime/Modules/GameFlow/`（`CMGM.GameFlow`） |
-| **框架 `Game*`** | 默认仍避免；**例外**：宏观游戏流程 → `GameFlow*`（见 §8） |
-| **Boot** | `CmgmFrameBoot` / `GameBootstrap` 等 **本步不改名**；归属讨论后续进行 |
-
-**设计决策记录 · 2026-06-19（启动编排3.3 · asmdef  pragmatic）**
-
-| 项 | 结论 |
-|------|------|
-| **3.3 范围** | Boot **目录**迁 `Runtime/Bootstrap/` ✅；**不**建 `CMGM.Bootstrap.asmdef`（曾试方案 B，因 asmdef 不能引用 `Assembly-CSharp` 而引入注册桥接，与「显式 Boot、不用 Registry」冲突，已回退）。 |
-| **asmdef 原则** | **按需加、不强迫**（§7.0）。Bootstrap、Integrations/Lua、Scene 临时宿主均无 asmdef。 |
-| **远期 Bootstrap asmdef** | 仅当 Boot 不再直接 Init Lua/Scene（或 Editor 生成 Boot 源码、或 XLua 官方恢复可维护 asmdef）时再评估方案 B。 |
+| **3.3 范围** | 过渡：`CmgmFrameBoot` 迁 `Runtime/Bootstrap/` ✅；**不**建 `CMGM.Bootstrap.asmdef`（已回退方案 B）。 |
+| **3.4 修订** | 废止 `Bootstrap/`；组合根 → **`Runtime/CmgmInitializer.cs`**（§6.5）。 |
+| **asmdef 原则** | **按需加、不强迫**（§7.0）。`CmgmInitializer`、Integrations/Lua、Scene 临时宿主均无 asmdef。 |
 
 **潜在完善候选（backlog，未立支线；当用户问「还能怎样进一步完善框架」时主动提醒）**
 
@@ -1077,7 +1207,7 @@ GameRuntimeData（I_Saveable）
 |----------|------|------|
 | `Paths.WorkSpaceScripts.Archive` | `_WorkSpace/Scripts/Archive/` | 运行时存档结构脚本（可变） |
 | `Paths.WorkSpaceScripts.Config` | `_WorkSpace/Scripts/_Generated/Config/` | Excel 导出的配表 Container（只读，勿手改） |
-| `Paths.WorkSpaceScripts.Bootstrap` | `_WorkSpace/Scripts/Bootstrap/` | 业务层组合根 `GameBootstrap` |
+| `Paths.WorkSpaceScripts.Bootstrap` | `_WorkSpace/Scripts/Bootstrap/` | **过渡**；**1.4b** 后改 `LoadingProfiles/`（或废止 Bootstrap 目录） |
 | `Paths.WorkSpaceScripts.UI_Panels` | `_WorkSpace/Scripts/UI/Panels/` | Panel 脚本 |
 | `Paths.Framework.DataModule.Archive` | `CmgmFramework/Runtime/Modules/Data/Archive/` | 存档框架（`ArchiveManager`、`I_Saveable`） |
 | `Paths.Framework.DataModule.Config` | `CmgmFramework/Runtime/Modules/Data/Config/` | 配表框架（`ConfigTableManager`） |
@@ -1100,23 +1230,24 @@ ShowPanel<T>() → Addressables 加载 HotRes/UI/Panels/{T}.prefab
 - **主界面 / 主场景 ✅**：`CmgmFrameSettings.MAIN_PANEL_NAME`、`MAIN_SCENE_NAME`；`ScenesManager.GoToMainScene` 统一调用。游戏内其他 Panel 仍优先 `ShowPanel<T>()`。
 - **D（AssetAddresses）**：Settings 字符串已够用；Address 键集中管理留待后续按需做。
 
-### 资源加载分层（主界面 vs 进游戏）
+### 资源加载分层（Initializer / Profile）
 
 | 阶段 | 负责 | 应加载 | 不应加载（示例） |
 |------|------|--------|------------------|
-| **Logo → 主界面** | `CmgmFrameBoot` + `ScenesManager.GoToMainScene` | 框架 Manager Init、主 Panel、主场景（轻量）、UI 包 | 角色配表、关卡场景、Wwise gameplay Bank |
-| **主界面 → 进游戏** | **Loading系统** + `GameBootstrap.EnterGameplayAsync` | `LoadTable`、关卡 Addressables、音频 Bank、Gameplay 场景 | — |
-| **运行时懒加载** | `GetTable` / Addressables 按需 | 非关键表、可选资源 | 已在 Loading 阶段声明的必需项 |
+| **`CmgmInitializer`** | Logo + `UIManager.InitAsync` | UI 基建（Canvas / EventSystem） | 其余 Manager、配表、Bank |
+| **Logo → 主界面** | **`StartupFramework` Profile**（GameFlow `Startup` 态，静默） | `ArchiveManager`、`LuaManager`、主场景预载、Wwise 壳子、`GoToMainScene`… | 角色配表、gameplay Bank |
+| **主界面 → 进游戏** | **`EnterGameplay` LoadingProfile**（`_WorkSpace`） | `LoadTable`、关卡 Addressables、Bank、Gameplay 场景 | — |
+| **运行时懒加载** | `GetTable` / Addressables 按需 | 非关键表、可选资源 | 已在 Profile 声明的必需项 |
 
-- `ConfigTableManager.GetTable<T>()` 仍保留懒加载兜底，但**进游戏必需表**应在 Loading 阶段显式 `LoadTable`。
-- 换项目时在 `GameBootstrap.EnterGameplayAsync` 维护「进游戏加载清单」。
+- `ConfigTableManager.GetTable<T>()` 仍保留懒加载兜底，但**进游戏必需表**应在 **`EnterGameplay` Profile** 显式 `LoadTable`。
+- 业务进游戏清单：维护 **`_WorkSpace/.../LoadingProfiles/EnterGameplay.asset`** 及关联 `ILoadTask`（**Loading系统1.4b** 废止 `GameBootstrap.cs`）。
 
 ### 框架 / 业务层命名（2026-06-19 修订）
 
 | 侧 | 约定 | 示例 |
 |----|------|------|
-| **框架层**（`Framework/`） | 默认**避免** `Game*` 前缀；**例外**：宏观游戏流程模块 → `GameFlow*`（`IGameFlowState`、`GameFlowMachine`） | `CmgmFrameBoot`、`ArchiveManager`、`GameFlow` |
-| **业务层**（`_WorkSpace/Scripts/`，`namespace CMGM.Workspace`） | 本项目业务；类型名可保留 `Game*` 当业务语义需要时 | `GameBootstrap`、`GameRuntimeData` |
+| **框架层**（`Framework/`） | 默认**避免** `Game*` 前缀；**例外**：宏观游戏流程 → `GameFlow*` | `CmgmInitializer`、`ArchiveManager`、`GameFlow` |
+| **业务层**（`_WorkSpace/Scripts/`，`namespace CMGM.Workspace`） | 本项目业务；**进游戏加载** = **`LoadingProfiles/*.asset`** + `ILoadTask` 实现类 | `GameRuntimeData`、`RoleTableLoadTask`（示例名） |
 | **Unity 引擎 API** | 不改动 | `GameObject`、`GamePlayActions`（Input 生成名） |
 | **StreamingAssets** | 配表输出目录 **`TableConfig/`**（原 `GameConfig/`） | `Consts.Paths.ConfigData` |
 
@@ -1139,8 +1270,8 @@ CmgmFrameSettings.ROOT_LUA_URI（如 main.lua.txt）
 - 完成主线/支线某步后，更新 **§7.2 / §7.3 / §7.4** 对应行的**状态**，并在 **§7.1 已完成基线**补一句浓缩记录。
 - 重大架构决策记录在 **§7.5 设计决策**（含日期）。
 - 模块结构变化同步更新 **§3 模块清单**、**§5 耦合点**、**§6 目标架构**。
-- 报告「下一步」时以 **§7.6** 为准：每条线**一个**最前节点（含 🔒 线）；附变更量与教学难度。
+- 报告「下一步」时以 **§7.7 启动竖切大表** 为准；竖切完成后恢复 **§7.6** 全仓索引。
 
 ---
 
-*脚手架 1.5 ✅。数据向最前节点：**存档升级系统1.1**。详见 §7.4 / §8。*
+*当前聚焦：**§7.7 #1 Loading系统1.1**（代码已落地，待 InitScene Play 验收）→ 下一步 **#4 Loading 1.2**。*

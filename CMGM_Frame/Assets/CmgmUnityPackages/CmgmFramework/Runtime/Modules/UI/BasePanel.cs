@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -157,6 +158,20 @@ public abstract class BasePanel : MonoBehaviour
     private readonly List<UnityAction> _toUnsubscribe = new();//将绑定的监听也缓存，方便在面板销毁时清空
 
 
+    private static System.Type ResolveBindType(System.Type componentType)
+    {
+        System.Type match = null;
+        foreach (var bindType in NeedBindTypes)
+        {
+            if (!bindType.IsAssignableFrom(componentType))
+                continue;
+            if (match == null || match.IsAssignableFrom(bindType))
+                match = bindType;
+        }
+
+        return match;
+    }
+
     private void ScanOnceAndSplit()
     {
         //只扫描一次所有的组件
@@ -168,18 +183,19 @@ public abstract class BasePanel : MonoBehaviour
         foreach (var ui in all)
         {
             if (ignore.Contains(ui.gameObject.name)) continue;
-            if (!NeedBindTypes.Contains(ui.GetType())) continue;//如果扫描到的类型不在预期内，跳过
 
-            var type = ui.GetType();
-            if (!buckets.TryGetValue(type, out var list))
+            var bindType = ResolveBindType(ui.GetType());
+            if (bindType == null) continue;
+
+            if (!buckets.TryGetValue(bindType, out var list))
             {
                 list = new List<UIBehaviour>();
-                buckets[type] = list;
+                buckets[bindType] = list;
             }
             list.Add(ui);
 
             // 为了 GetControl<T>(name) 也能 O(1),并且同类型的组件才会有重名的可能
-            _nameToIndex[(ui.GetType(), ui.gameObject.name)] = list.Count - 1;
+            _nameToIndex[(bindType, ui.gameObject.name)] = list.Count - 1;
         }
         foreach (var kv in buckets)//把扫描的内容更新到缓存里，方便后续读取
             _cache[kv.Key] = kv.Value.ToArray();
