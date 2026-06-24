@@ -121,7 +121,7 @@ Packages/（项目脚手架1.6 远期 UPM）
 |------|------|--------|
 | `UIManager` | 分层 Canvas、异步加载 Panel、Hide 中途取消容错 | ★★★★ |
 | `BasePanel` | Panel 基类 | ★★★ |
-| `Panels/MainPanel` 等 | `_WorkSpace/Scripts/UI/Panels/` ✅ | — |
+| `Panels/MainPanel`、`LoadingPanel` 等 | `_WorkSpace/Scripts/UI/Panels/` ✅ | — |
 | Editor 工具 | Panel 模板创建、快速搜索 | ★★★ |
 
 ### 3.3 数据（`Runtime/Modules/Data/`，`CMGM.Data`）
@@ -855,7 +855,7 @@ GameFlowMachine.Start();       // Startup 态内 Run(StartupFrameworkProfile)
 | 目录 | `Excels/`、`HotRes/`、`Scripts/_Generated/Config/` |
 | 文本 | `HotRes/Lua/main.lua.txt`、`HotRes/BuildSource/RELEASE_NOTE.txt` |
 | 场景 | `HotRes/Scenes/InitScene.unity`、`MainScene.unity` |
-| UI | `HotRes/UI/Panels/MainPanel.prefab`、`Scripts/UI/Panels/MainPanel.cs` |
+| UI | `HotRes/UI/Panels/MainPanel.prefab`、`LoadingPanel.prefab`；`Scripts/UI/Panels/MainPanel.cs`、`LoadingPanel.cs` |
 | Boot（业务侧，**过渡**） | `Scripts/Bootstrap/GameBootstrap.cs`（**Loading系统1.4b** 废止 → **`LoadingProfiles/EnterGameplay.asset`**） |
 
 | **GameBootstrap → Profile** | **1.2c 种子仍含 `GameBootstrap.cs`（过渡）**；**Loading系统1.4b** 改为种子 **`LoadingProfiles/EnterGameplay.asset`** + 示例 `ILoadTask`；自 `project_layer.manifest` **移除** `GameBootstrap.cs` |
@@ -1101,7 +1101,7 @@ Editor/
 
 | 项 | 结论 |
 |------|------|
-| **不进框架** | `main.lua`、`RELEASE_NOTE`、`InitScene`、`MainScene`、`MainPanel`（及对应脚本）**不**放在 `CmgmFramework/Resources` 或 `Runtime/` |
+| **不进框架** | `main.lua`、`RELEASE_NOTE`、`InitScene`、`MainScene`、`MainPanel`、`LoadingPanel`（及对应脚本）**不**放在 `CmgmFramework/Resources` 或 `Runtime/` |
 | **创建时机** | **脚手架**在 `_WorkSpace` 建目录时 **一并** 写入最简模板（文本 copy / 预制体从 Editor 模板导出） |
 | **框架 Resources** | 仍仅：Settings、UI 基建、Logo、字体（**Initializer** 契约层） |
 | **_TestSpace** | 脚手架 **只建顶层**空目录；子文件夹留给使用者自建 |

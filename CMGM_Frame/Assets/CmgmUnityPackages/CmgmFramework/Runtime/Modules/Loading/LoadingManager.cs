@@ -3,7 +3,9 @@ using System.Threading;
 using CMGM.Core;
 using CMGM.UI;
 using Cysharp.Threading.Tasks;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace CMGM.Loading
 {
@@ -12,11 +14,15 @@ namespace CMGM.Loading
     /// </summary>
     public sealed class LoadingManager : LazySingleton<LoadingManager>
     {
-        public const string LoadingPanelResourcesPath = "UI/Panels/LoadingPanel";
+        public const string LoadingPanelName = "LoadingPanel";
+
+        /// <summary>LoadingPanel Prefab 控件名约定（与业务层 Prefab 一致）。</summary>
+        private const string ProgressSliderControl = "sldProgress";
+        private const string StatusTextControl = "txtStatus";
 
         private LoadingManager() { }
 
-        private LoadingPanel _activePanel;
+        private BasePanel _activePanel;
 
         /// <summary>
         /// 顺序执行任务列表。#1 总进度 = 等权平均；#4 改为 Weight 加权。
@@ -67,28 +73,16 @@ namespace CMGM.Loading
             if (_activePanel != null)
                 return;
 
-            var prefab = ResourcesResMgr.Instance.LoadAsset<GameObject>(LoadingPanelResourcesPath);
-            if (prefab == null)
-            {
-                CmgmLog.fError(
-                    $"[LoadingManager] 未找到 Resources/{LoadingPanelResourcesPath}.prefab");
-                return;
-            }
-
-            var panelObj = Object.Instantiate(prefab, UIManager.Instance.GetLayerNode(layer), false);
-            panelObj.name = "LoadingPanel";
-            _activePanel = panelObj.GetComponent<LoadingPanel>();
+            _activePanel = await UIManager.Instance.ShowPanel(LoadingPanelName, layer);
             if (_activePanel == null)
             {
-                CmgmLog.fError("[LoadingManager] LoadingPanel.prefab 上缺少 LoadingPanel 组件。");
-                Object.Destroy(panelObj);
+                CmgmLog.fError(
+                    $"[LoadingManager] 未找到 {LoadingPanelName}（HotRes/UI/Panels/{LoadingPanelName}.prefab）");
                 return;
             }
 
-            _activePanel.SetProgress(0f);
-            _activePanel.SetStatus("加载中…");
-            _activePanel.OnShow();
-            await UniTask.Yield();
+            ApplyLoadingProgress(_activePanel, 0f);
+            ApplyLoadingStatus(_activePanel, "加载中…");
         }
 
         private void HidePanel()
@@ -96,9 +90,22 @@ namespace CMGM.Loading
             if (_activePanel == null)
                 return;
 
-            _activePanel.OnHide();
-            Object.Destroy(_activePanel.gameObject);
+            UIManager.Instance.HidePanel(LoadingPanelName, isDestroy: true);
             _activePanel = null;
+        }
+
+        private static void ApplyLoadingProgress(BasePanel panel, float overall01)
+        {
+            var slider = panel?.GetControl<Slider>(ProgressSliderControl);
+            if (slider != null)
+                slider.value = Mathf.Clamp01(overall01);
+        }
+
+        private static void ApplyLoadingStatus(BasePanel panel, string text)
+        {
+            var label = panel?.GetControl<TMP_Text>(StatusTextControl);
+            if (label != null)
+                label.text = text;
         }
 
         /// <summary>#1 验收用演示任务列表。</summary>
@@ -116,11 +123,11 @@ namespace CMGM.Loading
         private sealed class EqualWeightProgressReporter : ILoadProgressReporter
         {
             private readonly int _taskCount;
-            private readonly LoadingPanel _panel;
+            private readonly BasePanel _panel;
             private int _currentTaskIndex;
             private float _currentTaskInternal;
 
-            public EqualWeightProgressReporter(int taskCount, LoadingPanel panel)
+            public EqualWeightProgressReporter(int taskCount, BasePanel panel)
             {
                 _taskCount = Mathf.Max(1, taskCount);
                 _panel = panel;
@@ -130,7 +137,7 @@ namespace CMGM.Loading
             {
                 _currentTaskIndex = taskIndex;
                 _currentTaskInternal = 0f;
-                _panel?.SetStatus(displayName);
+                ApplyLoadingStatus(_panel, displayName);
                 ReportOverall(CalculateOverall());
             }
 
@@ -149,7 +156,7 @@ namespace CMGM.Loading
 
             public void ReportOverall(float overall01)
             {
-                _panel?.SetProgress(overall01);
+                ApplyLoadingProgress(_panel, overall01);
             }
 
             private float CalculateOverall()

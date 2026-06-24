@@ -17,6 +17,8 @@ Assets/_WorkSpace/HotRes/Lua/main.lua.txt
 Assets/_WorkSpace/HotRes/Scenes/InitScene.unity
 Assets/_WorkSpace/HotRes/Scenes/MainScene.unity
 Assets/_WorkSpace/HotRes/UI/Panels/MainPanel.prefab
+Assets/_WorkSpace/HotRes/UI/Panels/LoadingPanel.prefab
 Assets/_WorkSpace/Scripts/Bootstrap/GameBootstrap.cs
 Assets/_WorkSpace/Scripts/UI/Panels/MainPanel.cs
+Assets/_WorkSpace/Scripts/UI/Panels/LoadingPanel.cs
 Assets/_WorkSpace/Scripts/_Generated/Config
