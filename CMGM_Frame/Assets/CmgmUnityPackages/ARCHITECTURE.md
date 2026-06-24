@@ -2,7 +2,7 @@
 
 > 本文档是框架化改造的长期参考（「北极星」）。  
 > 目标：将当前工程从「带 Demo 的原型项目」逐步改造为「可跨项目迁移的框架」。  
-> 最后更新：2026-06-19 — **当前聚焦 §7.7 启动竖切大表**（Loading / GameFlow / Editor / 3.4）；完成前**暂停**其它支线新功能。
+> 最后更新：2026-06-19 — **当前聚焦 §7.7 启动竖切大表**（Loading / GameFlow / Editor / 3.4）；完成前**暂停**其它支线新功能。§6.5b 增补 **Loading 调用纪律**（方案 A，不采用 `Loading` 宏观态）。
 
 ---
 
@@ -174,7 +174,7 @@ Packages/（项目脚手架1.6 远期 UPM）
 > **决策（§7.5，YAGNI）：** **不**把 Scene 当作框架可选 Module 维护（无 `CMGM.Scene` asmdef、无 Scene 模块支线）。  
 > - **已下沉 Core：** `LoadSceneAsync`（与 `LoadAssetAsync` 并列，纯资源原语）。  
 > - **`ScenesManager` 为何还在：** 流程职责（回主界面、清 UI/存档、Quit）尚未迁入 **GameFlow系统**；当前仅为过渡代码，**GameFlow系统1.3 接管后应缩退或删除**，而非扩成完整 Scene 模块。  
-> - **进游戏 Loading：** 由 **Loading系统** 编排，不绑 Scene。  
+> - **进游戏 Loading：** 由 **Loading系统** 编排，不绑 Scene；**谁有权触发、何时 `SwitchTo`** 见 **§6.5b**。  
 > - **按需再建：** 仅当项目需要 Additive 多场景 / 流式分块 / 场景持久化 / 转场动画等，再评估是否新增 Scene 能力（届时可能落在 GameFlow / Loading / 业务层，而非预建 `Modules/Scene/`）。
 
 ### 3.7 可选模块
@@ -210,10 +210,11 @@ InitScene（CmgmInitializer.Awake）
             └─ GameFlow.MainMenu          ← 正式包体 / 非 Editor 测试路径
 
 主界面 → 进游戏：
-    GameFlow.StartGame() → Loading 态
-        └─ LoadingManager.Run(EnterGameplayProfile, showProgress: true)
-                ├─ LoadTable / 关卡 Addressables / Bank / Gameplay 场景 …（**Profile SO 清单**，无 `GameBootstrap.cs`）
-        └─ GameFlow.Gameplay
+    GameFlow.SwitchTo(Gameplay)          ← 宏观态切换；**不**单独 `SwitchTo(Loading)`（§6.5b）
+        └─ GameplayState.Enter()
+                └─ await LoadingManager.Run(EnterGameplayProfile, showProgress: true)
+                        ├─ LoadTable / 关卡 Addressables / Bank / Gameplay 场景 …（**Profile SO 清单**，无 `GameBootstrap.cs`）
+                └─ Enter 收尾（输入 map、HUD 等）
 ```
 
 ### 4.3 Editor 测试启动（**Editor测试系统** + **GameFlow.DirectToTest**）
@@ -489,6 +490,61 @@ GameFlow（何时、处于哪一宏观态）
 | **（按需）** `EnterBattle` 等 | `Gameplay` → `Battle` | 可配置 | 战斗资源、战斗 Manager… |
 
 > **业务层清单：** **不**再维护 `GameBootstrap.cs`（**Loading系统1.4b** 废止）。进游戏任务 = **`_WorkSpace/.../LoadingProfiles/EnterGameplay.asset`**（及同目录下 `*LoadTask.cs`）；框架 Loading 经 **`IWorkspaceLoadRegistrar`**（Core 契约，Workspace 实现）注册任务，**不**引用 `CMGM.Workspace` 具体类型。
+
+#### 6.5b Loading 调用纪律（GameFlow + Profile · **方案 A**）
+
+> **决策（2026-06-19）：** Loading **不是**独立宏观态，**不**为每次场景切换 `Push(LoadingState)`。进度与 `LoadScene` 均在 **当前宏观态的过渡方法** 或 **目标态 `Enter`** 内 `await LoadingManager.Run(Profile)`；GameFlow 栈顶始终表示 **玩法阶段**（`Startup` / `MainMenu` / `WorldMap` / `Battle` …），不表示「正在读条」。
+
+**三层分工**
+
+| 层 | 组件 | 职责 |
+|----|------|------|
+| **原语** | `AddressablesResMgr.LoadSceneAsync` 等 | **仅**出现在 `ILoadTask` 实现内部；业务 / 场景脚本 **不直接调用** |
+| **编排** | `LoadingManager.Run(Profile, options)` | 顺序执行 Profile 内 `ILoadTask` 列表；可选 `LoadingPanel` 进度 |
+| **策略** | `GameFlowMachine` + 各 `IGameFlowState` | **何时**跑哪份 Profile、是否 `SwitchTo` / `Push(Pause)`；栈顶宏观态不变时由 **当前态的过渡 API** 触发 Loading |
+
+**两条硬规矩（防乱）**
+
+1. **允许触发 `LoadingManager.Run` 的入口（收敛到极少数）**
+   - **`GameFlowMachine`** 上对外暴露的过渡 API（如各业务 **`XxxState.Enter`**、**`WorldMapState.TravelTo`**、**`SwitchTo` 后目标态 `Enter`** 等）；实现上 **只** 传入已定义的 **`LoadingProfile` SO**（或 Profile 工厂），**不**在调用方现场 `new` 零散 `ILoadTask` 列表。
+   - 各 **`IGameFlowState` 实现类**（框架层 + `_WorkSpace` 业务层）中 **命名清楚的过渡方法**（`Enter`、`TravelTo`、`LoadChapter`、`ReturnToMainMenu` …），且上述方法内部 **只** 调 `LoadingManager.Run` + Profile，不散落其它加载原语。
+
+2. **禁止**
+   - 场景 Trigger、Collider、关卡脚本、**Panel 按钮回调** 等 **直接** `LoadingManager.Run(...)` 或 **`LoadSceneAsync`**。
+   - 为「读条」单独维护 **`Loading` 宏观态**，或为同态区域切换 **`Push(LoadingState)`**（与本节方案 A 冲突）。
+   - **例外（须文档化、仅限 Editor / 测试）：** **`TestSceneEntry`** 等可在进场景后声明追加 Profile（§4.3、**Editor测试系统1.4**）；正式包体路径仍遵守上两条。
+
+**场景 / UI 只表达意图，不执行编排**
+
+```text
+Portal.OnEnter     → GameFlowMachine.Current（如 WorldMapState）.TravelTo("World_B")
+MainPanel 点开始   → GameFlowMachine.SwitchTo(Gameplay)   // GameplayState.Enter 内 Run EnterGameplay
+```
+
+**何时 `SwitchTo`，何时保持栈顶宏观态**
+
+| 场景 | 栈顶宏观态 | 谁 `Run(Profile)` |
+|------|------------|-------------------|
+| 启动 → 主菜单 | `Startup` → `MainMenu` | `StartupState.Enter` → `StartupFramework` |
+| 主菜单 → 进游戏 | `MainMenu` → `Gameplay`（或 `WorldMap`） | 目标态 `Enter` → `EnterGameplay` |
+| **大世界探索 A → B（同探索阶段）** | **保持 `WorldMap`（不 `SwitchTo`）** | **`WorldMapState.TravelTo(target)`** → 区域 Profile（含 `LoadSceneTask`） |
+| 探索 → 战斗 | `WorldMap` → `Battle` / `PreBattle` | 目标态 `Enter` → `EnterBattle` 等 |
+| 战斗暂停 | `Push(Pause)`，通常 **不** Loading | `PauseState.Enter`（Panel / 输入 map） |
+| 同宏观态下一关战斗 | 仍 `Battle` | `BattleState.LoadChapter(n)` 等同态过渡 API |
+
+**同态换场景示例（SRPG 大世界）**
+
+```text
+栈：[WorldMapState]   // 全程不变
+
+玩家进入传送门
+  → WorldPortal（业务层）调用 WorldMapState.TravelTo("World_B")
+  → await LoadingManager.Run(WorldRegionTransitionProfile.For("World_B"), showProgress: true)
+       └─ ILoadTask：可选卸载、预载、LoadSceneTask("World_B")、UI 摄像机叠加 …
+  → 仍在 WorldMapState；新场景内 WorldSceneEntry 做本地初始化（刷怪点、小地图等）
+```
+
+**与废止 Scene 模块的关系：** 废 `CMGM.Scene` / 缩退 `ScenesManager` **不是**「只有 `SwitchTo` 才能 Loading」，而是 **不再有第二套场景流程中心**；`GoToMainScene` / `QuitGame` 迁入 **`MainMenuState` 等 GameFlow 态**；`LoadScene` 统一进 **Profile 的 `ILoadTask`**，由 **§6.5b 允许的入口** 触发。
 
 **`CmgmInitializer` 最小集（3.4 验收）：**
 
@@ -774,7 +830,7 @@ GameFlowMachine.Start();       // Startup 态内 Run(StartupFrameworkProfile)
 |------|------|------|
 | **GameFlow系统1.1** | `IGameFlowState`：`Enter` / `Exit` / `Update`（可选） | 基础态可切换 |
 | **GameFlow系统1.2** | `GameFlowMachine`：Push / Pop / Replace | 日志可追踪栈 |
-| **GameFlow系统1.3** | 基础态 **`Startup`** / `MainMenu` / `Gameplay` / `Loading`；**触发 Loading Profile**；接管 `GoToMainScene` / `QuitGame`（`ScenesManager` 缩退） | 流程 + Loading 衔接 |
+| **GameFlow系统1.3** | 基础态 **`Startup`** / `MainMenu` / `Gameplay`（及按需 `WorldMap` / `Battle`）；**在态 `Enter` / 同态过渡 API 内触发 Loading Profile**（§6.5b，**无** `Loading` 宏观态）；接管 `GoToMainScene` / `QuitGame`（`ScenesManager` 缩退） | 流程 + Loading 衔接 |
 | **GameFlow系统1.3b** | **Editor：`DirectToTest`** — `CmgmInitializer` 完成后若存在 **`EditorPlayRequest`**，**跳过 MainMenu / MainScene**，`LoadSceneAsync(目标场景)`；可选追加 Profile（与 **Editor测试系统1.2~1.3** 同期） | Editor 与 Runtime 分支 |
 | **GameFlow系统1.4** | 预留态 `Pause` / `Cutscene` / `Battle` 空壳或最小实现 | JRPG / SRPG 可扩展 |
 | **GameFlow系统1.5** | 与 UI / 输入：状态切换时 UI 层、输入 map 切换策略 | 暂停时输入正确 |
@@ -903,10 +959,10 @@ GameFlowMachine.Start();       // Startup 态内 Run(StartupFrameworkProfile)
 
 | 线 | 最前节点 | 状态 | 解锁条件 | 预估变更量 | 教学难度 |
 |----|----------|------|----------|------------|----------|
-| **★ 启动竖切（§7.7）** | **Loading系统1.2** | **#1 待 Play 验收** | Core + UI ✅ | 见 §7.7 | ★★★☆ |
+| **★ 启动竖切（§7.7）** | **GameFlow系统1.2** | **#2 ✅** | 启动编排3.3 ✅ | 见 §7.7 | ★★☆ |
 | **主线（编译边界 + 启动编排）** | **启动编排3.4** | 3.3 ✅；3.4 待做（**并入 §7.7 阶段 C**） | Loading **≥1.2** | **中** | ★★★☆ |
-| **Loading系统** | Loading系统1.1 | **§7.7 阶段 A** | Core + UI ✅ | **中** | ★★★☆ |
-| **GameFlow系统** | GameFlow系统1.1 | **§7.7 阶段 A 并行** | 启动编排3.3 ✅ | **中** | ★★★☆ |
+| **Loading系统** | Loading系统1.2 | **§7.7 #4** | Loading 1.1 ✅ | **中** | ★★★☆ |
+| **GameFlow系统** | GameFlow系统1.2 | **§7.7 #3** | GameFlow 1.1 ✅ | **小** | ★★☆ |
 | **Editor测试系统** | Editor测试系统1.1 | **§7.7 阶段 D 前置** | Loading **1.1** ✅ | **小~中** | ★★☆ |
 | **存档升级系统** | 存档升级系统1.1 | ⏸ 竖切完成后 | 存档格式优化 ✅ | **中~大** | ★★★★ |
 | **Lua系统** | Lua系统1.1 | ⏸ 竖切完成后 | 2.6 ✅ | **小~中** | ★★★☆ |
@@ -942,13 +998,13 @@ GameFlowMachine.Start();       // Startup 态内 Run(StartupFrameworkProfile)
 | # | 阶段 | 步骤 ID | 内容 | 前置 | 验收标准 | 主要产出 | 变更量 | 状态 |
 |---|------|---------|------|------|----------|----------|--------|------|
 | **1** | **A · 执行器** | **Loading系统1.1** | `Modules/Loading`（`CMGM.Loading` asmdef）+ `LoadingManager.Run(tasks)` + 单条进度 UI；用硬编码/假任务跑通 | Core ✅ + UI ✅ | Play 后能看到进度条走完一组任务 | `LoadingManager`、`LoadingPanel`（或复用 UI 层）、asmdef | **中** | **✅ 待 Play 验收** |
-| **2** | A · 并行 | **GameFlow系统1.1** | `IGameFlowState`：`Enter` / `Exit` / `Update`（可选） | 启动编排3.3 ✅ | 两个空态可手动切换，日志可追踪 | `Modules/GameFlow/`、`CMGM.GameFlow` asmdef | **中** | 待做 |
-| **3** | A · 并行 | **GameFlow系统1.2** | `GameFlowMachine`：Push / Pop / Replace | **#2** ✅ | 栈操作日志正确 | `GameFlowMachine.cs` | **小** | 待做 |
+| **2** | A · 并行 | **GameFlow系统1.1** | `IGameFlowState`：`Enter` / `Exit` / `Update`（可选） | 启动编排3.3 ✅ | 两个空态可手动切换，日志可追踪 | `Modules/GameFlow/`、`CMGM.GameFlow` asmdef | **中** | **✅** |
+| **3** | A · 并行 | **GameFlow系统1.2** | `GameFlowMachine`：Push / Pop / Replace | **#2** ✅ | 栈操作日志正确 | `GameFlowMachine.cs` | **小** | **待做 ← 当前** |
 | **4** | **A · 任务模型** | **Loading系统1.2** | `ILoadTask` + `Weight` 加权进度；**`ManagerInitLoadTask`**（包 `BootSingleton.InitAsync`） | **#1** ✅ | 多任务加权进度正确；至少 1 个 Manager 经 Task 初始化 | `ILoadTask`、`ManagerInitLoadTask`、`DelegateTask`（过渡） | **中** | 待做 |
 | **5** | **B · 业务竖切** | **Loading系统1.3** | 接通「进游戏」：`MainPanel` → `LoadingManager.Run(EnterGameplay…)`；过渡期 **`DelegateTask` 包旧 `GameBootstrap`** | **#4** ✅；（**#3** 建议 ✅） | 主界面点进游戏走 Loading + 进度条，行为与现 `GameBootstrap` 等价 | `MainPanel` 改调 Loading；临时 EnterGameplay 任务列表 | **中** | 待做 |
 | **6** | **C · 启动重构** | **Loading系统1.4** | **`LoadingProfile` SO**：`StartupFramework` / `EnterGameplay` 静态清单 + 动态追加；清单吸收原 **`CmgmFrameBoot` Init 链**（Manager / 预载 / Wwise 壳等） | **#4** ✅ + **#5** ✅ | 启动任务可配在 SO；不再硬编码长链 | `LoadingProfile.cs`、`.asset` 资源 | **中** | 待做 |
 | **7** | C · 同里程碑 | **启动编排3.4** | `CmgmFrameBoot` → **`Runtime/CmgmInitializer.cs`**；废止 `Bootstrap/`；Initializer **仅** Logo + `await UIManager.InitAsync()` → 交 GameFlow | **#6** 同步进行 | InitScene 上 Boot 脚本瘦身；长 Init 不在 Initializer 内 | `CmgmInitializer.cs`；删/废 `CmgmFrameBoot` | **中** | 待做 |
-| **8** | C · 同里程碑 | **GameFlow系统1.3** | 宏观态 **`Startup` / `MainMenu` / `Gameplay` / `Loading`**；`Startup.Enter` → `Run(StartupFramework)` → `MainMenu`；**接管** `GoToMainScene` / `QuitGame`（`ScenesManager` 缩退） | **#6** **#7** + **#3** ✅ | 正式包体：Init → Startup Profile → 主界面；无 FrameBoot 直调 Scene | `StartupState`、`MainMenuState` 等；`ScenesManager` 缩退 | **中** | 待做 |
+| **8** | C · 同里程碑 | **GameFlow系统1.3** | 宏观态 **`Startup` / `MainMenu` / `Gameplay`**（§6.5b）；`Startup.Enter` → `Run(StartupFramework)` → `MainMenu`；**接管** `GoToMainScene` / `QuitGame`（`ScenesManager` 缩退） | **#6** **#7** + **#3** ✅ | 正式包体：Init → Startup Profile → 主界面；无 FrameBoot 直调 Scene | `StartupState`、`MainMenuState` 等；`ScenesManager` 缩退 | **中** | 待做 |
 | **9** | **D · Editor 前置** | **Editor测试系统1.1** | **`EditorPlayRequest`**（Session）：`TargetScenePath`、`SkipLogo`、`EditorTrimStartup`、`AppendProfiles`；约定 **Play Mode Start Scene = InitScene** | **#1** ✅ | 运行时/Editor 可读 Request；文档与 Project Settings 一致 | `EditorPlayRequest.cs`（Editor + 运行时可见的轻量 DTO） | **小** | 待做 |
 | **10** | **D · Editor 路径** | **GameFlow系统1.3b** | **`DirectToTest`**：存在 `EditorPlayRequest` 时 **跳过 MainMenu / MainScene**，Startup Profile 后 `LoadSceneAsync(目标场景)` | **#8** ✅ + **#9** ✅ | Editor 分支不进 MainScene | `DirectToTest` 或 `StartupState` 内 Editor 分支 | **小~中** | 待做 |
 | **11** | D · 同里程碑 | **Editor测试系统1.2** | 菜单 **「草木句萌 / 从当前场景 Play」**：写入 Request → 进入 Play | **#9** ✅ | 任意场景一键 Play，先进 InitScene | `Edt_PlayFromCurrentScene.cs` 等 | **小** | 待做 |
@@ -1274,4 +1330,4 @@ CmgmFrameSettings.ROOT_LUA_URI（如 main.lua.txt）
 
 ---
 
-*当前聚焦：**§7.7 #1 Loading系统1.1**（代码已落地，待 InitScene Play 验收）→ 下一步 **#4 Loading 1.2**。*
+*当前聚焦：**§7.7 #3 GameFlow 1.2**（#2 ✅）｜Loading 主线：**#4 Loading 1.2**。*

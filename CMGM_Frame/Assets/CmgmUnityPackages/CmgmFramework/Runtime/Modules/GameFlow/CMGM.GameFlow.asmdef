@@ -1,0 +1,16 @@
+{
+    "name": "CMGM.GameFlow",
+    "rootNamespace": "CMGM.GameFlow",
+    "references": [
+        "CMGM.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
