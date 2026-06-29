@@ -5,22 +5,19 @@ using Cysharp.Threading.Tasks;
 namespace CMGM.Workspace
 {
     /// <summary>
-    /// 业务层「进游戏」入口：在 Loading 进度条阶段加载 gameplay 所需内容（2.5 定位修订）。
-    /// <para>Logo → 主界面 仅走框架 <see cref="CMGM.Bootstrap.CmgmFrameBoot"/>，不在此预加载角色表等大资源。</para>
-    /// <para>进游戏 Loading 归属 Scene 模块（ScenesManager），见 ARCHITECTURE 2.5c。</para>
+    /// 业务层「进游戏」加载逻辑（#5 由 <see cref="EnterGameplayLoading"/> + <see cref="DelegateLoadTask"/> 接入 Loading 进度条）。
+    /// <para>#13 废止本类，清单迁入 <c>EnterGameplay</c> Profile SO。</para>
     /// </summary>
     public static class GameBootstrap
     {
         /// <summary>
-        /// 主界面点击「开始 / 读档」等进入游戏时调用（非 Logo 启动链）。
-        /// <para>配表、关卡资源、Wwise Bank 等应在此（或 Loading 模块回调内）加载，见 ARCHITECTURE §8 资源加载分层。</para>
+        /// 进游戏所需内容（配表、关卡资源、Bank 等）。由 Loading 任务调用，MainPanel 不直调。
         /// </summary>
         public static async UniTask EnterGameplayAsync()
         {
-            // TODO 2.5c：由 ScenesManager / LoadingPanel 展示进度并分段上报
             ConfigTableManager.Instance.LoadTable<RoleInfo>();
-            // TODO 2.5c：预载关卡场景 / Addressables、Wwise Bank 等
-            CmgmLog.fPositive("进游戏内容加载完成（配表等；Loading 见 Scene 2.5c）");
+            // TODO：预载关卡场景 / Addressables、Wwise Bank 等
+            CmgmLog.fPositive("进游戏内容加载完成");
 
             await UniTask.CompletedTask;
         }
