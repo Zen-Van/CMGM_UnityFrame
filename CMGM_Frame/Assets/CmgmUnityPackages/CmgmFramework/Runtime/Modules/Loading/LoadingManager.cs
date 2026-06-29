@@ -25,7 +25,7 @@ namespace CMGM.Loading
         private BasePanel _activePanel;
 
         /// <summary>
-        /// 顺序执行任务列表。#1 总进度 = 等权平均；#4 改为 Weight 加权。
+        /// 顺序执行任务列表；总进度 = Σ(已完成 Weight) + 当前 Weight × 任务内进度。
         /// </summary>
         public async UniTask RunAsync(
             IReadOnlyList<ILoadTask> tasks,
@@ -46,7 +46,7 @@ namespace CMGM.Loading
             if (options.ShowProgress)
                 await ShowPanelAsync(options.Layer);
 
-            var reporter = new EqualWeightProgressReporter(tasks.Count, _activePanel);
+            var reporter = new WeightedProgressReporter(tasks, _activePanel);
 
             try
             {
@@ -108,29 +108,33 @@ namespace CMGM.Loading
                 label.text = text;
         }
 
-        /// <summary>#1 验收用演示任务列表。</summary>
-        public static IReadOnlyList<ILoadTask> CreateAcceptanceDemoTasks()
+        private sealed class WeightedProgressReporter : ILoadProgressReporter
         {
-            return new ILoadTask[]
-            {
-                new DelayLoadTask("预载 UI 资源", 400),
-                new DelayLoadTask("初始化音频", 500),
-                new DelayLoadTask("准备主场景", 600),
-                new DelayLoadTask("哥们穿模中…", 700),
-            };
-        }
-
-        private sealed class EqualWeightProgressReporter : ILoadProgressReporter
-        {
-            private readonly int _taskCount;
+            private readonly IReadOnlyList<ILoadTask> _tasks;
+            private readonly float[] _weights;
+            private readonly float _totalWeight;
             private readonly BasePanel _panel;
             private int _currentTaskIndex;
             private float _currentTaskInternal;
 
-            public EqualWeightProgressReporter(int taskCount, BasePanel panel)
+            public WeightedProgressReporter(IReadOnlyList<ILoadTask> tasks, BasePanel panel)
             {
-                _taskCount = Mathf.Max(1, taskCount);
+                _tasks = tasks;
                 _panel = panel;
+                _weights = new float[tasks.Count];
+                _totalWeight = 0f;
+
+                for (var i = 0; i < tasks.Count; i++)
+                {
+                    var w = tasks[i].Weight;
+                    if (w <= 0f)
+                        w = 1f;
+                    _weights[i] = w;
+                    _totalWeight += w;
+                }
+
+                if (_totalWeight <= 0f)
+                    _totalWeight = tasks.Count;
             }
 
             public void BeginTask(int taskIndex, string displayName)
@@ -161,7 +165,12 @@ namespace CMGM.Loading
 
             private float CalculateOverall()
             {
-                return (_currentTaskIndex + _currentTaskInternal) / _taskCount;
+                var completed = 0f;
+                for (var i = 0; i < _currentTaskIndex; i++)
+                    completed += _weights[i];
+
+                var currentContribution = _weights[_currentTaskIndex] * _currentTaskInternal;
+                return (completed + currentContribution) / _totalWeight;
             }
         }
     }

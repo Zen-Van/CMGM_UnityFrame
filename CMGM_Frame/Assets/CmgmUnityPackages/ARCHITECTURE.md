@@ -2,7 +2,7 @@
 
 > 本文档是框架化改造的长期参考（「北极星」）。  
 > 目标：将当前工程从「带 Demo 的原型项目」逐步改造为「可跨项目迁移的框架」。  
-> 最后更新：2026-06-19 — **当前聚焦 §7.7 启动竖切大表**（Loading / GameFlow / Editor / 3.4）；完成前**暂停**其它支线新功能。§6.5b 增补 **Loading 调用纪律**（方案 A，不采用 `Loading` 宏观态）。
+> 最后更新：2026-06-20 — **当前聚焦 §7.7 启动竖切大表**（Loading / GameFlow / Editor / 3.4）；完成前**暂停**其它支线新功能。§6.5c 增补 **Loading Profile 编排定位**（与 Label / 场景 / 流式等非互斥、规模无关）。
 
 ---
 
@@ -546,6 +546,58 @@ MainPanel 点开始   → GameFlowMachine.SwitchTo(Gameplay)   // GameplayState.
 
 **与废止 Scene 模块的关系：** 废 `CMGM.Scene` / 缩退 `ScenesManager` **不是**「只有 `SwitchTo` 才能 Loading」，而是 **不再有第二套场景流程中心**；`GoToMainScene` / `QuitGame` 迁入 **`MainMenuState` 等 GameFlow 态**；`LoadScene` 统一进 **Profile 的 `ILoadTask`**，由 **§6.5b 允许的入口** 触发。
 
+#### 6.5c Loading Profile 定位：编排外壳 · 与常见做法非互斥
+
+> **决策（2026-06-20）：** **`LoadingProfile` 不是「小项目 / JRPG 专用清单」**，而是本框架 Loading 模块对外的 **「一次加载事务」封装**（步骤顺序、是否读条、进度权重、与 GameFlow 的衔接）。**中大型项目、开放世界** 同样可用 Profile；差别在 **Profile 从哪来、内容多静态还是多动态**，而非换一套 Loading 架构。
+
+**三层模型（与 §6.5b 一致，此处强调扩展性）**
+
+| 层 | 组件 | 回答的问题 |
+|----|------|------------|
+| **编排外壳** | **`LoadingProfile` SO**（#4 落地） | 这次加载 **跑哪些步骤、默认是否显示进度条** |
+| **步骤插件** | **`ILoadTask` 实现类** | 每一步 **具体干什么**（Init、资源、场景…） |
+| **资源原语** | **`AddressablesResMgr` 等（Core）** | 单条资源 / 场景 **怎么 Load**（仅出现在 Task 内部） |
+
+**与业界常见做法的关系：不是二选一，而是 Task 类型 + 触发方式**
+
+| 常见做法 | 在本框架中的落点 | 说明 |
+|----------|------------------|------|
+| **Manager / 代码 Init** | `ManagerInitLoadTask` 等 | Profile **可以且应当** 编排程序 Init，不仅限于美术音频 |
+| **Addressables Label / Group** | `PreloadLabelTask`（#1.5+ / 按需） | Profile 里 **一行 Label**，不必维护逐文件完整列表 |
+| **场景 / 关卡数据驱动** | 关卡 SO **引用** Profile，或 `LoadSceneTask` + 运行时 **append** | 「列表跟关卡绑」= 关卡数据挂 Profile 或参数，非与 Profile 冲突 |
+| **Boot Pipeline / 流程阶段** | `StartupFramework` 等 Profile + GameFlow 态 `Enter` | 与「Procedure / Boot Stage」同类，只是可配 SO |
+| **后台静默 + 前台读条** | 同 Profile 或不同 Profile + `LoadingRunOptions.ShowProgress` | 静默预载与 blocking 读条均为 **`Run(Profile)`** |
+| **流式 / 预测（开放世界）** | **`StreamRegionTask` 等（远期）** + 常驻 **`WorldStreamingService`** | Profile 管 **单次事务**（如传送读条）；预测 / 预算 / 每帧卸载由 **服务** 驱动，可反复 `Run(SilentProfile)` 或调单步 Task |
+
+```text
+                    LoadingProfile（一次加载事务）
+                            │
+            ┌───────────────┼───────────────┐
+            ▼               ▼               ▼
+   ManagerInitTask   PreloadLabelTask   LoadSceneTask
+            │               │               │
+            ▼               ▼               ▼
+      BootSingleton    Addressables      Core 原语
+```
+
+**规模演进（同一套壳，不同填法）**
+
+| 规模 | Profile 典型形态 |
+|------|------------------|
+| **竖切 / 单机阶段制** | 手维护 2~5 份 SO（`StartupFramework`、`EnterGameplay`、`EnterBattle`…） |
+| **关卡 / 章节增多** | **关卡 SO → 引用 Profile**；或通用 Profile + `append` 关卡参数 Task |
+| **资源量大** | Profile **变短**：多行 `PreloadLabel` / `PreloadSceneGroup`，少列单个 Prefab |
+| **任务数 ≥10~15** | Editor **生成** Profile，或 **模块 Registry** 拼 Task（§7.2b），仍输出 Profile |
+| **开放世界** | **短模板 Profile** + 运行时参数；blocking 读条仍 `Run(RegionTransitionProfile)`；平时 **Streaming 服务** 触发静默 Task |
+
+**Profile 仍不单独承担的部分（须另建子系统，但可调用 Loading）**
+
+- **持续预测**（按玩家位置每帧/定时预载下一块）
+- **内存预算**（同时驻留几块、何时 Force Unload）
+- **Additive 多场景生命周期**（块与块之间的卸载策略，§3.6 按需评估）
+
+上述子系统 **内部仍可** `LoadingManager.Run(profile)` 跑一批 Task，**不**意味着放弃 Profile 外壳。
+
 **`CmgmInitializer` 最小集（3.4 验收）：**
 
 ```csharp
@@ -740,19 +792,20 @@ GameFlowMachine.Start();       // Startup 态内 Run(StartupFrameworkProfile)
 
 #### Loading系统（已解锁）
 
-定位：**通用加载编排**——`ILoadTask` 执行器 + 加权进度 + Profile 清单；**取代原双 Boot 长链**（§6.5）。横切 UI / 资源 / Manager Init，属编排层（不进 Core）。**不引用** `CMGM.Workspace` 具体类型（业务任务用回调注入）。
+定位：**通用加载编排**——`ILoadTask` 执行器 + 加权进度 + **`LoadingProfile` 编排外壳**（§6.5c）；**取代原双 Boot 长链**（§6.5）。横切 UI / 资源 / Manager Init / Label 预载 / 场景切换，属编排层（不进 Core）。**不引用** `CMGM.Workspace` 具体类型（业务任务用 **`IWorkspaceLoadRegistrar`** 注入）。Profile 与 Addressables Label、关卡数据、流式加载 **非互斥**，通过后者的 **Task 实现** 纳入同一 Profile。
 
 | 子步 | 内容 | 学习点 |
 |------|------|--------|
 | **Loading系统1.1** | 模块骨架：`Modules/Loading`（`CMGM.Loading`）+ `LoadingManager.Run(tasks)` + 单条进度面板；跑通「执行一组任务并显示进度」 | 模块 asmdef、接口基础 |
-| **Loading系统1.2** | `ILoadTask` + 加权进度；**`ManagerInitLoadTask`**（包装 `BootSingleton.InitAsync`） | 接口/多态、Manager 与资源统一任务模型 |
+| **Loading系统1.2** ✅ | `ILoadTask.Weight` 加权进度；**`ManagerInitLoadTask`**；**`DelegateLoadTask`** | 多任务加权正确；Manager 经 Task Init |
 | **Loading系统1.3** | 接通「进游戏」：`GameFlow` / MainPanel → `EnterGameplay` Profile；过渡期可暂用 `DelegateTask` 包装旧 `GameBootstrap` | 模块协作、Profile 驱动 |
 | **Loading系统1.4** | **`LoadingProfile` SO**：`StartupFramework` / `EnterGameplay` 静态清单 + 动态追加；**吸收原 `CmgmFrameBoot` Init 链**（配合 **启动编排3.4**） | 数据驱动、与 Initializer 分工 |
 | **Loading系统1.4b** | **废止 `GameBootstrap.cs`**：业务进游戏清单迁入 **`EnterGameplay` Profile** + Workspace 侧 `ILoadTask` 实现；`IWorkspaceLoadRegistrar` 注册；更新脚手架种子 / `project_layer.manifest`（**不再**生成 `Scripts/Bootstrap/GameBootstrap.cs`） | 业务清单与框架编排统一 |
-| **Loading系统1.5+** | 后台静默加载、转场动画、动态拼任务（`EnterBattle` 等） | 进阶 |
+| **Loading系统1.5+** | **`PreloadLabelTask`**、后台静默 Profile、转场动画、**`StreamRegionTask`**（开放世界按需）、动态拼任务 | 进阶；见 §6.5c |
 
+> **Profile 定位（§6.5c）：** **编排外壳 + Task 插件**；中大型 / 开放世界 **不换架构**，换 Profile 填法（Label 行、关卡引用、动态 append、Streaming 服务 + 静默 Profile）。  
 > **进度模型（1.2 起）：** 每个 `ILoadTask` 带 `Weight`；总进度 = `Σ(已完成权重) + 当前任务权重 × 当前任务内部进度`。  
-> **Profile（1.4）：** 每个加载点一个 `.asset`；**`StartupFramework`** 默认静默（可与 Logo 并行）；**`EnterGameplay`** 显示进度条。  
+> **Profile（1.4）：** 每个加载点一个 `.asset`（或关卡 SO 引用）；**`StartupFramework`** 默认静默（可与 Logo 并行）；**`EnterGameplay`** 显示进度条。  
 > **与 Initializer 分工：** 仅 **`UIManager.InitAsync`** 留在 `CmgmInitializer`；其余 Manager Init 走 **`ManagerInitLoadTask`**。  
 > **`GameBootstrap`：** 过渡文件；**1.4b** 删除后，改维护 **`EnterGameplay` Profile**（`_WorkSpace` 内 SO，不进 `CmgmFramework`）。
 
@@ -959,9 +1012,9 @@ GameFlowMachine.Start();       // Startup 态内 Run(StartupFrameworkProfile)
 
 | 线 | 最前节点 | 状态 | 解锁条件 | 预估变更量 | 教学难度 |
 |----|----------|------|----------|------------|----------|
-| **★ 启动竖切（§7.7）** | **Loading系统1.2** | **#3 ✅** | 见 §7.7 | 见 §7.7 | ★★★☆ |
+| **★ 启动竖切（§7.7）** | **Loading系统1.3** | **#4 ✅ · 阶段 A 完成** | 见 §7.7 | 见 §7.7 | ★★☆ |
 | **主线（编译边界 + 启动编排）** | **启动编排3.4** | 3.3 ✅；3.4 待做（**并入 §7.7 阶段 C**） | Loading **≥1.2** | **中** | ★★★☆ |
-| **Loading系统** | Loading系统1.2 | **§7.7 #4 ← 当前** | Loading 1.1 ✅ | **中** | ★★★☆ |
+| **Loading系统** | Loading系统1.3 | **§7.7 #5 ← 当前** | Loading 1.2 ✅ | **中** | ★★☆ |
 | **GameFlow系统** | GameFlow系统1.3 | **§7.7 #8** | GameFlow 1.2 ✅ | **中** | ★★★☆ |
 | **Editor测试系统** | Editor测试系统1.1 | **§7.7 阶段 D 前置** | Loading **1.1** ✅ | **小~中** | ★★☆ |
 | **存档升级系统** | 存档升级系统1.1 | ⏸ 竖切完成后 | 存档格式优化 ✅ | **中~大** | ★★★★ |
@@ -1000,8 +1053,8 @@ GameFlowMachine.Start();       // Startup 态内 Run(StartupFrameworkProfile)
 | **1** | **A · 执行器** | **Loading系统1.1** | `Modules/Loading`（`CMGM.Loading` asmdef）+ `LoadingManager.Run(tasks)` + 单条进度 UI；用硬编码/假任务跑通 | Core ✅ + UI ✅ | Play 后能看到进度条走完一组任务 | `LoadingManager`、`LoadingPanel`（或复用 UI 层）、asmdef | **中** | **✅** |
 | **2** | A · 并行 | **GameFlow系统1.1** | `IGameFlowState`：`Enter` / `Exit` / `Update`（可选） | 启动编排3.3 ✅ | 两个空态可手动切换，日志可追踪 | `Modules/GameFlow/`、`CMGM.GameFlow` asmdef | **中** | **✅** |
 | **3** | A · 并行 | **GameFlow系统1.2** | `GameFlowMachine`：Push / Pop / SwitchTo | **#2** ✅ | 栈操作日志正确 | `GameFlowMachine.cs` | **小** | **✅** |
-| **4** | **A · 任务模型** | **Loading系统1.2** | `ILoadTask` + `Weight` 加权进度；**`ManagerInitLoadTask`**（包 `BootSingleton.InitAsync`） | **#1** ✅ | 多任务加权进度正确；至少 1 个 Manager 经 Task 初始化 | `ILoadTask`、`ManagerInitLoadTask`、`DelegateTask`（过渡） | **中** | **待做 ← 当前** |
-| **5** | **B · 业务竖切** | **Loading系统1.3** | 接通「进游戏」：`MainPanel` → `LoadingManager.Run(EnterGameplay…)`；过渡期 **`DelegateTask` 包旧 `GameBootstrap`** | **#4** ✅；（**#3** 建议 ✅） | 主界面点进游戏走 Loading + 进度条，行为与现 `GameBootstrap` 等价 | `MainPanel` 改调 Loading；临时 EnterGameplay 任务列表 | **中** | 待做 |
+| **4** | **A · 任务模型** | **Loading系统1.2** | `ILoadTask` + `Weight` 加权进度；**`ManagerInitLoadTask`**（包 `BootSingleton.InitAsync`） | **#1** ✅ | 多任务加权进度正确；至少 1 个 Manager 经 Task 初始化 | `ILoadTask`、`ManagerInitLoadTask`、`DelegateTask`（过渡） | **中** | **✅** |
+| **5** | **B · 业务竖切** | **Loading系统1.3** | 接通「进游戏」：`MainPanel` → `LoadingManager.Run(EnterGameplay…)`；过渡期 **`DelegateTask` 包旧 `GameBootstrap`** | **#4** ✅；（**#3** 建议 ✅） | 主界面点进游戏走 Loading + 进度条，行为与现 `GameBootstrap` 等价 | `MainPanel` 改调 Loading；临时 EnterGameplay 任务列表 | **中** | **待做 ← 当前** |
 | **6** | **C · 启动重构** | **Loading系统1.4** | **`LoadingProfile` SO**：`StartupFramework` / `EnterGameplay` 静态清单 + 动态追加；清单吸收原 **`CmgmFrameBoot` Init 链**（Manager / 预载 / Wwise 壳等） | **#4** ✅ + **#5** ✅ | 启动任务可配在 SO；不再硬编码长链 | `LoadingProfile.cs`、`.asset` 资源 | **中** | 待做 |
 | **7** | C · 同里程碑 | **启动编排3.4** | `CmgmFrameBoot` → **`Runtime/CmgmInitializer.cs`**；废止 `Bootstrap/`；Initializer **仅** Logo + `await UIManager.InitAsync()` → 交 GameFlow | **#6** 同步进行 | InitScene 上 Boot 脚本瘦身；长 Init 不在 Initializer 内 | `CmgmInitializer.cs`；删/废 `CmgmFrameBoot` | **中** | 待做 |
 | **8** | C · 同里程碑 | **GameFlow系统1.3** | 宏观态 **`Startup` / `MainMenu` / `Gameplay`**（§6.5b）；`Startup.Enter` → `Run(StartupFramework)` → `MainMenu`；**接管** `GoToMainScene` / `QuitGame`（`ScenesManager` 缩退） | **#6** **#7** + **#3** ✅ | 正式包体：Init → Startup Profile → 主界面；无 FrameBoot 直调 Scene | `StartupState`、`MainMenuState` 等；`ScenesManager` 缩退 | **中** | 待做 |
@@ -1015,7 +1068,7 @@ GameFlowMachine.Start();       // Startup 态内 Run(StartupFrameworkProfile)
 
 | 阶段 | 包含 # | 阶段 DoD（全部满足才算 ✅） |
 |------|--------|------------------------------|
-| **A** | 1~4 | Loading 能 Run 加权任务；GameFlow 空态机可切换 |
+| **A** | 1~4 | Loading 能 Run 加权任务；GameFlow 栈式状态机可切换 | **✅**
 | **B** | 5 | 进游戏经 Loading 进度条（可仍包旧 Bootstrap 逻辑） |
 | **C** | 6~8 | 正式启动：Initializer 薄 + StartupFramework Profile + GameFlow 到主界面 |
 | **D** | 9~12 | Editor「从当前场景 Play」→ Init → 目标测试场景 |
@@ -1178,6 +1231,16 @@ Editor/
 | **`GameBootstrap.cs`** | **废止**（**Loading系统1.4b**）；清单 = **`EnterGameplay` Profile SO** + Workspace `ILoadTask` 类 |
 | **Editor 测试** | **Editor测试系统** + **GameFlow.DirectToTest**（§4.3）；任意场景 Play → Initializer → **目标场景**（可跳过 MainScene） |
 
+**设计决策记录 · 2026-06-20（Loading Profile · 编排定位）**
+
+| 项 | 结论 |
+|------|------|
+| **Profile 是什么** | **一次加载事务**的封装：有序 `ILoadTask`、默认读条策略、供 GameFlow `Run(profile)` 引用 |
+| **与规模** | **非**小项目专用；大项目 / 开放世界 **继续用 Profile 外壳**，Profile 可更短、可 Editor 生成、可运行时 append |
+| **与 Label / 场景 / 流式** | **非互斥**；Label 预载、场景切换、Init 代码均为 **Task 类型**；不必维护逐文件完整列表 |
+| **与 Streaming** | **单次 blocking 读条** → Profile；**持续预测 / 内存预算** → 常驻 Streaming 服务，内部仍可 `Run(SilentProfile)` |
+| **文档** | 详见 **§6.5c** |
+
 **设计决策记录 · 2026-06-19（业务层 Workspace + GameFlow 命名）**
 
 | 项 | 结论 |
@@ -1330,4 +1393,4 @@ CmgmFrameSettings.ROOT_LUA_URI（如 main.lua.txt）
 
 ---
 
-*当前聚焦：**§7.7 #3 GameFlow 1.2**（#2 ✅）｜Loading 主线：**#4 Loading 1.2**。*
+*当前聚焦：**§7.7 #5 Loading 1.3**（#1~#4 ✅ · 阶段 A 完成）｜GameFlow 下一阶段 #8 在阶段 C。*

@@ -10,7 +10,7 @@ namespace CMGM.Loading
     {
         string DisplayName { get; }
 
-        /// <summary>任务权重；#1 暂按等权，#4 接入加权公式。</summary>
+        /// <summary>任务权重；总进度按 Weight 加权（#4）。</summary>
         float Weight => 1f;
 
         UniTask RunAsync(ILoadProgressReporter reporter, CancellationToken cancellationToken);

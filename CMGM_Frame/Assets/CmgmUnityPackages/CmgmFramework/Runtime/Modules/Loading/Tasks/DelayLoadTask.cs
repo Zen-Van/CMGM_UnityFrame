@@ -10,13 +10,16 @@ namespace CMGM.Loading
     {
         private readonly int _delayMs;
 
-        public DelayLoadTask(string displayName, int delayMs)
+        public DelayLoadTask(string displayName, int delayMs, float weight = 1f)
         {
             DisplayName = displayName;
             _delayMs = delayMs;
+            Weight = weight;
         }
 
         public string DisplayName { get; }
+
+        public float Weight { get; }
 
         public async UniTask RunAsync(ILoadProgressReporter reporter, CancellationToken cancellationToken)
         {

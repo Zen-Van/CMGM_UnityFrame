@@ -19,8 +19,8 @@ namespace CMGM.Bootstrap
     {
         public bool SHOW_LOGO = true;
 
-        [Header("Loading 1.1 验收")]
-        [Tooltip("Init 完成后、进主界面前跑演示 Loading 任务（#1 已验收，可关）")]
+        [Header("Loading 1.1 / 1.2 验收")]
+        [Tooltip("Init 完成后、进主界面前跑演示 Loading（加权进度 + ManagerInitLoadTask；验收通过后可关）")]
         public bool runLoadingAcceptanceDemo = true;
 
         [Header("GameFlow 1.2 验收")]
@@ -107,11 +107,10 @@ namespace CMGM.Bootstrap
                 //logo和逻辑层都完成了再淡出隐藏 Logo
                 await HideLogoPresentationAsync();
 
-                //跑测试加载进度条
                 if (runLoadingAcceptanceDemo)
                 {
                     await LoadingManager.Instance.RunAsync(
-                        LoadingManager.CreateAcceptanceDemoTasks(),
+                        CreateLoadingAcceptanceDemoTasks(),
                         new LoadingRunOptions { ShowProgress = true });
                 }
 
@@ -141,6 +140,19 @@ namespace CMGM.Bootstrap
                 await UniTask.Yield();
 
             logoRoot.SetActive(false);
+        }
+
+        private static IReadOnlyList<ILoadTask> CreateLoadingAcceptanceDemoTasks()
+        {
+            // #4 验收用临时清单（非 Profile SO）；#6 后 Startup/EnterGameplay 迁入 LoadingProfile
+            return new ILoadTask[]
+            {
+                new ManagerInitLoadTask<ArchiveManager>("存档 Manager（Task）", weight: 2f),
+                new DelayLoadTask("预载 UI 资源", 400, weight: 1f),
+                new DelayLoadTask("初始化音频", 500, weight: 2f),
+                new DelayLoadTask("准备主场景", 800, weight: 8f),
+                new DelayLoadTask("哥们穿模中...", 300, weight: 1f),
+            };
         }
 
         private static void RunGameFlowAcceptanceDemo()
