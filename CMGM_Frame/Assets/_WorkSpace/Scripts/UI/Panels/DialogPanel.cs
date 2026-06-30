@@ -1,0 +1,31 @@
+﻿using CMGM.UI;
+using Cysharp.Threading.Tasks;
+using TMPro;
+
+namespace CMGM.Workspace
+{
+    /// <summary>
+    /// 对话面板（HotRes/UI/Panels/DialogPanel.prefab）。
+    /// <para>控件约定：<c>txtContent</c>、<c>btnNext</c>；配表 / 立绘后续在 <see cref="PrintContent"/> 内扩展。</para>
+    /// </summary>
+    public class DialogPanel : BasePanel    {
+        private UniTaskCompletionSource _advanceSource;
+
+        public async UniTask PrintContent(int roleId, int imgId, string content)
+        {
+            var label = GetControl<TMP_Text>("txtContent");
+            if (label != null)
+                label.text = content ?? string.Empty;
+
+            _advanceSource = new UniTaskCompletionSource();
+            await _advanceSource.Task;
+            _advanceSource = null;
+        }
+
+        protected override void OnButtonClick(string btnName)
+        {
+            if (btnName == "btnNext")
+                _advanceSource?.TrySetResult();
+        }
+    }
+}

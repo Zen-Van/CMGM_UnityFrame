@@ -2,7 +2,7 @@
 
 放这一作游戏自己的「宏观流程态」脚本，例如 GameplayState、WorldMapState。
 
-和框架 `Modules/GameFlow/GameFlowStates/` 里的 CmgmInitState、MainMenuState 不一样：
+和框架 `Host/GameFlow/GameFlowStates/` 里的 CmgmInitState、MainMenuState 不一样：
 那些是启动、进主菜单，几乎每个项目都差不多；
 这里是你游戏的玩法阶段，换项目会整批换掉。
 

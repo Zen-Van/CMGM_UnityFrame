@@ -20,6 +20,7 @@ alwaysApply: true
 ## 其它
 
 - 回复使用**简体中文**。
+- **asmdef** 策略见 `asmdef-policy.mdc`（可读性优先、按需建程序集）。
 - 未明确要求时**不要** git commit / push。
 - 只做任务范围内的最小 diff；不顺手改无关文件。
 

@@ -7,7 +7,10 @@ Assets/CmgmUnityPackages/CmgmFramework/Runtime
 Assets/CmgmUnityPackages/CmgmFramework/Runtime/Core
 Assets/CmgmUnityPackages/CmgmFramework/Runtime/Modules
 Assets/CmgmUnityPackages/CmgmFramework/Runtime/Modules/Loading
-Assets/CmgmUnityPackages/CmgmFramework/Runtime/Modules/GameFlow
+Assets/CmgmUnityPackages/CmgmFramework/Runtime/Host
+Assets/CmgmUnityPackages/CmgmFramework/Runtime/Host/GameFlow
+Assets/CmgmUnityPackages/CmgmFramework/Runtime/Host/Lua
+Assets/CmgmUnityPackages/CmgmFramework/Runtime/Host/Story
 Assets/CmgmUnityPackages/CmgmFramework/Runtime/Modules/Data/Archive
 Assets/CmgmUnityPackages/CmgmFramework/Runtime/Modules/Data/Config
 Assets/CmgmUnityPackages/CmgmFramework/Runtime/Modules/Data/Editor

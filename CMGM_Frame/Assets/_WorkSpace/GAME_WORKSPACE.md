@@ -151,7 +151,7 @@ Boot 参数（主场景名、主 Panel 名、工作区根路径等）在 **`Cmgm
 | `Scripts/GameFlowState/` | 游戏宏观态 | `README.txt` |
 | `Scripts/LoadTasks/` | 游戏 Loading 步骤 | `README.txt` |
 
-框架启动态：`CmgmFramework/.../Modules/GameFlow/GameFlowStates/`（`CmgmInitState`、`MainMenuState`）。
+框架启动态：`CmgmFramework/.../Host/GameFlow/GameFlowStates/`（`CmgmInitState`、`MainMenuState`）。
 
 ---
 

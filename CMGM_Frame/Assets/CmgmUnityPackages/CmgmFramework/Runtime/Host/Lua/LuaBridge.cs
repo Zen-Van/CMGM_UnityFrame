@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using CMGM.Core;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
@@ -27,19 +25,8 @@ public class LuaBridge
     /// <param name="content">文本内容</param>
     public static void Talk(int roleId, int imgId, string content, Action callback)
     {
-        /*   这段逻辑封装到剧情系统的代码里，不放在Lua系统里写，Lua系统仅仅调用
-        UniTask.Void(async () =>
-        {
-            //显示UI面板
-            var panel = await UIManager.Instance.ShowPanel<DialogPanel>();
-            //触发UI面板逐字打印，并在逐字打印结束后调用结束回调
-            await panel.PrintContent(roleId, content, imgId);
-            //隐藏面板
-            UIManager.Instance.HidePanel<DialogPanel>(false);
-            //通知lua，命令完成
-            callback?.Invoke();
-        });
-        */
+        // 编排见 StoryDialogueManager；展示见业务层 DialogPanel.PrintContent
+        StoryDialogueManager.Talk(roleId, imgId, content, callback);
     }
     /// <summary>
     /// 对话命令（默认立绘）

@@ -1,0 +1,65 @@
+---
+description: asmdef 创建策略 — 可读性优先，按需建程序集
+alwaysApply: true
+---
+
+# asmdef 协作策略
+
+## 总原则
+
+- asmdef 是**编译边界工具**，不是模块化标配；无 asmdef 时用 **namespace + 目录** 分层即可。
+- **可读性优先**：若单独 asmdef 导致注册钩子、多余 Interface、跳多文件才读懂调用链 → **不建 asmdef**，留在 `Assembly-CSharp`。
+- **禁止**仅为过编译而加 BootInit / Registry /「仅为跨程序集」的 Interface（除非用户明确要求）。
+
+## 何时建 asmdef（须同时满足）
+
+1. 模块边界稳定，对外以公开 Manager 或 Core 契约为主。
+2. 组合根（`Host/CmgmInitializer` / `Host/GameFlow` 启动清单）与 Lua 等同处 `Host/`，可直接引用具体类型。
+3. 不引入「只为过编译」的间接层。
+4. 第三方无冲突（XLua **永不**单独 asmdef，见 `ARCHITECTURE.md` §7.5）。
+
+## 本项目定案（2026-07）
+
+### 不建 asmdef（`Assembly-CSharp`，目录 `Runtime/Host/`）
+
+| 路径 | 原因 |
+|------|------|
+| `Host/CmgmInitializer.cs` | 组合根，需 new 各 State |
+| `Host/GameFlow/` | 宏观流程 + `CreateTasks()`；`ManagerInitLoadTask<LuaManager>` 直写 |
+| `Host/Lua/` | XLua 约束；与 GameFlow 同程序集 |
+| `Host/Story/` | Lua Talk 编排；直连 `DialogPanel` |
+| `_WorkSpace/Scripts/` | 业务层 |
+
+### 保留 asmdef
+
+| 程序集 | 理由 |
+|--------|------|
+| `CMGM.Core` | 契约 + BootSingleton + 路径常量；全员引用 |
+| `CMGM.UI` / `CMGM.Data` / `CMGM.Loading` | API 稳定；经公开 Manager 调用 |
+| `CMGM.Audio` / `CMGM.Input` | Wwise / InputSystem 隔离 |
+| `CMGM.*.Editor` | Editor-only |
+
+### 新增模块决策
+
+1. 先写于 `Assembly-CSharp` + namespace。
+2. 未出现跨程序集间接层、编译可接受 → **保持无 asmdef**。
+3. 模块大、边界稳、拆程序集**不增加**跳文件 → 再建 asmdef。
+
+## 反模式（见到应质疑或回退）
+
+- `*BootInit` / `Register(...)` 启动钩子（第三方强制除外）
+- Interface **仅**因 asmdef 看不见具体 Panel / Manager
+- `DelegateLoadTask` 作长期 Init 方案（过渡可用，长期应直写 Task 或合并程序集）
+- 扩 Core 契约却**无 asmdef 消费者**
+
+## 合法模式（保留）
+
+- `ManagerInitLoadTask<T>`：调用方在 `Assembly-CSharp` 时 `T` 可为 `LuaManager`；`CMGM.Loading` 不必认识 `T`。
+- `WwiseInitLoadTask`：`CMGM.Loading` 直接引用 `CMGM.Audio.WwiseAudioManager`。
+- `ILuaService`：Core 契约 / `Host/Lua` 实现；**当前无 asmdef Module 调用**；勿再复制此类「无消费者契约」。
+
+## AI 改动纪律
+
+- 新建框架目录时**默认不加** asmdef。
+- 用户未要求时**不要**为「架构完整」主动拆程序集。
+- 拆/建 asmdef 前说明：是否增加间接层、对 `CreateTasks()` 等启动清单可读性的影响。

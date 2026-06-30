@@ -10,8 +10,7 @@ namespace CMGM.Core
 
     /// Lua 服务契约。被 asmdef 封装的 Module 通过本接口调用 Lua，
 
-    /// 不直接依赖 XLua 与 Assembly-CSharp 中的具体实现（依赖倒置，见 ARCHITECTURE §3.4 / §7.5）。
-
+    /// 不直接依赖 XLua 与 <c>Host/Lua</c> 中的具体实现（依赖倒置，见 ARCHITECTURE §3.4 / §7.5）。
     /// <para>注意：Core 不引用 XLua，故接口不暴露 LuaEnv 等 XLua 类型。</para>
 
     /// <para>启动：Boot 中 <c>await LuaManager.InitAsync()</c>；就绪见 <see cref="IsInited"/>。</para>

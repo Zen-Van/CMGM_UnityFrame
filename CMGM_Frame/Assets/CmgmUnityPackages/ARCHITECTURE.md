@@ -29,10 +29,13 @@ Assets/
 │   │   ├── Resources/              Settings、UI、Logo、字体
 │   │   ├── Editor/                 框架 Editor、脚手架
 │   │   └── Runtime/                运行时代码 ✅
-│   │       ├── CmgmInitializer.cs    InitScene 薄组合根（#9 ✅）
-│   │       ├── Core/
-│   │       ├── Modules/
-│   │       └── Integrations/
+│   │       ├── Core/               CMGM.Core（有 asmdef）
+│   │       ├── Modules/            UI / Data / Loading / Audio / Input（有 asmdef）
+│   │       └── Host/               无 asmdef（Assembly-CSharp）
+│   │           ├── CmgmInitializer.cs
+│   │           ├── GameFlow/
+│   │           ├── Lua/
+│   │           └── Story/
 │   └── CmgmGameKits/
 ├── _WorkSpace/                     **业务层**：脚本、HotRes、Excels（无 Resources）
 ├── _TestSpace/                     **测试层**
@@ -136,15 +139,16 @@ Packages/（项目脚手架1.6 远期 UPM）
 | `GameRuntimeData` | 游戏存档结构（`_WorkSpace/Scripts/Archive/`）✅ | — |
 | `CipherTool` | 配表 / 存档加解密 | ★★★ |
 
-### 3.4 Lua（契约 `Runtime/Core/ILuaService`；实现 `Runtime/Integrations/Lua/`）
+### 3.4 Lua / Story（契约 `Runtime/Core/ILuaService`；实现 `Runtime/Host/Lua/`、`Host/Story/`）
 
 | 组件 | 职责 | 程序集 | 成熟度 |
 |------|------|--------|--------|
 | `ILuaService` | Lua 服务契约（执行脚本 / 桥接注册等） | `CMGM.Core`（asmdef） | 已实现 ✅ |
-| `LuaManager` | LuaEnv 生命周期、Loader 链、脚本执行；实现 `ILuaService` | `Assembly-CSharp` | ★★★ |
-| `LuaBridge` | C# ↔ Lua 桥接（Talk / Wait / DebugLog）；保留全局 namespace（`main.lua` 调 `CS.LuaBridge`） | `Assembly-CSharp` | ★★ |
+| `LuaManager` | LuaEnv 生命周期、Loader 链、脚本执行；实现 `ILuaService` | `Assembly-CSharp`（`Host/Lua/`） | ★★★ |
+| `LuaBridge` | C# ↔ Lua 桥接（Talk / Wait / DebugLog）；保留全局 namespace（`main.lua` 调 `CS.LuaBridge`） | `Assembly-CSharp`（`Host/Lua/`） | ★★ |
+| `StoryDialogueManager` | Lua `Talk` 编排：`ShowPanel<DialogPanel>` → `PrintContent` → Hide | `Assembly-CSharp`（`Host/Story/`） | ★ |
 
-> **现状（2026-06-19 决策，见 §7.5）：** Lua **不单独建 asmdef**。XLua 退回官方 master（无 asmdef、待在 `Assembly-CSharp`）；契约 `ILuaService` 放 `CMGM.Core`，实现放 `Runtime/Integrations/Lua/`；`LuaManager.InitAsync()` 在 **`CmgmInitState.CreateTasks()`** 的 `ManagerInitLoadTask` 中执行（§6.5f）。被 asmdef 封装的 Module 只依赖契约，不碰 XLua（依赖倒置）。
+> **现状（2026-06-19 决策 + 2026-07 Host 目录，见 §7.5）：** Lua **不单独建 asmdef**。XLua 待在 `Assembly-CSharp`；契约 `ILuaService` 放 `CMGM.Core`，实现放 **`Runtime/Host/Lua/`**；`StoryDialogueManager` 放 **`Host/Story/`**（直连业务层 `DialogPanel`，不抽跨程序集 Interface）。`LuaManager.InitAsync()` 在 **`CmgmInitState.CreateTasks()`** 的 `ManagerInitLoadTask<LuaManager>` 中执行（§6.5f）。GameFlow 与 Lua 同处 **`Host/`**，可读性优先于 asmdef 隔离。
 
 **Lua 加载策略：**
 
@@ -161,7 +165,7 @@ Packages/（项目脚手架1.6 远期 UPM）
 | **`LoadingManager`** | **一切可编排异步准备**：`ILoadTask`（Manager Init / 资源 / 场景 / 业务回调）+ Profile + 可选进度 UI | ☆（支线 Loading系统） |
 | **`GameFlow`** | **何时跑哪份 Loading Profile**；宏观态切换（`Startup` / `MainMenu` / `Gameplay` / …）；**Editor** 下 `DirectToTest`（见 **Editor测试系统**） | ☆（支线 GameFlow系统） |
 
-> **组合根（3.4 ✅）：** `CmgmFramework/Runtime/CmgmInitializer.cs`（**无** `Bootstrap/` 目录、**无** `CMGM.Bootstrap` namespace）。  
+> **组合根（3.4 ✅）：** `CmgmFramework/Runtime/Host/CmgmInitializer.cs`（**无** `Bootstrap/` 目录、**无** `CMGM.Bootstrap` namespace）。
 > **设计决策（2026-06-19 修订）：** 单一薄入口 **`CmgmInitializer`**；Init 链在 **`CmgmInitState.CreateTasks()`**；进游戏在 **`GameplayState.CreateTasks()`** + **`EnterGameplayLoadTask`**（#16 ✅）。**`BootSingleton` 仍保留**（生命周期 guard）。
 
 ### 3.6 场景加载与流程（**不建 Scene 模块**；**已删 `ScenesManager`**）
@@ -346,7 +350,7 @@ InitScene（CmgmInitializer.Awake）          ← #9 ✅
 
 | 问题 | 位置 | 计划归属 |
 |------|------|----------|
-| namespace / asmdef | Core/UI/Data/Audio/Input/Editor 已闭环；Lua / **`CmgmInitializer`** / Scene 临时宿主 无 asmdef | §7.2 ✅ |
+| namespace / asmdef | Core/UI/Data/Audio/Input/Editor 已闭环；**`Host/`**（Initializer / GameFlow / Lua / Story）无 asmdef | §7.2 ✅ |
 | ~~`BinaryFormatter` 序列化~~ | ~~`ArchiveManager`~~ | **存档格式优化1.2 ✅**（`JsonArchiveSerializer`） |
 | 配表 payload 读写分散 | ~~`ExcelTool` / `ConfigTableManager`~~ | **存档格式优化1.2b ✅** |
 | 无 GameFlow 状态机 | — | 支线「GameFlow系统」 |
@@ -365,17 +369,17 @@ InitScene（CmgmInitializer.Awake）          ← #9 ✅
                         │ 依赖
 ┌───────────────────────▼─────────────────────────┐
 │  CMGM.Modules（可选框架模块）                      │
-│  UI / Data / Lua / Audio / Input / Loading / GameFlow …      │
+│  UI / Data / Audio / Input / Loading …（有 asmdef）           │
 └───────────────────────┬─────────────────────────┘
                         │ 依赖
 ┌───────────────────────▼─────────────────────────┐
 │  CMGM.Core（框架核心，跨项目复用）                  │
 │  单例 / 资源 / LoadSceneAsync / 服务契约 …         │
 └───────────────────────┬─────────────────────────┘
-                        │ 组合（Core + 已选 Modules + Integrations）
+                        │ 组合（Core + 已选 Modules + Host）
 ┌───────────────────────▼─────────────────────────┐
-│  CmgmInitializer（薄组合根；§6.5；Assembly-CSharp）  │
-│  InitScene：Logo + UIManager → GameFlow            │
+│  Host（薄组合根 + 流程编排 + Lua/Story；Assembly-CSharp） │
+│  CmgmInitializer · GameFlow · Lua · Story       │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -387,10 +391,13 @@ Assets/CmgmUnityPackages/
     Resources/
     Editor/
     Runtime/
-      CmgmInitializer.cs          （#9 ✅；Runtime 根目录）
-      Core/
-      Modules/
-      Integrations/
+      Core/                         CMGM.Core（有 asmdef）
+      Modules/                      UI / Data / Loading / Audio / Input（有 asmdef）
+      Host/                         无 asmdef（Assembly-CSharp）
+        CmgmInitializer.cs          （#9 ✅）
+        GameFlow/
+        Lua/
+        Story/
   CmgmGameKits/
 
 Assets/_WorkSpace/
@@ -421,7 +428,7 @@ Assets/_WorkSpace/Scripts/
 
 </details>
 
-### 6.1 框架模块分级（Core / 可选 Modules）
+### 6.1 框架目录分级（Core / Modules / Host）
 
 | 层级 | 目录 | 模块 id | 默认 | 说明 |
 |------|------|---------|------|------|
@@ -430,8 +437,10 @@ Assets/_WorkSpace/Scripts/
 | **Modules** | `…/Data/` | `Data` | 推荐 | `CMGM.Data` ✅ |
 | **—** | ~~`Modules/Scene/`~~ | — | **不建模块** | **已删**；流程在 `MainMenuState` / `LoadTasks` |
 | **Modules** | `…/Loading/` | `Loading` | 可选 | 支线「Loading系统」；`CMGM.Loading` |
-| **Modules** | `…/GameFlow/` | `GameFlow` | 推荐 | 支线「GameFlow系统」；`CMGM.GameFlow`；触发 Loading Profile |
-| **Integrations** | `CmgmFramework/Runtime/Integrations/Lua/` | `Lua` | 可选 | **不建 asmdef**，契约 `ILuaService` 入 Core（§7.5） |
+| **Host** | `…/Host/GameFlow/` | `GameFlow` | 推荐 | 支线「GameFlow系统」；`namespace CMGM.GameFlow`；**无 asmdef** |
+| **Host** | `…/Host/Lua/` | `Lua` | 可选 | **无 asmdef**；契约 `ILuaService` 入 Core（§7.5） |
+| **Host** | `…/Host/Story/` | `Story` | 可选 | Lua `Talk` 编排；**无 asmdef** |
+| **Host** | `…/Host/CmgmInitializer.cs` | — | **必选** | InitScene 薄组合根（#9 ✅）；**无 asmdef** |
 | **Modules** | `…/Audio/` | `Audio` | 可选 | `CMGM.Audio`（编译边界2.7） |
 | **Modules** | `…/Input/` | `Input` | 可选 | `CMGM.Input`（编译边界2.8） |
 | **Modules** | `…/Optional/` | `Optional` | 可选 | 原 `OptionalSystem/`；事件总线等 |
@@ -442,11 +451,11 @@ Assets/_WorkSpace/Scripts/
 | 归属 | 内容 |
 |------|------|
 | **已完成基线** | 物理目录 + 去 `Game*` 前缀；UI / Data / Audio / Input / Editor asmdef 闭环 |
-| **主线 编译边界2.6~2.9** ✅ | Lua（Integrations，**无** asmdef）/ Audio / Input / Editor 有 asmdef；`CmgmInitializer` / Scene 临时宿主 / Integrations 无 asmdef |
-| **主线 启动编排3.4** ✅ | **`CmgmInitializer.cs`** 在 `Runtime/` 根；框架态在 **`GameFlow/GameFlowStates/`** | **#9 #16** ✅ |
+| **主线 编译边界2.6~2.9** ✅ | Lua / GameFlow / Story / Initializer 在 **`Host/`**（**无** asmdef）；Audio / Input / Editor 有 asmdef |
+| **主线 启动编排3.4** ✅ | **`Host/CmgmInitializer.cs`**；框架态在 **`Host/GameFlow/GameFlowStates/`** | **#9 #16** ✅ |
 | **内容扩展1.5 / 项目脚手架1.6** | Editor 模块导入向导（远期） |
 
-最小 JRPG 示例：`Core` + `UI` + `Data` + `Lua`（+ `Integrations`）  
+最小 JRPG 示例：`Core` + `UI` + `Data` + `Host/Lua`（+ `Host/Story` 按需）
 最小 MUG 示例：`Core` + `UI` + `Audio` + `Input`
 
 ### 6.2 Editor 目录分层（Runtime 与 Editor 分离）
@@ -468,7 +477,7 @@ Assets/_WorkSpace/Scripts/
 
 ### 6.3 模块目录重命名（已完成基线，去 `Game*` 前缀）
 
-与 `_WorkSpace/Scripts` 业务层区分，迁入 `CmgmFramework` 时**统一去掉历史模块目录 `Game*` 前缀**（`AudioSystem`→`Audio` 等）。**例外：** 宏观流程模块 **`GameFlow`**（`CMGM.GameFlow`）保留 `Game` 前缀。namespace / asmdef 在对应模块闭环步骤与目录对齐。
+与 `_WorkSpace/Scripts` 业务层区分，迁入 `CmgmFramework` 时**统一去掉历史模块目录 `Game*` 前缀**（`AudioSystem`→`Audio` 等）。**例外：** 宏观流程 **`GameFlow`**（`namespace CMGM.GameFlow`）保留 `Game` 前缀；物理目录在 **`Host/GameFlow/`**，**无**独立 asmdef。
 
 | 现目录 | 框架目标 | 计划 namespace / asmdef |
 |--------|----------|-------------------------|
@@ -476,7 +485,7 @@ Assets/_WorkSpace/Scripts/
 | `GameUI/` | `Runtime/Modules/UI/` | `CMGM.UI` ✅ |
 | `GameData/` | `Runtime/Modules/Data/` | `CMGM.Data` ✅ |
 | `GameLevel/` | — | **不建模块**（§3.6；场景原语在 Core） |
-| `LuaCore/` | `Framework/Integrations/Lua/` | 无 asmdef；`ILuaService` 在 Core ✅ |
+| `LuaCore/` | `Framework/Host/Lua/` | 无 asmdef；`ILuaService` 在 Core ✅ |
 | `AudioSystem/` | `Runtime/Modules/Audio/` | `CMGM.Audio`（编译边界2.7） |
 | `GameInput/` | `Runtime/Modules/Input/` | `CMGM.Input`（编译边界2.8） |
 | `OptionalSystem/` | `Runtime/Modules/Optional/` | `CMGM.Optional` |
@@ -498,7 +507,7 @@ Assets/_WorkSpace/Scripts/
 
 ### 6.5 启动三分工：`CmgmInitializer` · Loading · GameFlow
 
-**组合根（Composition Root）** 在本框架中**收窄为单一薄入口**：**`CmgmInitializer`**（`Runtime/CmgmInitializer.cs`，无独立目录 / namespace）。  
+**组合根（Composition Root）** 在本框架中**收窄为单一薄入口**：**`CmgmInitializer`**（`Runtime/Host/CmgmInitializer.cs`，`namespace CMGM`）。
 其余「谁先 Init、加载什么资源」**不再**维护第二、第三个 Boot 文件，统一为 **Loading Profile** 内的 **`ILoadTask`** 列表，由 **GameFlow** 决定在何时 `LoadingManager.Run(profile)`。
 
 ```
@@ -514,7 +523,7 @@ GameFlow（何时、处于哪一宏观态）
 | **Loading** | 本阶段跑哪些异步任务？进度如何？ | `ILoadTask`、`CreateTasks()`、`LoadingManager` |
 | **GameFlow** | 现在在主菜单还是进游戏中？何时触发哪份 Profile？ | `IGameFlowState`、`GameFlowMachine` |
 
-**Initializer 不能放进 `CMGM.Core`：** 与旧 Boot 相同，Core 若直接引用 `UIManager` 等具体类型会 **Core → Modules 依赖倒置**（§6.1 禁止）。`CmgmInitializer` 落 **`Assembly-CSharp`**，与 Integrations / Scene 临时宿主同级。
+**Initializer 不能放进 `CMGM.Core`：** 与旧 Boot 相同，Core 若直接引用 `UIManager` 等具体类型会 **Core → Modules 依赖倒置**（§6.1 禁止）。`CmgmInitializer` 与 **GameFlow / Lua / Story** 同落 **`Host/`**（`Assembly-CSharp`）。
 
 #### 6.5a Manager 单例双基类（启动编排3.2 ✅ · **仅纯 C#**）
 
@@ -698,7 +707,7 @@ MainPanel 点开始   → GameFlowMachine.SwitchTo(Gameplay)   // GameplayState.
 **`CmgmInitializer` 最小集（3.4 验收）：**
 
 ```csharp
-// Runtime/CmgmInitializer.cs — 薄类：Logo 编排 + 交 GameFlow
+// Runtime/Host/CmgmInitializer.cs — 薄类：Logo 编排 + 交 GameFlow
 await UniTask.WhenAll(
     GameFlowMachine.Instance.SwitchToAsync(new CmgmInitState()),  // 内：UIManager → RunAsync(CreateTasks)
     ShowLogosAsync());
@@ -709,7 +718,7 @@ await SwitchToAsync(new MainMenuState());
 
 | 方案 | 位置 | 本框架 |
 |------|------|--------|
-| **A. `Assembly-CSharp` + `Runtime/CmgmInitializer.cs`** | 组合根与 Integrations 同程序集 | **目标（3.4）** |
+| **A. `Assembly-CSharp` + `Runtime/Host/`** | 组合根与 GameFlow / Lua / Story 同程序集 | **目标（3.4 + 2026-07 Host）** |
 | **B. 独立 asmdef** | 曾为 `CMGM.Bootstrap` | **不做**（Lua / 显式 Init 与 asmdef 冲突，见 3.3 回退记录） |
 | **C. 仅引 Core + Registry** | 远期可选 | **模块启动Registry系统** |
 
@@ -739,7 +748,7 @@ await SwitchToAsync(new MainMenuState());
 | **启动编排3.1** ✅ | 文档约定 Init 纪律 + 三档时机（已被 6.5 修订吸收） | 完成 |
 | **启动编排3.2** ✅ | `LazySingleton` / `BootSingleton` + `InitAsync`；UI / Archive / Lua 迁移 | 完成 |
 | **启动编排3.3** ✅ | `CmgmFrameBoot` → `Runtime/Bootstrap/`（过渡）；Play 验收 | 完成 |
-| **启动编排3.4** ✅ | **`CmgmInitializer.cs`** → `Runtime/` 根；InitScene 挂 Initializer；Play 验收 | **#9** ✅ |
+| **启动编排3.4** ✅ | **`Host/CmgmInitializer.cs`**；InitScene 挂 Initializer；Play 验收 | **#9** ✅ |
 
 **当前运行时：** **3.4** `CmgmInitializer` + GameFlow（#7~#9 ✅）；**StartupFramework Profile** 为 #10 可选收敛。
 
@@ -785,8 +794,8 @@ await SwitchToAsync(new MainMenuState());
 | 其余模块后建 asmdef | 不在分层完成前给混合目录建程序集 |
 | 禁止为修编译改业务 | 不得删改 Panel 按钮逻辑、场景跳转等；边界问题用迁移 / 接口 / 引用解决 |
 | 动功能前先确认 | 任何可能影响运行时行为的改法，先与用户确认 |
-| XLua 不建 asmdef | 官方 `feature/asmdef` 已被回滚（PR#1067 加、PR#1068 删），XLua 留官方 master、待在 `Assembly-CSharp`；Lua 模块改走「契约入 Core / 实现入 `Integrations`」，不给 XLua 套 asmdef（§7.5） |
-| **asmdef 按需、不强迫** | asmdef 是编译边界工具，**不是**每个目录的必选项。若导致组合根注册桥接、破坏显式 Init、或与第三方（XLua）冲突，则**保持 `Assembly-CSharp` + namespace 分层**（§7.5） |
+| XLua 不建 asmdef | 官方 `feature/asmdef` 已被回滚（PR#1067 加、PR#1068 删），XLua 留官方 master、待在 `Assembly-CSharp`；Lua 改走「契约入 Core / 实现入 **`Host/Lua`**」，不给 XLua 套 asmdef（§7.5） |
+| **asmdef 按需、不强迫** | asmdef 是编译边界工具，**不是**每个目录的必选项。若导致 BootInit 注册桥接、破坏显式 Init、或与第三方（XLua）冲突，则**保持 `Host/` + namespace 分层**（§7.5；详见 `.cursor/rules/asmdef-policy.mdc`） |
 | 小步验证 | 每模块闭环后编译 + 主流程 Play 一次，再开下一模块 |
 
 > 主线「编译边界2.6~2.8」即按此四步推进。
@@ -798,7 +807,7 @@ await SwitchToAsync(new MainMenuState());
 | Core 程序集 | `CMGM.Core` asmdef + `namespace CMGM.Core`；`Consts.Paths` 单文件；`WorkSpace` 根入 `CmgmFrameSettings`；**`LoadSceneAsync` 原语** |
 | 框架/业务分层 | `CmgmUnityPackages/` + `_WorkSpace/Scripts/`；Panel / 配表 / 存档在业务层脚本目录 |
 | UI / Data / Audio / Input / Editor | 各模块 asmdef 闭环（Editor 含 `CMGM.Editor`、`CMGM.UI.Editor`、`CMGM.Data.Editor`） |
-| Lua | `Integrations/Lua/` + `ILuaService`（**无** Lua asmdef，方案 C） |
+| Lua | `Host/Lua/` + `Host/Story/` + `ILuaService`（**无** Lua asmdef，方案 C） |
 | 启动编排 | `LazySingleton` / `BootSingleton` + `InitAsync`；**#6 #7** ✅；**CreateTasks 同址**（§6.5f）；目标 **#9 Initializer** |
 | **Loading #6** ✅ | Boot Init 链从 Boot 抽出（清单现于 **`CmgmInitState.CreateTasks()`**） |
 | **#7 GameFlow 1.3a** ✅ | `SwitchToAsync` + `CmgmInitState` / `MainMenuState`；Boot 只调 GameFlow |
@@ -825,14 +834,14 @@ await SwitchToAsync(new MainMenuState());
 
 | 步骤编号 | 名称 | 解锁条件 | 状态 |
 |----------|------|----------|------|
-| **编译边界2.6** | Lua 模块收口（**方案 C**）：XLua 退官方 master；Core 加 `ILuaService` 契约；`LuaManager` 实现 `ILuaService`；`LuaManager`/`LuaBridge` 迁 `Framework/Integrations/Lua`（`Assembly-CSharp`） | 已完成基线 ✅ | **完成 ✅（2026-06-19）** |
+| **编译边界2.6** | Lua 模块收口（**方案 C**）：XLua 退官方 master；Core 加 `ILuaService` 契约；`LuaManager` 实现 `ILuaService`；`LuaManager`/`LuaBridge` 迁 **`Host/Lua`**（`Assembly-CSharp`） | 已完成基线 ✅ | **完成 ✅（2026-06-19）** |
 | **编译边界2.7** ✅ | Audio 模块解耦与闭环（2.7a/b/c，见 §7.2a） | 编译边界2.6 完成 ✅ | **已完成** |
 | **编译边界2.8** ✅ | Input 模块闭环（`CMGM.Input`） | 编译边界2.7 完成 ✅ | **已完成** |
 | **编译边界2.9** ✅ | Editor 闭环（`CMGM.Editor`） | 编译边界2.8 完成 ✅ | **已完成** |
 | **启动编排3.1** ✅ | 文档约定：两组合根 + Init 纪律 + 三档时机 + Boot 三方案对比 + Registry 阈值（§6.5、§7.2b）；**不改运行时** | 编译边界2.9 完成 ✅ | **完成 ✅（2026-06-19）** |
 | **启动编排3.2** ✅ | **仅纯 C#**：`LazySingleton` / `BootSingleton` + `InitAsync`；迁移 UI / Archive / Lua；Mono 单例留 Audio 支线 | 启动编排3.1 完成 ✅ | **完成 ✅（已验收）** |
 | **启动编排3.3** ✅ | `CmgmFrameBoot` → `Runtime/Bootstrap/`（过渡）；显式 InitAsync（无 Bootstrap asmdef） | 启动编排3.2 完成 ✅ | **完成 ✅（已验收）** |
-| **启动编排3.4** ✅ | `CmgmInitializer`：`Runtime/CmgmInitializer.cs`；框架态在 `GameFlow/GameFlowStates/` | Loading系统 **≥1.2** ✅ | **✅** |
+| **启动编排3.4** ✅ | `CmgmInitializer`：`Runtime/Host/CmgmInitializer.cs`；框架态在 `Host/GameFlow/GameFlowStates/` | Loading系统 **≥1.2** ✅ | **✅** |
 
 > 主线 **启动编排3.3** 已完成（过渡运行时）；**3.4** 与 **Loading / GameFlow** 衔接，见 §6.5。Registry 非主线，见 §7.2b。
 
@@ -977,7 +986,7 @@ await SwitchToAsync(new MainMenuState());
 
 #### GameFlow系统（已解锁）
 
-> **模块：** `Runtime/Modules/GameFlow/`（`namespace CMGM.GameFlow`）；编排游戏宏观流程，**不引用** `CMGM.Workspace` 业务类型。
+> **模块：** `Runtime/Host/GameFlow/`（`namespace CMGM.GameFlow`）；编排游戏宏观流程，**不引用** `CMGM.Workspace` 业务类型；**无 asmdef**（与 `Host/Lua` 同程序集，启动清单可读性优先）。
 
 | 子步 | 内容 | 验收 |
 |------|------|------|
@@ -1156,12 +1165,12 @@ await SwitchToAsync(new MainMenuState());
 | # | 阶段 | 步骤 ID | 内容 | 前置 | 验收标准 | 主要产出 | 变更量 | 状态 |
 |---|------|---------|------|------|----------|----------|--------|------|
 | **1** | **A · 执行器** | **Loading系统1.1** | `Modules/Loading` + `LoadingManager.Run` + 进度 UI | Core ✅ + UI ✅ | Play 进度条走完 | `LoadingManager`、`LoadingPanel` | **中** | **✅** |
-| **2** | A · 并行 | **GameFlow系统1.1** | `IGameFlowState`：`EnterAsync` / `Exit` / `Update` | 3.3 ✅ | 空态可切换 | `CMGM.GameFlow` | **中** | **✅** |
+| **2** | A · 并行 | **GameFlow系统1.1** | `IGameFlowState`：`EnterAsync` / `Exit` / `Update` | 3.3 ✅ | 空态可切换 | `Host/GameFlow`（`CMGM.GameFlow` ns） | **中** | **✅** |
 | **3** | A · 并行 | **GameFlow系统1.2** | `GameFlowMachine`：Push / Pop / SwitchTo | **#2** ✅ | 栈日志正确 | `GameFlowMachine.cs` | **小** | **✅** |
 | **4** | **A · 任务模型** | **Loading系统1.2** | `ILoadTask` + `Weight` + `ManagerInitLoadTask` | **#1** ✅ | 加权进度正确 | `ILoadTask` 等 | **中** | **✅** |
 | **5** | **B · 业务竖切** | **Loading系统1.3** | `MainPanel` → `EnterGameplayLoading` + 进度条 | **#4** ✅ | 进游戏有进度条 | `MainPanel`、`EnterGameplayLoading` | **中** | **✅** |
 | **6** | **C · 启动清单** | **Loading 1.4 · 启动** | Boot 无长 Init 链；清单后迁入 **`CmgmInitState.CreateTasks()`**（#7） | **#5** ✅ | Play 与改前一致 | `CmgmInitState.cs` | **小** | **✅** |
-| **7** | **C · GameFlow** | **GameFlow 1.3a** | **`CmgmInitState` + `MainMenuState`** + **`SwitchToAsync`** | **#6** ✅ | Logo 后进主界面 | `GameFlow/GameFlowStates/*` | **中** | **✅** |
+| **7** | **C · GameFlow** | **GameFlow 1.3a** | **`CmgmInitState` + `MainMenuState`** + **`SwitchToAsync`** | **#6** ✅ | Logo 后进主界面 | `Host/GameFlow/GameFlowStates/*` | **中** | **✅** |
 | **8** | C · GameFlow | **GameFlow 1.3b** | **`GameplayState`**；`MainPanel` → **`SwitchToAsync(Gameplay)`** | **#7** ✅ | 进游戏走 GameFlow | `GameplayState`、`MainPanel` | **小~中** | **✅** |
 | **9** | C · 编排 | **启动编排3.4** | `CmgmFrameBoot` → **`CmgmInitializer.cs`**；仅 Logo + `SwitchToAsync(CmgmInitState)` | **#7** ✅ | InitScene 组合根更名 | `CmgmInitializer.cs` | **小** | **✅** |
 | **10** | C · Loading 整理 | **Loading 1.4 · Task** | 预载主场景 / Wwise 等 **具名 `ILoadTask`**；**游戏专属 Task → `_WorkSpace/Scripts/LoadTasks/`** | **#8** ✅ | 清单可读、分层清晰 | `*LoadTask.cs` | **小** | 待做 |
@@ -1263,13 +1272,23 @@ await SwitchToAsync(new MainMenuState());
 | 项 | 结论 |
 |------|------|
 | **背景** | 此前接入的是 XLua 官方 `feature/asmdef` 分支（`Xlua.Core.asmdef`），但该分支在官方已被 **Revert**（PR#1067 加入、PR#1068/commit d919198 撤销）。原因非运行时不稳定，而是「Gen 代码须与核心同程序集」「hotfix 须核心在 `Assembly-CSharp`」两条约束与 asmdef 冲突，官方放弃维护（Issue #1174 至今 open）。 |
-| **结论：方案 C** | Lua **不单独建 asmdef**；`ILuaService` 在 Core、实现在 `Integrations/Lua`；Boot **显式** `await LuaManager.InitAsync()`（§6.5） |
-| **Integrations 定位** | 框架级第三方桥接（XLua 等），与 **`CmgmInitializer`** 同类，落 `Assembly-CSharp` |
+| **结论：方案 C** | Lua **不单独建 asmdef**；`ILuaService` 在 Core、实现在 **`Host/Lua`**；Boot **显式** `ManagerInitLoadTask<LuaManager>`（§6.5） |
+| **Host 定位（2026-07，废止 Integrations）** | **`Runtime/Host/`**：无 asmdef 的「装配层」——`CmgmInitializer`、GameFlow、Lua、Story；与有 asmdef 的 **`Modules/`** 区分 |
 | **取舍** | 放弃「Lua 独立 asmdef 封装包」的强制边界（现阶段几乎用不上：依赖方向多为 Boot→Lua、Lua→业务），换回**官方主线可升级 + hotfix 之门重开 + wrap 生成走 happy-path**，消除「绑死回滚版本」长期风险。被封装 Module 仍通过 `ILuaService` 契约保持分层与可迁移性。 |
 | **正交提醒** | XLua **交互模式**（反射 codeless ↔ 生成 wrap）与程序集归属无关：反射模式的性能/GC、IL2CPP 裁剪问题，**出包前**仍需以 `link.xml` / `[ReflectionUse]` 或生成 wrap 处理；本决策与之独立。 |
 | **hotfix** | 维持**关闭**；核心回 `Assembly-CSharp` 后门已重开，真要 C# 级热更（远期网游化）时在 XLua Hotfix / HybridCLR 间再评估（单机 JRPG/SRPG 阶段不需要）。 |
 
 > 旧「编译边界2.6 = `CMGM.Lua` asmdef + XLua Gen 同单」及相关 asmdef 文件已废弃，迁入 `ARCHITECTURE_DEPRECATED.md`。
+
+**设计决策记录 · 2026-07（`Host/` 目录 · asmdef 可读性优先）**
+
+| 项 | 结论 |
+|------|------|
+| **背景** | `GameFlow` / Lua 曾各自 asmdef 或挂在 `Integrations/`，导致 `LuaBootInit`、`IStoryPanel` 等仅为过编译的间接层，启动清单可读性下降。 |
+| **目录** | 新增 **`Runtime/Host/`**（无 asmdef）：`CmgmInitializer`、`GameFlow/`、`Lua/`、`Story/`；**废止** `Integrations/`；**废止** `CMGM.GameFlow` / `CMGM.Story` asmdef。 |
+| **Modules** | 仅保留**有 asmdef** 的能力模块：UI / Data / Loading / Audio / Input。 |
+| **协作规则** | 详见 `.cursor/rules/asmdef-policy.mdc`：可读性优先、按需建 asmdef。 |
+| **路径常量** | `Consts.Paths.Framework.Host`、`HostGameFlow`、`HostLua`、`HostStory`（`Integrations` 已删）。 |
 
 **设计决策记录 · 2026-06-19（编译边界2.7 Audio 解耦）**
 
@@ -1295,9 +1314,9 @@ await SwitchToAsync(new MainMenuState());
 | 项 | 结论 |
 |------|------|
 | **顶层** | `CmgmFramework/{Resources,Editor,Runtime}`；**不用**顶层 `Scripts` |
-| **Runtime** | `CmgmInitializer.cs`、`Core/`、`Modules/`（含 **`GameFlow/GameFlowStates/`**）、`Integrations/` |
+| **Runtime** | **`Host/`**（`CmgmInitializer`、`GameFlow/`、`Lua/`、`Story/`）、`Core/`、`Modules/`（UI / Data / Loading / Audio / Input，有 asmdef） |
 | **模块 Editor** | 仍在 `Runtime/Modules/*/Editor/`（asmdef 限定 Editor 平台） |
-| **路径常量** | `Paths.Framework.Runtime`、`Integrations` 等；**无** `Bootstrap` 路径项（#16 ✅） |
+| **路径常量** | `Paths.Framework.Host`、`HostGameFlow`、`HostLua`、`HostStory` 等；**无** `Integrations` / `Bootstrap` 路径项（#16 ✅） |
 
 > **说明：** 脚手架 **1.2b ✅** 后本线最前节点为 **1.5**。
 
@@ -1365,7 +1384,7 @@ Editor/
 
 | 项 | 结论 |
 |------|------|
-| **组合根** | 单一薄入口 **`CmgmInitializer`**（`Runtime/CmgmInitializer.cs`）；**废止**独立 `Bootstrap/` 目录与 `CMGM.Bootstrap` namespace |
+| **组合根** | 单一薄入口 **`CmgmInitializer`**（`Runtime/Host/CmgmInitializer.cs`）；**废止**独立 `Bootstrap/` 目录与 `CMGM.Bootstrap` namespace |
 | **Initializer 职责** | Logo + **`SwitchToAsync(CmgmInitState)`**；UI 基建在 **`CmgmInitState.EnterAsync`** 内 |
 | **其余编排** | **`CreateTasks()` + `ILoadTask`**（含 `ManagerInitLoadTask`）；由 **GameFlow** 决定何时 `RunAsync` |
 | **清单形态** | **代码**（State 内 `CreateTasks()` + `LoadTasks/` 具名类）；**不做** `LoadingProfile` SO |
@@ -1389,7 +1408,7 @@ Editor/
 |------|------|
 | **业务层** | 中文统称 **业务层**；英文 **Workspace**（目录 `_WorkSpace` 不变） |
 | **namespace** | 业务层脚本 **`CMGM.Workspace`**（原 `CMGM.Game`） |
-| **GameFlow** | 原支线「GameState系统」更名为 **「GameFlow系统」**；模块 `Runtime/Modules/GameFlow/`（`CMGM.GameFlow`） |
+| **GameFlow** | 原支线「GameState系统」更名为 **「GameFlow系统」**；目录 **`Runtime/Host/GameFlow/`**（`namespace CMGM.GameFlow`，**无 asmdef**） |
 | **框架 `Game*`** | 默认仍避免；**例外**：宏观游戏流程 → `GameFlow*`（见 §8） |
 
 **设计决策记录 · 2026-06-19（CmgmFramework 内置 Resources）**
@@ -1407,8 +1426,8 @@ Editor/
 | 项 | 结论 |
 |------|------|
 | **3.3 范围** | 过渡：`CmgmFrameBoot` 迁 `Runtime/Bootstrap/` ✅；**不**建 `CMGM.Bootstrap.asmdef`（已回退方案 B）。 |
-| **3.4 修订** | 废止 `Bootstrap/`；组合根 → **`Runtime/CmgmInitializer.cs`**（§6.5）。 |
-| **asmdef 原则** | **按需加、不强迫**（§7.0）。`CmgmInitializer`、Integrations/Lua、Scene 临时宿主均无 asmdef。 |
+| **3.4 修订** | 废止 `Bootstrap/`；组合根 → **`Runtime/Host/CmgmInitializer.cs`**（§6.5）。 |
+| **asmdef 原则** | **按需加、不强迫**（§7.0）。**`Host/`** 全体（Initializer / GameFlow / Lua / Story）均无 asmdef；详见 `.cursor/rules/asmdef-policy.mdc`。 |
 
 **潜在完善候选（backlog，未立支线；当用户问「还能怎样进一步完善框架」时主动提醒）**
 
@@ -1512,7 +1531,7 @@ ShowPanel<T>() → Addressables 加载 HotRes/UI/Panels/{T}.prefab
 | **Unity 引擎 API** | 不改动 | `GameObject`、`GamePlayActions`（Input 生成名） |
 | **StreamingAssets** | 配表输出目录 **`TableConfig/`**（原 `GameConfig/`） | `Consts.Paths.ConfigData` |
 
-> **术语：** 中文称 **业务层**；英文称 **Workspace**（目录 `_WorkSpace`）。原 `CMGM.Game` namespace 已统一为 **`CMGM.Workspace`**。原支线「GameState系统」已更名为 **「GameFlow系统」**（`Modules/GameFlow/`，`namespace CMGM.GameFlow`）。
+> **术语：** 中文称 **业务层**；英文称 **Workspace**（目录 `_WorkSpace`）。原 `CMGM.Game` namespace 已统一为 **`CMGM.Workspace`**。原支线「GameState系统」已更名为 **「GameFlow系统」**（`Host/GameFlow/`，`namespace CMGM.GameFlow`）。
 
 ### Lua 管线
 

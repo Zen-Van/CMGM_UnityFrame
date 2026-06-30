@@ -1,0 +1,5 @@
+-- 剧情示例：主界面「加载游戏」按钮会 ExecuteLua 本文件
+Talk(1, 0, "这是第一句台词。")
+Talk(1, 0, "点「继续」看下一句。")
+Talk(2, 0, "第二角色（roleId=2，暂未查配表）。")
+DebugLog("demo_intro 播完")

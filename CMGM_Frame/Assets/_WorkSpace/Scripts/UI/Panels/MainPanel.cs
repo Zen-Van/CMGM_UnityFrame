@@ -16,7 +16,8 @@ namespace CMGM.Workspace
                     GameFlowMachine.Instance.SwitchToAsync(new GameplayState()).Forget();
                     break;
                 case "btnLoad":
-                    CmgmLog.fNormal("加载游戏");
+                    // 竖切占位：演示 Lua 剧情（story/demo_intro.lua.txt）
+                    LuaManager.Instance.ExecuteLua("story/demo_intro.lua.txt").Forget();
                     break;
                 case "btnQuit":
                     CmgmApplication.Quit();

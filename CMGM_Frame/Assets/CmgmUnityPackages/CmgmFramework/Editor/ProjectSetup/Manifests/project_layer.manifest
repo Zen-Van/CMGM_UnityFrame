@@ -18,6 +18,7 @@ Assets/_WorkSpace/HotRes/Scenes/InitScene.unity
 Assets/_WorkSpace/HotRes/Scenes/MainScene.unity
 Assets/_WorkSpace/HotRes/UI/Panels/MainPanel.prefab
 Assets/_WorkSpace/HotRes/UI/Panels/LoadingPanel.prefab
+Assets/_WorkSpace/HotRes/UI/Panels/DialogPanel.prefab
 Assets/_WorkSpace/Scripts/LoadTasks/EnterGameplayLoadTask.cs
 Assets/_WorkSpace/Scripts/GameFlowState/README.txt
 Assets/_WorkSpace/Scripts/GameFlowState/GameplayState.cs
@@ -28,4 +29,5 @@ Assets/_WorkSpace/Scripts/Archive
 Assets/_WorkSpace/Scripts/Archive/GameRuntimeData.cs
 Assets/_WorkSpace/Scripts/UI/Panels/MainPanel.cs
 Assets/_WorkSpace/Scripts/UI/Panels/LoadingPanel.cs
-Assets/_WorkSpace/Scripts/_Generated/Config
+Assets/_WorkSpace/Scripts/UI/Panels/DialogPanel.cs
+Assets/_WorkSpace/HotRes/Lua/Story/demo_intro.lua.txt

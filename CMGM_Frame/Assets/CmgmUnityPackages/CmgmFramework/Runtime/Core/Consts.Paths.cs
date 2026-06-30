@@ -65,11 +65,15 @@ namespace CMGM.Core
             public static class Framework
             {
                 public static string Root => Package.Framework;
-                /// <summary>运行时代码根（Core / Modules / Integrations）</summary>
+                /// <summary>运行时代码根（Core / Modules / Host）</summary>
                 public static string Runtime => Root + "/Runtime";
                 public static string Core => Runtime + "/Core";
                 public static string Modules => Runtime + "/Modules";
-                public static string Integrations => Runtime + "/Integrations";
+                /// <summary>无 asmdef：组合根、GameFlow、Lua、Story 等（Assembly-CSharp）</summary>
+                public static string Host => Runtime + "/Host";
+                public static string HostGameFlow => Host + "/GameFlow";
+                public static string HostLua => Host + "/Lua";
+                public static string HostStory => Host + "/Story";
                 /// <summary>框架级 Editor（路径检查、通用模板等，编译边界2.9）</summary>
                 public static string Editor => Root + "/Editor";
 
