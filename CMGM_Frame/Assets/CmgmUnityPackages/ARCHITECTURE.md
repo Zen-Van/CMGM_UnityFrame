@@ -336,7 +336,9 @@ Assets/_WorkSpace/
   GAME_WORKSPACE.md
   HotRes/  Excels/
   Scripts/
-    Bootstrap/                    ← 过渡；Loading 1.4b 后改 LoadingProfiles/ 或废止
+    Bootstrap/                    ← 过渡；#8/#16 后精简
+    GameFlowState/                ← 业务宏观态
+    LoadTasks/                    ← 业务 ILoadTask
     UI/Panels/
     Archive/
     _Generated/
@@ -483,14 +485,14 @@ GameFlow（何时、处于哪一宏观态）
 | **（按需）** `EnterBattle` 等 | `BattleState.Enter` / 同态 API | 可配置 | **对应 State 类内 `CreateTasks()`** |
 
 > **#17 可选：** Profile SO 仍可作为「一次加载事务」外壳；**默认教学路径**为 State 内 **`private CreateTasks()`**（非独立 static 清单类）。  
-> **分层：** 框架 `CMGM.Loading` 提供 **机制 + 通用积木**；**游戏专属 `ILoadTask`** 放 **`_WorkSpace/Scripts/Loading/`**（#10），由 State 的 `CreateTasks()` 引用。
+> **分层：** 框架 `CMGM.Loading` 提供 **机制 + 通用积木**；**游戏专属 `ILoadTask`** 放 **`_WorkSpace/Scripts/LoadTasks/`**（#10），由 State 的 `CreateTasks()` 引用。
 
 #### 6.5d Loading 1.4 分步（与 §7.7 # 对齐）
 
 | §7.7 # | 内容 | 改哪里 |
 |--------|------|--------|
 | **#6** ✅ | Boot Init 链从 Boot 抽出 | 后并入 **`CmgmInitState`**（#7） |
-| **#10** | 具名 `ILoadTask`；业务 Task 迁 `_WorkSpace` | `Loading/Tasks/` 框架 + 业务 |
+| **#10** | 具名 `ILoadTask`；业务 Task 迁 `_WorkSpace/Scripts/LoadTasks/` | 框架 + 业务 LoadTask |
 | **#11** | `LoadingRunOptions` 预设对称 | 各 State 内 `RunAsync` 选项 |
 | **#17** | 可选 Profile SO（Editor 创建） | 远期 |
 
@@ -523,7 +525,7 @@ CreateTasks()           ← 与 RunAsync 同址（§6.5f）；具名 ILoadTask �
 
 - **`UIManager.InitAsync`** 须在 **`RunAsync` 之前**、写在 **`EnterAsync` 内**（不能放进 `CreateTasks()`，见 `LoadingManager` 入口检查）。
 - **禁止** 独立 static 类（如 `XxxLoading.CreateTasks()`）与 **`RunAsync` 分处两类**；`EnterGameplayLoading` 为 **#8 前过渡**，收进 `GameplayState` 后删除。
-- **具名 `ILoadTask`** 可在 `Loading/Tasks/` 或 `_WorkSpace/Scripts/Loading/` 定义，由 **同类的 `CreateTasks()` 组装引用**（#10）。
+- **具名 `ILoadTask`** 可在框架 `Loading/Tasks/` 或 **`_WorkSpace/Scripts/LoadTasks/`** 定义，由 **同类的 `CreateTasks()` 组装引用**（#10）。
 - **`LoadingManager`** 仍为唯一执行器；State / 过渡 API 负责 **何时跑 + 清单内容**，不替代执行器。
 
 #### 6.5b Loading 调用纪律（GameFlow + 清单 · **方案 A**）
@@ -1007,7 +1009,7 @@ await SwitchToAsync(new MainMenuState());
 | UI | `HotRes/UI/Panels/MainPanel.prefab`、`LoadingPanel.prefab`；`Scripts/UI/Panels/MainPanel.cs`、`LoadingPanel.cs` |
 | Boot（业务侧，**过渡**） | `Scripts/Bootstrap/GameBootstrap.cs`（**Loading系统1.4b** 废止 → **`LoadingProfiles/EnterGameplay.asset`**） |
 
-| **GameBootstrap → #16** | 种子仍含 `GameBootstrap.cs`（过渡）；**#16** 改为业务 **`EnterGameplayLoadTask`** + `_WorkSpace/Scripts/Loading/` |
+| **GameBootstrap → #16** | 种子仍含 `GameBootstrap.cs`（过渡）；**#16** 改为业务 **`LoadTasks/`** 下具名 Task |
 
 #### 模块启动Registry系统（🔒 远期，见 §7.2b）
 
@@ -1103,13 +1105,13 @@ await SwitchToAsync(new MainMenuState());
 | **7** | **C · GameFlow** | **GameFlow 1.3a** | **`CmgmInitState` + `MainMenuState`** + **`SwitchToAsync`**；**CreateTasks 同址**（§6.5f） | **#6** ✅ **#3** ✅ | Logo 后进主界面；Boot 无 Loading/Scene 直调 | `Bootstrap/GameFlow/*State` | **中** | **✅** |
 | **8** | C · GameFlow | **GameFlow 1.3b** | **`GameplayState`**；`MainPanel` → **`SwitchToAsync(Gameplay)`** | **#7** ✅ | 进游戏走 GameFlow | `GameplayState`、`MainPanel` | **小~中** | **待做 ← 当前** |
 | **9** | C · 编排 | **启动编排3.4** | `CmgmFrameBoot` → **`CmgmInitializer.cs`**；仅 Logo + `SwitchToAsync(CmgmInitState)` | **#7** ✅ | InitScene 组合根更名 | `CmgmInitializer.cs` | **小** | 待做 |
-| **10** | C · Loading 整理 | **Loading 1.4 · Task** | 预载主场景 / Wwise 等 **具名 `ILoadTask`**；**游戏专属 Task → `_WorkSpace/Scripts/Loading/`** | **#8** ✅ | 清单可读、分层清晰 | `*LoadTask.cs` | **小** | 待做 |
+| **10** | C · Loading 整理 | **Loading 1.4 · Task** | 预载主场景 / Wwise 等 **具名 `ILoadTask`**；**游戏专属 Task → `_WorkSpace/Scripts/LoadTasks/`** | **#8** ✅ | 清单可读、分层清晰 | `*LoadTask.cs` | **小** | 待做 |
 | **11** | C · Loading 整理 | **Loading 1.4 · API** | `RunAsync()` / `LoadingRunOptions` 预设；`Startup` / `EnterGameplay` 入口对称 | **#10** 可选 | 调用方式统一 | 小改 | **小** | 待做 |
 | **12** | **D · Editor** | **Editor测试1.1** | **`EditorPlayRequest`** DTO | **#1** ✅ | Editor/Runtime 可读 | `EditorPlayRequest.cs` | **小** | 待做 |
 | **13** | D · Editor | **GameFlow 1.3c** | **`DirectToTest`**：Editor 跳过 MainScene | **#9** ✅ **#12** ✅ | Editor 进目标场景 | `CmgmInitState` Editor 分支 | **小~中** | 待做 |
 | **14** | D · Editor | **Editor测试1.2** | 菜单「从当前场景 Play」 | **#12** ✅ | 任意场景 Play | `Edt_PlayFromCurrentScene.cs` | **小** | 待做 |
 | **15** | D · Editor | **Editor测试1.3** | E2E：Init → trim Startup → 目标场景 | **#13** **#14** ✅ | 测试场景可达 | 联调验收 | **小** | 待做 |
-| **16** | **E · 清理** | **Loading 1.4b** | **废止 `GameBootstrap.cs`** → **`EnterGameplayLoadTask`**（业务层）；更新 Seeds / manifest | **#8** ✅ | 无 `GameBootstrap` | 业务 `Loading/` | **中** | 待做 |
+| **16** | **E · 清理** | **Loading 1.4b** | **废止 `GameBootstrap.cs`** → 业务 **`LoadTasks/`**；更新 Seeds / manifest | **#8** ✅ | 无 `GameBootstrap` | 业务 `LoadTasks/` | **中** | 待做 |
 | **17** | 可选 | **Loading 1.4 · SO** | 可选 **`LoadingProfile` SO**（**Editor 菜单创建**，禁止手写 YAML） | Task ≥8 | Inspector 可配序 | `.asset` + Editor | **中** | 远期 |
 
 #### 阶段验收清单（里程碑 Definition of Done）

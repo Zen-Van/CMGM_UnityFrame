@@ -92,6 +92,10 @@ namespace CMGM.Core
             {
                 public static string Root => ScriptsPath;
                 public static string Bootstrap => Root + "/Bootstrap";
+                /// <summary>业务层宏观流程态（Gameplay / WorldMap …）</summary>
+                public static string GameFlowState => Root + "/GameFlowState";
+                /// <summary>业务层 Loading Task（TableLoadTask 等）</summary>
+                public static string LoadTasks => Root + "/LoadTasks";
                 public static string UI_Panels => Root + "/UI/Panels";
                 /// <summary>业务层运行时存档结构脚本（如 GameRuntimeData）</summary>
                 public static string Archive => Root + "/Archive";

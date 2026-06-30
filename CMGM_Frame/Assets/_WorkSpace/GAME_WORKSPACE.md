@@ -60,8 +60,9 @@ _WorkSpace/
 
 └── Scripts/
 
-    ├── Bootstrap/              GameBootstrap（#16 废止）；EnterGameplayLoading（#8 过渡）
-
+    ├── Bootstrap/              过渡；#8/#16 后精简
+    ├── GameFlowState/            业务宏观态 + README.txt
+    ├── LoadTasks/                业务 LoadTask（TableLoadTask 等）
     ├── UI/Panels/
 
     ├── Archive/
@@ -144,9 +145,18 @@ Boot 参数（主场景名、主 Panel 名、工作区根路径等）在 **`Cmgm
 
 ---
 
+## 6. GameFlowState 与 LoadTasks（业务层）
 
+| 目录 | 说明 | 说明文件 |
+|------|------|----------|
+| `Scripts/GameFlowState/` | 游戏宏观态 | `README.txt` |
+| `Scripts/LoadTasks/` | 游戏 Loading 步骤 | `README.txt` |
 
-## 6. UI
+框架启动态：`CmgmFramework/.../Bootstrap/GameFlow/`（`CmgmInitState`、`MainMenuState`）。
+
+---
+
+## 7. UI
 
 
 
@@ -162,7 +172,7 @@ Boot 参数（主场景名、主 Panel 名、工作区根路径等）在 **`Cmgm
 
 
 
-## 7. 新建游戏项目时建议修改
+## 8. 新建游戏项目时建议修改
 
 
 
@@ -178,7 +188,7 @@ Boot 参数（主场景名、主 Panel 名、工作区根路径等）在 **`Cmgm
 
 
 
-## 8. 文档索引
+## 9. 文档索引
 
 
 
