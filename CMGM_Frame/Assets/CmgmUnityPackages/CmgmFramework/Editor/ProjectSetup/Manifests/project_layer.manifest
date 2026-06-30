@@ -24,6 +24,8 @@ Assets/_WorkSpace/Scripts/GameFlowState/GameplayState.cs
 Assets/_WorkSpace/Scripts/GameFlowState/WorldMapState.cs
 Assets/_WorkSpace/Scripts/LoadTasks/README.txt
 Assets/_WorkSpace/Scripts/LoadTasks/TableLoadTask.cs
+Assets/_WorkSpace/Scripts/Archive
+Assets/_WorkSpace/Scripts/Archive/GameRuntimeData.cs
 Assets/_WorkSpace/Scripts/UI/Panels/MainPanel.cs
 Assets/_WorkSpace/Scripts/UI/Panels/LoadingPanel.cs
 Assets/_WorkSpace/Scripts/_Generated/Config

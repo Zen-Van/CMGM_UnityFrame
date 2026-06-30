@@ -216,29 +216,91 @@ InitScene（CmgmInitializer.Awake）
 
 ### 4.3 Editor 测试启动（**Editor测试系统** + **GameFlow.DirectToTest**）
 
-> **目标：** 在 Editor 中从**任意已打开场景** Play，仍先走 **`CmgmInitializer`**，但**不强制** `GoToMainScene` / MainMenu；Startup 结束后 **直接进入 Editor 启动场景**。
+> **目标：** 在 Editor 中从**任意已打开场景** Play，仍先走 **`CmgmInitializer`**，但**不强制** `GoToMainScene` / MainMenu；Startup 结束后 **直接进入 Editor 启动场景**。  
+> **入口定案（2026-06-19）：** **Main Toolbar Overlay** + **劫持 Unity 自带 Play**；**不**以菜单「从当前场景 Play」为主入口（见 **§4.3.1**）。
+
+#### 4.3.0 两条 Play 路径（UX）
+
+| 入口 | 何时用 | 进 Play 前写入 `EditorPlayRequest` | 启动链结束后 |
+|------|--------|--------------------------------------|--------------|
+| **Unity 自带 Play** | 日常测关卡 / 测试场景 | 当前激活场景 **≠ InitScene** → `Mode=DirectToTest`，`TargetScenePath`=该场景；**= InitScene** → `Mode=FullStartup` | DirectToTest → 目标场景；FullStartup → `MainMenuState` |
+| **Toolbar「正式启动」** | 模拟打包后完整流程 | **始终** `Mode=FullStartup`（与当前打开哪张场景无关） | `MainMenuState` → 正式主界面路径 |
+
+**工程前置：** **Play Mode Start Scene = InitScene**（`Assets/.../HotRes/Scenes/InitScene.unity`）。否则在非 InitScene 按 Play 会**不进** `CmgmInitializer`，两条路径均失效。
 
 ```
-Editor：用户打开 TestScene.unity → 菜单「从当前场景 Play」/ Play Mode Start Scene = InitScene
+Editor：用户打开 TestScene.unity → 按 Unity 自带 Play（Play Mode Start Scene = InitScene）
     │
-    ├─ EditorPlayRequest 写入：TargetScenePath、SkipLogo、StartupProfile 裁剪、可选追加 Profile
+    ├─ ExitingEditMode：Edt_PlayModeIntentHook 写入 EditorPlayRequest（DirectToTest + TargetScenePath）
     │
 InitScene（CmgmInitializer）
-    └─ SwitchToAsync(CmgmInitState)  ── Editor 分支 ──► DirectToTest（或 CmgmInit 态内检测 EditorPlayRequest）
+    └─ SwitchToAsync(CmgmInitState)
             │
-            └─ EnterAsync：UIManager → Run(CreateTasks, editorTrim)   ← 可跳过 MainScene 预载等
+            ├─ EnterAsync：UIManager → Run(CreateTasks, editorTrim)   ← EditorTrimStartup 时可跳过 MainScene 预载
             │
-            └─ LoadSceneAsync(EditorPlayRequest.TargetScenePath)        ← **不**加载 MainScene
+            ├─ DirectToTest：LoadSceneAsync(TargetScenePath)            ← **不** SwitchTo MainMenuState
             │
-            └─ （可选）Run(EnterGameplay / EnterBattle / 场景内 TestSceneEntry 声明的 Profile)
+            └─ （可选）Run(TestSceneEntry / AppendTasks 声明的 ILoadTask)
+```
+
+```
+Editor：任意场景 → Toolbar「正式启动」→ Play
+    │
+    ├─ Overlay 写入 EditorPlayRequest（FullStartup）后 EditorApplication.isPlaying = true
+    │
+InitScene → CmgmInitState → … → SwitchToAsync(MainMenuState)    ← 与打包后一致
 ```
 
 | 项 | 结论 |
 |----|------|
-| **能否跳过 MainScene** | **可以**；`StartupFramework` 在 Editor 测试路径**不包含** `GoToMainScene` / `MAIN_SCENE` 预载（或整 Profile 换用 **`StartupFrameworkEditorTrim`**） |
-| **落点场景** | **`EditorPlayRequest.TargetScenePath`** = 点 Play 前 **Editor 当前打开场景** 的路径 |
-| **进场景后再 Loading** | **支持**；由场景上可选 **`TestSceneEntry`**（`_TestSpace` / 业务层）或菜单勾选「追加 EnterGameplay Profile」在 `LoadSceneAsync` **之后**再 `Run` |
-| **与正式路径关系** | 共用 Initializer + Loading + GameFlow；仅 **GameFlow 分支**与 Profile 裁剪不同 |
+| **能否跳过 MainScene** | **可以**；`DirectToTest` 时 `CmgmInitState.CreateTasks()` 在 `EditorTrimStartup` 下**省略** `SceneLoadTask(MainScene, Preload)` |
+| **落点场景** | **`EditorPlayRequest.TargetScenePath`** = 点 Play 前 **Editor 当前激活场景** 路径（`ExitingEditMode` 读取） |
+| **进场景后再 Loading** | **支持**；场景上可选 **`TestSceneEntry`**（`_TestSpace` / 业务层）在 `LoadSceneAsync` **之后**再 `RunAsync(AppendTasks)` |
+| **与正式路径关系** | 共用 Initializer + Loading + GameFlow；仅 **GameFlow 分支**与 `CreateTasks()` 裁剪不同 |
+| **打包后** | 无 `EditorPlayRequest`；永远 **FullStartup** |
+
+#### 4.3.1 实施方案 · Main Toolbar Overlay（Editor测试系统 1.2 定案）
+
+> **Unity 版本：** 6000.x；使用 **`UnityEditor.Overlays` / `ToolbarOverlay`** 在主工具栏 Play 旁增加 **「正式启动」** 控件。  
+> **原则：** 框架只提供 **意图 DTO + Editor 钩子 + Overlay**；具体战斗/关卡逻辑仍在 **`_TestSpace`** / 业务层。
+
+**目录（`CmgmFramework/Editor/PlayMode/`）**
+
+| 文件 | 子步 | 职责 |
+|------|------|------|
+| `EditorPlayRequest.cs` | **1.1** | Session 级意图：`Mode`（`FullStartup` / `DirectToTest`）、`TargetScenePath`、`SkipLogo`、`EditorTrimStartup`、`AppendTasks`（可选） |
+| `Edt_PlayModeIntentHook.cs` | **1.2a** | `[InitializeOnLoad]` 订阅 `EditorApplication.playModeStateChanged`：`ExitingEditMode` 时按 **§4.3.0** 表写入 Request；`EnteredEditMode` 时可选清理 |
+| `Edt_CmgmPlayToolbarOverlay.cs` | **1.2b** | `ToolbarOverlay`：按钮 **「正式启动」** → `FullStartup` → `isPlaying = true` |
+
+**`EditorPlayRequest` 要点**
+
+- **存 Session：** 优先 `SessionState`（或静态 + Domain Reload 约定），避免 Domain Reload 丢意图时需文档说明。
+- **`FullStartup`：** `CmgmInitializer` 在 `CmgmInitState` 完成后 **`SwitchToAsync(MainMenuState)`**（与现网一致）。
+- **`DirectToTest`：** `CmgmInitializer` **跳过** `MainMenuState`，改 `LoadSceneAsync(TargetScenePath)`；`CmgmInitState` 按 `EditorTrimStartup` 裁剪 `CreateTasks()`。
+- **InitScene 判定：** 与 `Consts.Paths.HotScene + "/InitScene.unity"` 路径比较（或 `CmgmFrameSettings` 日后增字段；竖切阶段用常量路径即可）。
+
+**运行时改动（GameFlow 1.3b · 竖切 #13）**
+
+| 位置 | 改动 |
+|------|------|
+| `CmgmInitializer.InitGame` | `#if UNITY_EDITOR`：读 `EditorPlayRequest`；`DirectToTest` 时不进 `MainMenuState`，改加载目标场景 |
+| `CmgmInitState.CreateTasks` | `EditorTrimStartup` 时不加入 `SceneLoadTask(MAIN_SCENE_NAME, Preload)` |
+| Player / 非 Editor | 不引用 `EditorPlayRequest`；行为不变 |
+
+**验收（1.3 · E2E · 竖切 #15）**
+
+1. 打开 `_TestSpace` 测试场景 → **自带 Play** → Init →（trim）→ 落在该场景，**无** MainPanel。  
+2. 同上场景 → Toolbar **「正式启动」** → Init → MainMenu / MainScene。  
+3. 打开 **InitScene** → **自带 Play** → 完整正式启动（等同 FullStartup）。  
+4. **Build Player** → 仅正式启动路径。
+
+**可选后续（竖切外）**
+
+| 子步 | 内容 |
+|------|------|
+| **1.4** | `TestSceneEntry`：进场景后 `RunAsync` 追加 `ILoadTask` |
+| **1.5** | `SkipLogo` / 默认 `EditorTrimStartup=true` 固化，缩短迭代 |
+| **兜底菜单** | 若 Overlay 不可用，可在 `QuickSearch` 保留等价菜单；**非主路径** |
 
 ### 4.2 当前运行时（**#6 #7 #8 #9 ✅**）
 
@@ -547,7 +609,7 @@ CreateTasks()           ← 与 RunAsync 同址（§6.5f）；具名 ILoadTask �
 2. **禁止**
    - 场景 Trigger、Collider、关卡脚本、**Panel 按钮回调** 等 **直接** `LoadingManager.Run(...)` 或 **`LoadSceneAsync`**。
    - 为「读条」单独维护 **`Loading` 宏观态**，或为同态区域切换 **`Push(LoadingState)`**（与本节方案 A 冲突）。
-   - **例外（须文档化、仅限 Editor / 测试）：** **`TestSceneEntry`** 等可在进场景后声明追加 Profile（§4.3、**Editor测试系统1.4**）；正式包体路径仍遵守上两条。
+   - **例外（须文档化、仅限 Editor / 测试）：** **`TestSceneEntry`** 等可在进场景后 `RunAsync(AppendTasks)`（§4.3、**Editor测试系统1.4**）；正式包体路径仍遵守上两条。
 
 **场景 / UI 只表达意图，不执行编排**
 
@@ -922,7 +984,7 @@ await SwitchToAsync(new MainMenuState());
 | **GameFlow系统1.1** ✅ | `IGameFlowState`：`EnterAsync` / `Exit` / `Update`（可选） | 基础态可切换 |
 | **GameFlow系统1.2** ✅ | `GameFlowMachine`：`SwitchToAsync` / Push / Pop | 栈操作日志可追踪 |
 | **GameFlow系统1.3** | 基础态 **`CmgmInit`** / `MainMenu` / `Gameplay`（#7 ✅）；**`EnterAsync` 内 `CreateTasks` + `RunAsync`**（§6.5f）；**已删 `ScenesManager`** | 流程 + Loading 衔接 |
-| **GameFlow系统1.3b** | **Editor：`DirectToTest`** — `CmgmInitializer` 完成后若存在 **`EditorPlayRequest`**，**跳过 MainMenu / MainScene**，`LoadSceneAsync(目标场景)`；可选追加 Profile（与 **Editor测试系统1.2~1.3** 同期） | Editor 与 Runtime 分支 |
+| **GameFlow系统1.3b** | **Editor：`DirectToTest`** — `EditorPlayRequest.Mode=DirectToTest` 时 **跳过 MainMenu**，`LoadSceneAsync(目标场景)`；`CreateTasks` 可按 `EditorTrimStartup` 裁剪（与 **Editor测试系统1.2~1.3** 同期） | Editor 与 Runtime 分支 |
 | **GameFlow系统1.4** | 预留态 `Pause` / `Cutscene` / `Battle` 空壳或最小实现 | JRPG / SRPG 可扩展 |
 | **GameFlow系统1.5** | 与 UI / 输入：状态切换时 UI 层、输入 map 切换策略 | 暂停时输入正确 |
 
@@ -931,17 +993,20 @@ await SwitchToAsync(new MainMenuState());
 
 #### Editor测试系统（已解锁）
 
-> **定位：** **框架 Editor**（`CmgmFramework/Editor/`）提供跨项目通用的 Play 测试钩子；**不**把具体战斗/关卡测试逻辑放进 Core。领域可复用辅助放 **GameKits**（远期）；本工程实验场景放 **`_TestSpace`**。
+> **定位：** **框架 Editor**（`CmgmFramework/Editor/`）提供跨项目通用的 Play 测试钩子；**不**把具体战斗/关卡测试逻辑放进 Core。领域可复用辅助放 **GameKits**（远期）；本工程实验场景放 **`_TestSpace`**。  
+> **入口定案（2026-06-19）：** **Main Toolbar Overlay** + **Unity 自带 Play 意图劫持**；详见 **§4.3 / §4.3.1**。
 
 | 子步 | 内容 | 验收 |
 |------|------|------|
-| **Editor测试系统1.1** | **`EditorPlayRequest`**（Editor 静态/Session）：`TargetScenePath`、`SkipLogo`、`EditorTrimStartup`、`AppendProfiles`；文档约定 **Play Mode Start Scene = InitScene** | 任意场景 Play 先进 InitScene |
-| **Editor测试系统1.2** | 菜单 **「草木句萌 / 从当前场景 Play」**（`CMGM.Editor`）：写入 `EditorPlayRequest` → 进入 Play | 不打开 InitScene 也能从当前场景测 |
-| **Editor测试系统1.3** | 与 **GameFlow系统1.3b** 对接：`DirectToTest` 在 Startup Profile 后 **`LoadSceneAsync(TargetScenePath)`**，**不** `GoToMainScene` | 空场景 / 测试场景可达 |
-| **Editor测试系统1.4** | 可选 **`TestSceneEntry`**（`_TestSpace` 或业务层 MonoBehaviour）：`Start` 时声明本场景追加的 Profile（如 `EnterGameplay` / `EnterBattle`） | 进场景后再 Loading |
-| **Editor测试系统1.5** | **`StartupFrameworkEditorTrim` Profile**（或 Profile 变体）：Editor 下跳过 MainScene 预载 / Logo 等 | 迭代更快 |
+| **Editor测试系统1.1** | **`EditorPlayRequest`**（Session）：`Mode`（`FullStartup` / `DirectToTest`）、`TargetScenePath`、`SkipLogo`、`EditorTrimStartup`、`AppendTasks`；约定 **Play Mode Start Scene = InitScene** | Runtime / Editor 可读意图 |
+| **Editor测试系统1.2a** | **`Edt_PlayModeIntentHook`**：`ExitingEditMode` 时非 InitScene → `DirectToTest`；InitScene → `FullStartup` | 自带 Play 即测试路径 |
+| **Editor测试系统1.2b** | **`Edt_CmgmPlayToolbarOverlay`**：主工具栏 **「正式启动」** → 始终 `FullStartup` 后进 Play | 任意场景可跑打包后流程 |
+| **Editor测试系统1.3** | **GameFlow 1.3b** + E2E：`DirectToTest` 后 **`LoadSceneAsync(TargetScenePath)`**；竖切 **#15** 四条用例（§4.3.1） | 测试场景可达 |
+| **Editor测试系统1.4** | 可选 **`TestSceneEntry`**（`_TestSpace` / 业务层）：`Start` 时 `RunAsync(AppendTasks)` | 进场景后再 Loading |
+| **Editor测试系统1.5** | 默认 `EditorTrimStartup` / `SkipLogo` 策略固化（**代码**裁剪 `CreateTasks()`，**非** Profile SO） | 迭代更快 |
 
-> **分层：** **框架** = `EditorPlayRequest` + 菜单 + `GameFlow.DirectToTest`；**GameKits** = 可复用玩法测试模板（远期）；**`_TestSpace`** = 本项目 `TableTest`、测试场景与 `TestSceneEntry` 实例。
+> **分层：** **框架** = `EditorPlayRequest` + Play 钩子 + Toolbar Overlay + `GameFlow.DirectToTest`；**GameKits** = 可复用玩法测试模板（远期）；**`_TestSpace`** = 测试场景与 `TestSceneEntry` 实例。  
+> **废止主路径：** 菜单「从当前场景 Play」；若需兜底可放 `QuickSearch`，不作为 1.2 验收项。
 
 #### 事件总线系统（已解锁）
 
@@ -1101,10 +1166,10 @@ await SwitchToAsync(new MainMenuState());
 | **9** | C · 编排 | **启动编排3.4** | `CmgmFrameBoot` → **`CmgmInitializer.cs`**；仅 Logo + `SwitchToAsync(CmgmInitState)` | **#7** ✅ | InitScene 组合根更名 | `CmgmInitializer.cs` | **小** | **✅** |
 | **10** | C · Loading 整理 | **Loading 1.4 · Task** | 预载主场景 / Wwise 等 **具名 `ILoadTask`**；**游戏专属 Task → `_WorkSpace/Scripts/LoadTasks/`** | **#8** ✅ | 清单可读、分层清晰 | `*LoadTask.cs` | **小** | 待做 |
 | **11** | C · Loading 整理 | **Loading 1.4 · API** | `LoadingRunOptions` 预设（可选） | **#10** 可选 | 调用方式统一 | 小改 | **小** | 可选 |
-| **12** | **D · Editor** | **Editor测试1.1** | **`EditorPlayRequest`** DTO | **#1** ✅ | Editor/Runtime 可读 | `EditorPlayRequest.cs` | **小** | 待做 |
-| **13** | D · Editor | **GameFlow 1.3c** | **`DirectToTest`**：Editor 跳过 MainScene | **#9** ✅ **#12** ✅ | Editor 进目标场景 | `CmgmInitState` Editor 分支 | **小~中** | 待做 |
-| **14** | D · Editor | **Editor测试1.2** | 菜单「从当前场景 Play」 | **#12** ✅ | 任意场景 Play | `Edt_PlayFromCurrentScene.cs` | **小** | 待做 |
-| **15** | D · Editor | **Editor测试1.3** | E2E：Init → trim Startup → 目标场景 | **#13** **#14** ✅ | 测试场景可达 | 联调验收 | **小** | 待做 |
+| **12** | **D · Editor** | **Editor测试1.1** | **`EditorPlayRequest`** DTO（`Mode` + `TargetScenePath` 等） | **#1** ✅ | Editor/Runtime 可读 | `Editor/PlayMode/EditorPlayRequest.cs` | **小** | 待做 |
+| **13** | D · Editor | **GameFlow 1.3b** | **`DirectToTest`**：`CmgmInitializer` / `CmgmInitState` Editor 分支 | **#9** ✅ **#12** ✅ | Editor 进目标场景 | `CmgmInitializer.cs`、`CmgmInitState.cs` | **小~中** | 待做 |
+| **14** | D · Editor | **Editor测试1.2** | Play 钩子 **1.2a** + Toolbar Overlay **1.2b**（§4.3.1） | **#12** ✅ | 自带 Play / 「正式启动」 | `Edt_PlayModeIntentHook.cs`、`Edt_CmgmPlayToolbarOverlay.cs` | **小~中** | 待做 |
+| **15** | D · Editor | **Editor测试1.3** | E2E 四条用例（§4.3.1） | **#13** **#14** ✅ | 测试场景可达 | 联调验收 | **小** | 待做 |
 | **16** | **E · 清理** | **Loading 1.4b** | **`EnterGameplayLoadTask`**；废止 `GameBootstrap` / `Scripts/Bootstrap/` | **#8** ✅ | 无 Bootstrap 目录 | 业务 `LoadTasks/` | **中** | **✅** |
 
 #### 阶段验收清单（里程碑 Definition of Done）
@@ -1114,15 +1179,15 @@ await SwitchToAsync(new MainMenuState());
 | **A** | 1~4 | Loading 能 Run 加权任务；GameFlow 栈式状态机可切换 | **✅**
 | **B** | 5 | 进游戏经 Loading 进度条 | **✅**
 | **C** | 6~11 | Boot→GameFlow→主界面→进游戏；Initializer；具名 Task 整理 | **#6~#9 #16 ✅**；#10 可选 polish |
-| **D** | 12~15 | Editor「从当前场景 Play」→ Init → 目标测试场景 |
+| **D** | 12~15 | Toolbar Overlay + 自带 Play → Init → 目标测试场景 **或** 正式启动 |
 | **E** | 16 | `EnterGameplayLoadTask`；无 `Scripts/Bootstrap/` |
 
 #### 竖切完成后可选（不在当前冻结范围）
 
 | 步骤 ID | 内容 | 说明 |
 |---------|------|------|
-| **Editor测试系统1.4** | `TestSceneEntry`：进场景后声明追加 Profile | `_TestSpace` / 业务层 |
-| **Editor测试系统1.5** | `StartupFrameworkEditorTrim` Profile | Editor 迭代加速 |
+| **Editor测试系统1.4** | `TestSceneEntry`：进场景后 `RunAsync(AppendTasks)` | `_TestSpace` / 业务层 |
+| **Editor测试系统1.5** | 默认 `EditorTrimStartup` / `SkipLogo` | Editor 迭代加速 |
 | **Loading系统1.5+** | 静默加载、转场、`EnterBattle` 动态拼任务 | 玩法扩展 |
 | **GameFlow系统1.4~1.5** | `Pause` / `Battle` 空壳；UI / 输入 map | JRPG 扩展 |
 
@@ -1152,6 +1217,17 @@ await SwitchToAsync(new MainMenuState());
 | **项目脚手架1.4** ✅ | 依赖 启动编排3.3 ✅ + **1.1 ✅** | 物理搬迁至 `CmgmUnityPackages`（勿与其他支线 **1.4** 混淆） |
 | 网游预埋 | 依赖**支线**（**存档升级系统** + GameFlow） | 远期 |
 | **存档升级系统** | 依赖 **存档格式优化** 全线完成（**含 1.1b~1.3b**） | chunk / Migrator 建立在统一 `.cmgm` v1 之上 |
+
+**设计决策记录 · 2026-06-19（Editor测试 · Main Toolbar Overlay）**
+
+| 项 | 结论 |
+|------|------|
+| **主入口** | **Unity 自带 Play**（非 InitScene → `DirectToTest`）+ **Toolbar Overlay「正式启动」**（始终 `FullStartup`） |
+| **不再做主路径** | 菜单「草木句萌 / 从当前场景 Play」；可选 `QuickSearch` 兜底 |
+| **API** | Unity 6 `ToolbarOverlay`（`CmgmFramework/Editor/PlayMode/`） |
+| **意图写入时机** | `EditorApplication.playModeStateChanged` · `ExitingEditMode`（Play 钩子）；Overlay 按钮在 `isPlaying=true` 前写 `FullStartup` |
+| **前置** | **Play Mode Start Scene = InitScene** |
+| **与 Profile SO** | `EditorTrimStartup` / `AppendTasks` 均为 **代码**字段，**不做** LoadingProfile SO |
 
 **设计决策记录 · 2026-06-20（§7.7 重排 · GameFlow 优先）**
 
@@ -1241,7 +1317,11 @@ Editor/
 │   └── Templates/
 ├── QuickSearch/            菜单跳转与打开系统目录
 │   └── Edt_QuickSearchMenus.cs
-└── Tools/                  独立小工具（**Editor测试**「从当前场景 Play」等）
+├── PlayMode/               **Editor测试**：`EditorPlayRequest`、Play 钩子、Toolbar Overlay（§4.3.1）
+│   ├── EditorPlayRequest.cs
+│   ├── Edt_PlayModeIntentHook.cs
+│   └── Edt_CmgmPlayToolbarOverlay.cs
+└── Tools/                  其它独立小工具
     └── TMP/
 ```
 
@@ -1279,7 +1359,7 @@ Editor/
 | **_TestSpace** | 脚手架 **只建顶层**空目录；子文件夹留给使用者自建 |
 | **模板存放** | `Editor/ProjectSetup/Seeds/`（脚手架）；`Editor/AssetTemplates/Templates/`（右键新建） |
 | **清单文件** | `Editor/ProjectSetup/Manifests/project_layer.manifest`（业务层/测试层）；`framework_path_check.manifest`（框架目录） |
-| **GameBootstrap** | **已废止**（#16 ✅）→ **`EnterGameplayLoadTask`** |
+| **框架 Settings** | 仅 **Workspace 根路径、主场景/主 Panel（启动链用）**；**不**配玩法场景 / 进游戏 Panel |
 
 **设计决策记录 · 2026-06-19（CmgmInitializer + Loading Profile）**
 
@@ -1292,7 +1372,7 @@ Editor/
 | **过渡** | **`CmgmInitializer`**（3.4 ✅）；#10 具名 Task 整理为可选 polish |
 | **`BootSingleton`** | 类名暂保留；`InitAsync` 仅 Initializer 最小集或 Loading 任务 |
 | **`EnterGameplayLoadTask`** | 业务进游戏步骤（`LoadTasks/`）；#16 ✅ |
-| **Editor 测试** | **Editor测试系统** + **GameFlow.DirectToTest**（§4.3）；任意场景 Play → Initializer → **目标场景**（可跳过 MainScene） |
+| **Editor 测试** | **Main Toolbar Overlay** + 自带 Play 意图劫持（§4.3）；`DirectToTest` → 目标场景；`FullStartup` → MainMenu（打包后路径） |
 
 **设计决策记录 · 2026-06-20（加载清单 · 代码优先，废止 Profile SO）**
 

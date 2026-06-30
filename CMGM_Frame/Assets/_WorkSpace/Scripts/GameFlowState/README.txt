@@ -24,7 +24,12 @@ Panel 只负责「我想去哪」：SwitchTo 或调当前态的 TravelTo。
 ────────────────────────────────
 现有文件
 
-GameplayState.cs   — 进游戏（MainPanel → SwitchToAsync）
-WorldMapState.cs     — 同态换区 TravelTo 样板（#8 之后、有大区域需求时再填 Task）
+GameplayState.cs   — 竖切接线（MainPanel → SwitchToAsync + Loading）；非完整「进游戏」
+WorldMapState.cs     — 同态换区 TravelTo 样板（有大区域需求时再填 Task）
 
-配表、Loading 步骤 → LoadTasks 文件夹（流式/区块加载说明也在那边）。
+────────────────────────────────
+进游戏 / 读档（业务层 · 暂不实现）
+
+「开始游戏」可能是新建或读档，初始场景、Panel、Bank 因项目而异。
+不在框架 CmgmFrameSettings 里配玩法场景名；定稿后在本文件夹 LoadTasks + 各 State 里按项目配置组装。
+当前 EnterGameplayLoadTask 仅为占位，等业务需求明确再填。

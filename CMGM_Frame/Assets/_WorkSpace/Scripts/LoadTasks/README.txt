@@ -59,4 +59,4 @@ Task 仍建议放在本文件夹，例如：
 现有文件
 
 TableLoadTask.cs          — 配表预加载样板
-EnterGameplayLoadTask.cs  — 进游戏（场景 / Bank 等）
+EnterGameplayLoadTask.cs  — 进游戏占位（新建/读档未定；业务层后续再填）
