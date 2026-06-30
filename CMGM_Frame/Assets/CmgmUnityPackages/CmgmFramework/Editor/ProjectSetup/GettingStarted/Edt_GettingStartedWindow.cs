@@ -3,16 +3,36 @@ using UnityEditor;
 using UnityEngine;
 
 /// <summary>
-/// 入门引导窗口：展示 framework_dependencies.manifest 逐项检查结果。
+/// 入门引导窗口：分步展示依赖检查、项目初始化与后续配置。
 /// </summary>
 public sealed class Edt_GettingStartedWindow : EditorWindow
 {
     public const string MenuPath = "草木句萌/入门引导";
     private const int MenuPriority = -1100;
     private const int MissingPathPreviewMax = 6;
-    private Vector2 _scroll;
     private Edt_GettingStartedProbe.Report _report;
     private Edt_GettingStartedProbe.ProjectInitReport _projectInitReport;
+    private bool _expandCompletedStep0;
+    private bool _expandCompletedStep1;
+
+    private enum Step
+    {
+        Dependencies = 0,
+        ProjectInit = 1,
+        PostInit = 2,
+    }
+
+    private Step CurrentStep
+    {
+        get
+        {
+            if (!_report.AllSatisfied)
+                return Step.Dependencies;
+            if (!_projectInitReport.IsInitialized)
+                return Step.ProjectInit;
+            return Step.PostInit;
+        }
+    }
 
     [MenuItem(MenuPath, false, MenuPriority)]
     public static void OpenFromMenu()
@@ -23,7 +43,7 @@ public sealed class Edt_GettingStartedWindow : EditorWindow
     public static void ShowWindow(Edt_GettingStartedProbe.Report report)
     {
         var window = GetWindow<Edt_GettingStartedWindow>(true, "入门引导", true);
-        window.minSize = new Vector2(520f, 400f);
+        window.minSize = new Vector2(520f, 280f);
         window._report = report;
         window._projectInitReport = Edt_GettingStartedProbe.CheckProjectInitialized();
         window.Show();
@@ -34,42 +54,46 @@ public sealed class Edt_GettingStartedWindow : EditorWindow
     {
         if (_report == null)
             RefreshAll();
-        DrawHeader();
-        _scroll = EditorGUILayout.BeginScrollView(_scroll);
-        DrawDependencyItems();
-        if (_report.AllSatisfied)
-            DrawProjectInitSection();
-        EditorGUILayout.EndScrollView();
+        EditorGUILayout.Space(4f);
+        if (CurrentStep == Step.Dependencies)
+            DrawCurrentStepHeader("1. 框架依赖", DrawDependenciesBody);
+        else
+            DrawCompletedStepHeader("1. 框架依赖", ref _expandCompletedStep0, DrawDependenciesBody);
+        if (CurrentStep == Step.ProjectInit)
+            DrawCurrentStepHeader("2. 项目初始化", DrawProjectInitBody);
+        else if ((int)CurrentStep > (int)Step.ProjectInit)
+            DrawCompletedStepHeader("2. 项目初始化", ref _expandCompletedStep1, DrawProjectInitBody);
+        if (CurrentStep == Step.PostInit)
+            DrawPostInitStep();
         DrawFooter();
     }
 
-    private void DrawHeader()
+    private static void DrawCurrentStepHeader(string title, System.Action drawBody)
     {
-        EditorGUILayout.Space(4f);
-        if (!_report.AllSatisfied)
-        {
-            EditorGUILayout.HelpBox(
-                "以下依赖尚未满足。请按提示补齐 Registry 包或拷贝本地 Assets；每次编译结束后本窗口会自动弹出，直至依赖与项目初始化均完成。",
-                MessageType.Warning);
-        }
-        else if (!_projectInitReport.IsInitialized)
-        {
-            EditorGUILayout.HelpBox(
-                "框架依赖已全部就绪。下一步请运行「项目初始化」，按 project_layer.manifest 创建 _WorkSpace 目录与种子文件。",
-                MessageType.Info);
-        }
-        else
-        {
-            EditorGUILayout.HelpBox(
-                "框架依赖与项目初始化均已完成。若 Console 仍有编译错误请等待重编；可关闭本窗口并开始配置 Addressables、Play 入口场景等。",
-                MessageType.Info);
-        }
-        EditorGUILayout.Space(4f);
+        EditorGUILayout.Space(6f);
+        EditorGUILayout.LabelField(title, EditorStyles.boldLabel);
+        drawBody();
     }
 
-    private void DrawDependencyItems()
+    private static void DrawCompletedStepHeader(string title, ref bool expanded, System.Action drawExpandedBody)
     {
-        EditorGUILayout.LabelField("框架依赖", EditorStyles.boldLabel);
+        EditorGUILayout.Space(6f);
+        var doneStyle = new GUIStyle(EditorStyles.foldout);
+        doneStyle.fontStyle = FontStyle.Bold;
+        doneStyle.normal.textColor = new Color(0.2f, 0.65f, 0.3f);
+        expanded = EditorGUILayout.Foldout(expanded, $"✓ {title}", true, doneStyle);
+        if (expanded)
+        {
+            EditorGUILayout.Space(2f);
+            drawExpandedBody();
+        }
+    }
+
+    private void DrawDependenciesBody()
+    {
+        EditorGUILayout.HelpBox(
+            "请补齐 Registry 包或拷贝本地 Assets。每次编译结束后本窗口会自动弹出，直至三步均完成。",
+            MessageType.Info);
         foreach (Edt_GettingStartedProbe.DependencyItem item in _report.Items)
         {
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
@@ -87,10 +111,11 @@ public sealed class Edt_GettingStartedWindow : EditorWindow
         }
     }
 
-    private void DrawProjectInitSection()
+    private void DrawProjectInitBody()
     {
-        EditorGUILayout.Space(8f);
-        EditorGUILayout.LabelField("项目初始化", EditorStyles.boldLabel);
+        EditorGUILayout.HelpBox(
+            "按 project_layer.manifest 创建 _WorkSpace 目录与种子文件；已存在路径不会覆盖。",
+            MessageType.Info);
         if (!_projectInitReport.HasValidManifest)
         {
             EditorGUILayout.HelpBox(
@@ -100,11 +125,11 @@ public sealed class Edt_GettingStartedWindow : EditorWindow
         }
         if (_projectInitReport.IsInitialized)
         {
-            EditorGUILayout.HelpBox("project_layer.manifest 清单路径均已存在，项目已初始化。", MessageType.None);
+            EditorGUILayout.HelpBox("project_layer.manifest 清单路径均已存在。", MessageType.None);
             return;
         }
         EditorGUILayout.HelpBox(
-            $"尚有 {_projectInitReport.MissingPaths.Count} 项目录或种子文件缺失（清单见 project_layer.manifest）。",
+            $"尚有 {_projectInitReport.MissingPaths.Count} 项目录或种子文件缺失。",
             MessageType.Warning);
         foreach (string path in _projectInitReport.MissingPaths.Take(MissingPathPreviewMax))
             EditorGUILayout.LabelField("✗  " + path, EditorStyles.miniLabel);
@@ -119,12 +144,39 @@ public sealed class Edt_GettingStartedWindow : EditorWindow
             TryRunProjectInitialization();
     }
 
-    private void DrawFooter()
+    private void DrawPostInitStep()
     {
         EditorGUILayout.Space(6f);
-        if (!_report.AllSatisfied)
+        EditorGUILayout.LabelField("3. 后续配置", EditorStyles.boldLabel);
+        EditorGUILayout.HelpBox(
+            "依赖与项目初始化已完成。下列为 Play 前建议项（项目脚手架1.8 计划自动化 Addressables 模板）。",
+            MessageType.Info);
+        EditorGUILayout.LabelField("Addressables · Default Local Group（或你的默认组）", EditorStyles.boldLabel);
+        EditorGUILayout.HelpBox(
+            "Window → Asset Management → Addressables → Groups，确认含下列文件夹条目（Address = 文件夹路径）：",
+            MessageType.None);
+        EditorGUILayout.LabelField("· HotRes/UI  →  Label: UI", EditorStyles.miniLabel);
+        EditorGUILayout.LabelField("    ShowPanel → UI/Panels/{Panel}.prefab", EditorStyles.centeredGreyMiniLabel);
+        EditorGUILayout.LabelField("· HotRes/Lua  →  Label: Lua", EditorStyles.miniLabel);
+        EditorGUILayout.LabelField("    正式包 Lua 预载", EditorStyles.centeredGreyMiniLabel);
+        EditorGUILayout.LabelField("· HotRes/Scenes  →  无 Label", EditorStyles.miniLabel);
+        EditorGUILayout.LabelField("    SceneLoadTask · InitScene / MainScene", EditorStyles.centeredGreyMiniLabel);
+        EditorGUILayout.LabelField("· 可选：LevelPrefabs、BuildSource、_TestSpace/Scenes、CmgmFrameSettings", EditorStyles.miniLabel);
+        EditorGUILayout.Space(4f);
+        EditorGUILayout.LabelField("Play 与构建", EditorStyles.boldLabel);
+        EditorGUILayout.HelpBox(
+            "Play Mode Start Scene → InitScene（_WorkSpace/HotRes/Scenes/InitScene）。\n" +
+            "首次 Play 前可 Addressables → Build → Default Build Script。\n" +
+            "若修改 WORK_SPACE_ROOT，Address 前缀须与 WorkSpace 根一致。",
+            MessageType.None);
+    }
+
+    private void DrawFooter()
+    {
+        EditorGUILayout.Space(8f);
+        EditorGUILayout.BeginHorizontal();
+        if (CurrentStep == Step.Dependencies)
         {
-            EditorGUILayout.BeginHorizontal();
             GUI.enabled = _report.MissingRegistryPackages.Count > 0;
             if (GUILayout.Button("安装 Registry 包", GUILayout.Height(28f)))
             {
@@ -132,17 +184,10 @@ public sealed class Edt_GettingStartedWindow : EditorWindow
                 RefreshAll();
             }
             GUI.enabled = true;
-            if (GUILayout.Button("重新检查", GUILayout.Height(28f)))
-                RefreshAll();
-            EditorGUILayout.EndHorizontal();
         }
-        else if (!_projectInitReport.IsInitialized)
-        {
-            if (GUILayout.Button("重新检查", GUILayout.Height(28f)))
-                RefreshAll();
-        }
-        else if (GUILayout.Button("重新检查", GUILayout.Height(28f)))
+        if (GUILayout.Button("重新检查", GUILayout.Height(28f)))
             RefreshAll();
+        EditorGUILayout.EndHorizontal();
         if (_report.InstallErrors.Count > 0)
         {
             EditorGUILayout.Space(4f);

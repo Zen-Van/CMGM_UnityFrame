@@ -889,7 +889,7 @@ await SwitchToAsync(new MainMenuState());
 | **GameFlow系统** | GameFlow系统1.1 | 启动编排3.3 ✅ | 已解锁 |
 | **事件总线系统** | 事件总线系统1.1 | 启动编排3.3 ✅ | 已解锁 |
 | **依赖抽象系统** | 依赖抽象系统1.1 | 编译边界2.8 ✅ | 已解锁（按需） |
-| **项目脚手架与包体迁移** | **项目脚手架1.6**（远期） | 1.5 ✅ | 已解锁 |
+| **项目脚手架与包体迁移** | **项目脚手架1.8** | 入门引导 ✅ | 已解锁 |
 | **GameKits** | GameKits1.1 | 未定（草案写 **项目脚手架1.4** 后，**非可靠**） | 🔒【仅作参考】 |
 | **Editor测试系统** | Editor测试系统1.1 | GameFlow系统1.1 进行中 **或** Loading系统1.1 ✅ | 已解锁 |
 | **模块启动Registry系统** | 模块启动Registry系统1.1 | 启动编排3.4 ✅ **且** Profile 任务 ≥10 | 🔒 远期 |
@@ -1050,17 +1050,19 @@ await SwitchToAsync(new MainMenuState());
 
 > **动因：** 框架代码与游戏内容混在 `_WorkSpace/Scripts` 不便跨项目拷贝；常量入口分散（`Consts.Paths` / `MusicGameConsts` 等）；新项目缺少标准业务层目录。  
 > **目标形态：** 可移植代码 → `Assets/CmgmUnityPackages/{CmgmFramework,CmgmGameKits}`；业务层 → `_WorkSpace` + `_TestSpace`；框架文档 → `ARCHITECTURE.md`（随框架）；业务层约定 → `_WorkSpace/GAME_WORKSPACE.md`（随项目）。  
-> **节奏：** 1.1 ✅ → **1.4 ✅** → **1.3 ✅** → **1.2 ✅** → **1.2b ✅** → **1.2c ✅** → **1.5 ✅**…；**本线最前节点 = 1.6（远期）**。
+> **节奏：** 1.1 ✅ → **1.4 ✅** → **1.3 ✅** → **1.2 ✅** → **1.2b ✅** → **1.2c ✅** → **1.5 ✅** → **入门引导 ✅** → **1.8（待做）**…；**本线最前节点 = 1.8**。
 
 | 子步 | 内容 | 验收 |
 |------|------|------|
 | **项目脚手架1.1** ✅ | `CmgmUnityPackages/` 占位 + ARCHITECTURE 目标结构 | 占位目录存在 |
 | **项目脚手架1.4** ✅ | Framework + `CmgmGameKits` **目录**物理搬迁 → `CmgmUnityPackages`；`Consts.Paths.Package` 收口 | 编译 + Play |
 | **项目脚手架1.3** ✅ | `_WorkSpace/GAME_WORKSPACE.md` 模板 | 游戏文档与框架文档分离 |
-| **项目脚手架1.2** ✅ | WorkSpace 脚手架 Editor（`草木句萌/脚手架/` 菜单）；**仅目录 + GAME_WORKSPACE.md** | 空工程可建骨架；PathCheck 通过 |
+| **项目脚手架1.2** ✅ | WorkSpace 脚手架 Editor；**仅目录 + GAME_WORKSPACE.md**（入口已并入 **入门引导**） | 空工程可建骨架；PathCheck 通过 |
 | **项目脚手架1.2b** ✅ | 业务层种子 + `project_layer.manifest`；模板源 `Editor/ProjectSetup/Seeds/` | 脚手架可写最简闭环 |
 | **项目脚手架1.2c** ✅ | manifest 补全（`GAME_WORKSPACE.md`、`_Generated/Config/`、`GameBootstrap.cs`）；`work_space_scaffold` → **`project_layer.manifest`** | PathCheck 与菜单一致 |
 | **项目脚手架1.5** ✅ | 空工程迁移验证 | 可复制 |
+| **入门引导** ✅ | `GettingStarted` 零依赖程序集；依赖/项目初始化检查 + 自动弹窗 | 仅拷包工程可弹窗引导 |
+| **项目脚手架1.8**（待做） | **`Seeds/AddressableAssetsData/` 模板** + 初始化/入门引导衔接（见下节） | 新工程项目初始化后 Addressables 可 Play |
 | **项目脚手架1.6**（远期） | Manifest 驱动勾选 → 生成 **LoadingProfile** 任务（+ 可选 asmdef） | 按勾选裁剪 |
 | **项目脚手架1.7**（按需） | 路径扫描自动生成 / 校验（与 **Lua系统1.3** / §2b **E** 衔接） | 路径少手写 |
 
@@ -1078,6 +1080,37 @@ await SwitchToAsync(new MainMenuState());
 | 场景 | `HotRes/Scenes/InitScene.unity`、`MainScene.unity` |
 | UI | `HotRes/UI/Panels/MainPanel.prefab`、`LoadingPanel.prefab`；`Scripts/UI/Panels/MainPanel.cs`、`LoadingPanel.cs` |
 | 进游戏 LoadTask | `Scripts/LoadTasks/EnterGameplayLoadTask.cs`（#16 ✅） |
+
+**项目脚手架1.8（待做 · Addressables 模板）**
+
+> **现状：** **项目初始化 / 入门引导** 只写入 `_WorkSpace` 文件与目录，**不**创建 `Assets/AddressableAssetsData/`，**不** Mark Addressable、**不**建组/标签。UPM 仅安装 Addressables **包**；运行时 `ShowPanel` / Lua 预载 / `SceneLoadTask` 仍依赖 Addressables 配置（本仓为长期手工维护）。
+> **目标：** 新工程在完成「项目初始化」后，**无需再手工搭一遍** 与本框架约定一致的组/标签/目录条目，即可进入 Play 验收。
+
+| 项 | 计划 |
+|----|------|
+| **模板位置** | `Editor/ProjectSetup/Seeds/AddressableAssetsData/`（与业务 Seeds 并列；**不**放进 `CmgmFramework/Runtime`） |
+| **写入时机** | 扩展 **项目初始化** 或 **入门引导「都齐了」后的下一步**：若 `Assets/AddressableAssetsData/` 不存在则从 Seeds 复制；已存在则 **不覆盖**（与 `project_layer` 同原则） |
+| **验收** | 复制到新空工程 → 项目初始化 → Addressables 窗口可见下列组/标签 → `ShowPanel<MainPanel>` / `Lua` 预载 / `SceneLoadTask` 不报 Address 缺失 |
+| **远期备选（1.8b）** | 不拷 YAML（GUID 易断），改 Editor 脚本 **`AddressableAssetSettings`** API 按路径 Mark 文件夹 + 打 Label（项目初始化末尾或单独菜单） |
+
+**框架约定 · Default Local Group 目录条目（Address = 文件夹路径，子资源继承 Address）**
+
+| 标记路径（默认 `_WorkSpace` 下） | Address | Label | 运行时用途 |
+|-----------------------------------|---------|-------|------------|
+| `{WorkSpace}/HotRes/UI` | `Assets/_WorkSpace/HotRes/UI` | **`UI`** | `UIManager` → `LoadAssetAsync("UI/Panels/{Panel}.prefab")` → 完整键 `{HotRes}/UI/Panels/...` |
+| `{WorkSpace}/HotRes/Lua` | `Assets/_WorkSpace/HotRes/Lua` | **`Lua`** | `LuaManager` 正式包：`LoadResourceLocationsAsync("Lua", TextAsset)` |
+| `{WorkSpace}/HotRes/Scenes` | `Assets/_WorkSpace/HotRes/Scenes` | （无） | `SceneLoadTask` 预载/加载（场景名如 `InitScene`、`MainScene`） |
+| `{WorkSpace}/HotRes/LevelPrefabs` | 同路径 | （无） | 关卡 Prefab 预载（按需） |
+| `{WorkSpace}/HotRes/BuildSource` | 同路径 | （无） | 构建产物/源资源（按需） |
+| `Assets/_TestSpace/Scenes` | 同路径 | （无） | Editor 测试场景（按需） |
+| `CmgmFramework/Resources/CmgmFrameSettings` | **`CmgmFrameSettings`** | （无） | 可选：与 Resources 加载并存时按项目约定 |
+
+> **说明：** `{WorkSpace}` 默认 `Assets/_WorkSpace`，与 `CmgmFrameSettings.WORK_SPACE_ROOT` 一致；改 WorkSpace 根时 Address 前缀须同步。**Play Mode Start Scene** 设为 **`InitScene`**（仍属 Project Settings，不进 Addressables 模板）。
+
+**与入门引导衔接（已实现 → 1.8 后改文案）**
+
+- 依赖齐 + `project_layer` 齐 → 停止自动弹窗；窗口 **「后续配置」** 列出上表直至 1.8 自动化完成。
+- 1.8 完成后：入门引导可增加 **`addressables.manifest`** 检查项（组/标签/关键路径是否存在）。
 
 #### 模块启动Registry系统（🔒 远期，见 §7.2b）
 
@@ -1131,7 +1164,7 @@ await SwitchToAsync(new MainMenuState());
 | **Lua系统** | Lua系统1.1 | ⏸ 竖切完成后 | 2.6 ✅ | **小~中** | ★★★☆ |
 | **Audio系统** | Audio系统1.1 | ⏸ 竖切完成后 | 2.7 ✅ | **中** | ★★★☆ |
 | **事件总线系统** | 事件总线系统1.1 | ⏸ 竖切完成后 | 3.3 ✅ | **小~中** | ★★☆☆ |
-| **项目脚手架与包体迁移** | **项目脚手架1.6**（远期） | 远期按需 | 1.5 ✅ | **大** | ★★★★ |
+| **项目脚手架与包体迁移** | **项目脚手架1.8** | 待做 | 入门引导 ✅ | **中** | ★★★☆ |
 | **内容扩展** | 内容扩展1.1 | 按需 | 各子项依赖对系统 | **不一** | ★★~★★★★ |
 | **GameKits** | GameKits1.1 | 🔒【仅作参考】 | **未定** | **未定** | **未定** |
 | **模块启动Registry系统** | 模块启动Registry系统1.1 | 🔒 远期 | **启动编排3.4** ✅ **且** Profile 任务 ≥10 | **大** | ★★★★ |
@@ -1318,7 +1351,7 @@ await SwitchToAsync(new MainMenuState());
 | **模块 Editor** | 仍在 `Runtime/Modules/*/Editor/`（asmdef 限定 Editor 平台） |
 | **路径常量** | `Paths.Framework.Host`、`HostGameFlow`、`HostLua`、`HostStory` 等；**无** `Integrations` / `Bootstrap` 路径项（#16 ✅） |
 
-> **说明：** 脚手架 **1.2b ✅** 后本线最前节点为 **1.5**。
+> **说明：** 脚手架 **入门引导 ✅** 后本线最前节点为 **1.8（Addressables 模板）**。
 
 **CmgmFramework/Editor 布局（四分法 · 2026-06-20）**
 
@@ -1504,9 +1537,11 @@ GameRuntimeData（I_Saveable）
 
 ```
 ShowPanel<T>() → Addressables 加载 HotRes/UI/Panels/{T}.prefab
+  → 完整 Address：{HotRes}/UI/Panels/{T}.prefab（如 Assets/_WorkSpace/HotRes/UI/Panels/MainPanel.prefab）
   → 挂到对应 E_UILayer 层 Canvas
 ```
 
+- **Addressables 组/标签：** 须将 **`HotRes/UI` 文件夹** Mark 为 Addressable，Label **`UI`**（详见 **项目脚手架1.8**）；**项目初始化当前不会自动创建**。
 - **主界面 / 主场景 ✅**：`CmgmFrameSettings.MAIN_PANEL_NAME`、`MAIN_SCENE_NAME`；由 **`MainMenuState.EnterAsync`** 执行。游戏内其他 Panel 仍优先 `ShowPanel<T>()`。
 - **D（AssetAddresses）**：Settings 字符串已够用；Address 键集中管理留待后续按需做。
 
