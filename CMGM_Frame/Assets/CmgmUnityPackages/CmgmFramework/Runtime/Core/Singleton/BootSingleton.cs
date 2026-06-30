@@ -5,19 +5,23 @@ using Cysharp.Threading.Tasks;
 namespace CMGM.Core
 {
     /// <summary>
-    /// Boot 型单例：须 <see cref="InitAsync"/> 完成后才允许 <see cref="Instance"/>。
+    /// Boot 型单例：推荐 <see cref="InitAsync"/>；未 Init 时 <see cref="Instance"/> 会 Error 并兜底阻塞 Init（防呆）。
+    /// <para>禁止在 <see cref="OnInitAsync"/> 内访问<strong>自身</strong> <see cref="Instance"/>（重入时不阻塞，避免死锁）。</para>
     /// </summary>
     public abstract class BootSingleton<T> where T : BootSingleton<T>
     {
         protected static object lockObj = new object();
         private static T instance;
         private static bool isReady;
+        private static bool isInitializing;
+        private static bool fallbackInitWarned;
+        private static bool reentrantAccessWarned;
         private static readonly object initLock = new object();
         private static UniTask initTask;
 
         public static bool IsReady => isReady;
 
-        /// <summary>Boot 组合根唯一推荐入口。</summary>
+        /// <summary>Boot 组合根 / Loading 任务唯一推荐入口。</summary>
         public static UniTask InitAsync()
         {
             if (isReady)
@@ -29,6 +33,8 @@ namespace CMGM.Core
                     return UniTask.CompletedTask;
                 if (initTask.Status == UniTaskStatus.Pending)
                     return initTask;
+
+                isInitializing = true;
                 initTask = InitInternalAsync();
                 return initTask;
             }
@@ -36,9 +42,16 @@ namespace CMGM.Core
 
         private static async UniTask InitInternalAsync()
         {
-            var inst = GetOrCreateInstance();
-            await inst.OnInitAsync();
-            isReady = true;
+            try
+            {
+                var inst = GetOrCreateInstance();
+                await inst.OnInitAsync();
+                isReady = true;
+            }
+            finally
+            {
+                isInitializing = false;
+            }
         }
 
         public static T Instance
@@ -47,8 +60,27 @@ namespace CMGM.Core
             {
                 if (!isReady)
                 {
-                    CmgmLog.fError(
-                        $"[BootSingleton] {typeof(T).Name} 尚未 InitAsync，请先在 Boot 中 await {typeof(T).Name}.InitAsync()");
+                    if (isInitializing)
+                    {
+                        if (!reentrantAccessWarned)
+                        {
+                            reentrantAccessWarned = true;
+                            CmgmLog.fError(
+                                $"[BootSingleton] {typeof(T).Name} OnInitAsync 执行中又访问 Instance（重入），" +
+                                "返回未 Ready 实例；请避免在 Init 内访问自身 Instance。");
+                        }
+
+                        return GetOrCreateInstance();
+                    }
+
+                    if (!fallbackInitWarned)
+                    {
+                        fallbackInitWarned = true;
+                        CmgmLog.fError(
+                            $"[BootSingleton] {typeof(T).Name} 尚未 InitAsync，兜底阻塞 Init（正式路径请显式 await InitAsync）。");
+                    }
+
+                    InitAsync().GetAwaiter().GetResult();
                 }
 
                 return GetOrCreateInstance();
@@ -62,7 +94,10 @@ namespace CMGM.Core
         protected static void ResetBootState()
         {
             isReady = false;
+            isInitializing = false;
             initTask = default;
+            fallbackInitWarned = false;
+            reentrantAccessWarned = false;
         }
 
         private static T GetOrCreateInstance()

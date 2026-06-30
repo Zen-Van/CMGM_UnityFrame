@@ -26,6 +26,7 @@ namespace CMGM.Loading
 
         /// <summary>
         /// 顺序执行任务列表；总进度 = Σ(已完成 Weight) + 当前 Weight × 任务内进度。
+        /// <para><see cref="LoadingRunOptions.ShowProgress"/> 为 false 时可在 UIManager 未 Ready 下静默执行；为 true 时须先 InitAsync。</para>
         /// </summary>
         public async UniTask RunAsync(
             IReadOnlyList<ILoadTask> tasks,
@@ -35,13 +36,17 @@ namespace CMGM.Loading
             if (tasks == null || tasks.Count == 0)
                 return;
 
+            options ??= new LoadingRunOptions();
+
             if (!UIManager.IsReady)
             {
-                CmgmLog.fError("[LoadingManager] UIManager 尚未 InitAsync，无法显示 Loading UI。");
-                return;
+                if (options.ShowProgress)
+                {
+                    CmgmLog.fError("[LoadingManager] UIManager 尚未 InitAsync，无法显示 Loading UI。");
+                    return;
+                }
+                // 静默模式：不依赖 LoadingPanel，继续跑 Task
             }
-
-            options ??= new LoadingRunOptions();
 
             if (options.ShowProgress)
                 await ShowPanelAsync(options.Layer);

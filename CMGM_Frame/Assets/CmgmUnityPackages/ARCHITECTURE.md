@@ -462,14 +462,15 @@ GameFlow（何时、处于哪一宏观态）
 | 基类 | 显式 Init | 业务使用 |
 |------|-----------|----------|
 | **`LazySingleton<T>`** | 默认不写 | `XxxManager.Instance` |
-| **`BootSingleton<T>`** | **`await XxxManager.InitAsync()`**（仅 Initializer 或 Loading 任务） | `InitAsync` 完成后 `Instance` 可用 |
+| **`BootSingleton<T>`** | **`await XxxManager.InitAsync()`**（Initializer / Loading 任务） | `InitAsync` 完成后 `Instance` 可用；未 Init 访问 `Instance` → **Error + 兜底阻塞 Init** |
 
 - **私有 ctor 不写业务逻辑**；重活在 **`protected virtual UniTask OnInitAsync()`**。
 - **Lua**（Boot 型）：`OnInitAsync` 内 `LoadLuaMapper` / `ExecuteLua`——在 **`CmgmInitState.CreateTasks()`** 的 `ManagerInitLoadTask` 中 `await LuaManager.InitAsync()`。
 
 **纪律（3.4 目标；3.2 已落地 InitAsync 机制）：**
 
-- **`BootSingleton`**：只允许 **`CmgmInitializer`（`UIManager` 等最小集）** 或 **Loading `ManagerInitLoadTask`** 调用 `InitAsync()`。
+- **`BootSingleton`**：只允许 **`CmgmInitializer`** 或 **Loading `ManagerInitLoadTask`** 调用 `InitAsync()`（纪律不变）。
+- **`Instance` 兜底（2026-06）：** 未 Ready 访问 `Instance` → Error + 阻塞 `InitAsync`；**`OnInitAsync` 内重入自身 `Instance` 不阻塞**（防死锁，仍 Error 一次）。
 - **禁止**在 Panel / 场景脚本里 Init `BootSingleton`。
 - **`LazySingleton`**：不进 Profile，首次 `Instance` 使用。
 
