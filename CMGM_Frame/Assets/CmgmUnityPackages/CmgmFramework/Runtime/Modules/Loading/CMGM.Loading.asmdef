@@ -4,6 +4,7 @@
     "references": [
         "CMGM.Core",
         "CMGM.UI",
+        "CMGM.Audio",
         "UniTask",
         "Unity.TextMeshPro"
     ],

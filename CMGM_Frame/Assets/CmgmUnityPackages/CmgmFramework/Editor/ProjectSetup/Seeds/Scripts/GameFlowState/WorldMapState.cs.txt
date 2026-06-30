@@ -23,7 +23,7 @@ namespace CMGM.Workspace.GameFlowState
             CmgmLog.fNormal($"[WorldMap] TravelTo → {regionId}");
             await LoadingManager.Instance.RunAsync(
                 CreateTravelTasks(regionId),
-                new LoadingRunOptions { ShowProgress = true });
+                LoadingRunOptions.WithProgress);
         }
 
         private IReadOnlyList<ILoadTask> CreateTravelTasks(string regionId)

@@ -6,7 +6,6 @@
         "CMGM.Loading",
         "CMGM.UI",
         "CMGM.Data",
-        "CMGM.Audio",
         "UniTask"
     ],
     "includePlatforms": [],

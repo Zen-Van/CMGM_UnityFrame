@@ -7,6 +7,12 @@ namespace CMGM.Loading
     /// </summary>
     public sealed class LoadingRunOptions
     {
+        /// <summary>静默执行（不显示进度面板；可在 UIManager 未 Ready 时使用）。</summary>
+        public static LoadingRunOptions Silent { get; } = new LoadingRunOptions { ShowProgress = false };
+
+        /// <summary>显示进度面板（须 UIManager 已 Ready）。</summary>
+        public static LoadingRunOptions WithProgress { get; } = new LoadingRunOptions { ShowProgress = true };
+
         /// <summary>是否显示进度面板（#1 默认 true）。</summary>
         public bool ShowProgress { get; set; } = true;
 

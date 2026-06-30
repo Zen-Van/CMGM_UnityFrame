@@ -36,7 +36,7 @@ namespace CMGM.Loading
             if (tasks == null || tasks.Count == 0)
                 return;
 
-            options ??= new LoadingRunOptions();
+            options ??= LoadingRunOptions.WithProgress;
 
             if (!UIManager.IsReady)
             {

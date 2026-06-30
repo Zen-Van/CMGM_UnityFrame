@@ -17,7 +17,7 @@ namespace CMGM.Workspace.GameFlowState
         {
             await LoadingManager.Instance.RunAsync(
                 CreateTasks(),
-                new LoadingRunOptions { ShowProgress = true });
+                LoadingRunOptions.WithProgress);
         }
 
         private IReadOnlyList<ILoadTask> CreateTasks()
