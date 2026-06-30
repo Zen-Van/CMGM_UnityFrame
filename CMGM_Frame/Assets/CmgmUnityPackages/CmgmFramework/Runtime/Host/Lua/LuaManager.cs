@@ -196,6 +196,13 @@ public class LuaManager : BootSingleton<LuaManager>, ILuaService
         if (!isRootFile)
             await UniTask.WaitUntil(() => IsInited);
 
+        // 非根脚本：同一时刻只允许一段 ExecuteLua（连点 btnLoad 等会重入，Stack Pop 会错配）
+        if (!isRootFile && IsExecuting())
+        {
+            CmgmLog.fNegative($"[LuaManager] 已有 Lua 在执行，忽略重复 ExecuteLua：{uri}");
+            return;
+        }
+
         //lua脚本的内容
         string luaContent = Encoding.UTF8.GetString(GetLuaContent(uri)).Trim('\n').Trim('\r');
         string template = isRootFile ? luaContent :
@@ -208,8 +215,7 @@ public class LuaManager : BootSingleton<LuaManager>, ILuaService
 
         CmgmLog.fPositive($"开始执行lua语句：\r\n{template}");
 
-        //新增一条完成标记
-        //TODO:lua是按顺序执行的吗??? 在异步方法中调用会不会同时执行??? Stack顺序会不会混乱???
+        // 完成标记栈：一段脚本 Push 一次，LuaExecuteFinished 时 Pop；不宜并行多段 ExecuteLua（见入口 IsExecuting guard）
         var cs = new UniTaskCompletionSource<string>();
         CurrentEventSourceStack.Push(cs);
 

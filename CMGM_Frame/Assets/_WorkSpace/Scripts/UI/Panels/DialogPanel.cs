@@ -11,6 +11,13 @@ namespace CMGM.Workspace
     public class DialogPanel : BasePanel    {
         private UniTaskCompletionSource _advanceSource;
 
+        /// <summary>
+        /// 显示对话的逻辑
+        /// </summary>
+        /// <param name="roleId"></param>
+        /// <param name="imgId"></param>
+        /// <param name="content"></param>
+        /// <returns></returns>
         public async UniTask PrintContent(int roleId, int imgId, string content)
         {
             var label = GetControl<TMP_Text>("txtContent");
@@ -22,6 +29,10 @@ namespace CMGM.Workspace
             _advanceSource = null;
         }
 
+        /// <summary>
+        /// 完成对话的逻辑
+        /// </summary>
+        /// <param name="btnName"></param>
         protected override void OnButtonClick(string btnName)
         {
             if (btnName == "btnNext")
