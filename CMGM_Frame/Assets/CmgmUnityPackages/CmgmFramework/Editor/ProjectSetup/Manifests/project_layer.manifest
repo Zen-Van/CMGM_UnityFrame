@@ -1,5 +1,5 @@
 # 项目初始化目录清单（project_layer.manifest）
-# 菜单「草木句萌/▶ 项目初始化」与 Edt_ProjectPathCheck 共用
+# 入口：菜单「草木句萌/入门引导」窗口内「▶ 项目初始化」；与 Edt_ProjectPathCheck 共用
 # 每行一条 Assets 路径；有扩展名视为文件（从 ProjectSetup/Seeds 复制），否则视为目录
 # 种子文件在 Seeds 中多为 *.txt 后缀（如 *.cs.txt、*.md.txt）；已存在的路径不会覆盖
 # Assets/_WorkSpace 会替换为 CmgmFrameSettings.WORK_SPACE_ROOT

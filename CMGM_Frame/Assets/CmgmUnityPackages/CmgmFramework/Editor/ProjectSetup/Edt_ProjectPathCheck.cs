@@ -30,7 +30,7 @@ public class Edt_ProjectPathCheck
         else
         {
             CmgmLog.fError("检查完毕，下列路径没有找到o(╥﹏╥):\n" + errorPaths +
-                           $"\n可通过菜单「{Edt_ProjectLayerSetup.MenuPath}」补全。");
+                           "\n可通过「入门引导」窗口（菜单「草木句萌/入门引导」）补全。");
         }
     }
 

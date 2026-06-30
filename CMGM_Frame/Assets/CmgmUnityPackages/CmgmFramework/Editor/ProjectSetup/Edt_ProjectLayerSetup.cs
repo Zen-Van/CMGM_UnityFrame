@@ -4,21 +4,18 @@ using UnityEngine;
 
 /// <summary>
 /// 项目初始化：按 manifest 创建目录与种子文件（含 vFolders 着色）。
+/// 常规入口见「草木句萌/入门引导」窗口；不设顶级菜单项以防误触。
 /// </summary>
 public static class Edt_ProjectLayerSetup
 {
-    public const string MenuPath = "草木句萌/▶ 项目初始化";
-    private const int MenuPriority = -1000;
-
-    [MenuItem(MenuPath, false, MenuPriority)]
     public static void InitializeFrameworkDirectories()
     {
         if (!EditorUtility.DisplayDialog("项目初始化",
-                "将检查框架依赖包（Addressables、Input System、TextMesh Pro、XLua、UniTask 等），\n" +
+                "将检查框架依赖包（Addressables、Input System、TextMesh Pro、XLua、UniTask、Wwise、Odin 等），\n" +
                 "按 project_layer.manifest 创建目录与种子文件，\n" +
                 "并设置项目初始化目录的 vFolders 文件夹颜色。\n\n" +
                 "已存在的目录与文件不会覆盖。\n" +
-                "Registry 缺失包可自动安装；XLua / UniTask 等本地目录需随工程一并拷贝。\n\n继续？",
+                "Registry 缺失包可自动安装；XLua / UniTask / Wwise / Odin 等本地目录需随工程一并拷贝。\n\n继续？",
                 "初始化", "取消"))
             return;
 

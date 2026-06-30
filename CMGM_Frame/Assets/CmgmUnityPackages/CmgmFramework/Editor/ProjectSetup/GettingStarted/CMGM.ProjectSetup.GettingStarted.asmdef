@@ -1,12 +1,7 @@
 {
-    "name": "CMGM.Editor",
-    "rootNamespace": "CMGM.Editor",
-    "references": [
-        "CMGM.Core",
-        "CMGM.ProjectSetup.GettingStarted",
-        "Unity.TextMeshPro",
-        "VFolders"
-    ],
+    "name": "CMGM.ProjectSetup.GettingStarted",
+    "rootNamespace": "",
+    "references": [],
     "includePlatforms": [
         "Editor"
     ],
