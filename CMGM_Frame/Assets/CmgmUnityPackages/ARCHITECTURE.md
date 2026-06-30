@@ -164,18 +164,18 @@ Packages/（项目脚手架1.6 远期 UPM）
 > **组合根（3.4 ✅）：** `CmgmFramework/Runtime/CmgmInitializer.cs`（**无** `Bootstrap/` 目录、**无** `CMGM.Bootstrap` namespace）。  
 > **设计决策（2026-06-19 修订）：** 单一薄入口 **`CmgmInitializer`**；Init 链在 **`CmgmInitState.CreateTasks()`**；进游戏在 **`GameplayState.CreateTasks()`** + **`EnterGameplayLoadTask`**（#16 ✅）。**`BootSingleton` 仍保留**（生命周期 guard）。
 
-### 3.6 场景加载与流程（**不建 Scene 模块**；`ScenesManager` 为临时宿主）
+### 3.6 场景加载与流程（**不建 Scene 模块**；**已删 `ScenesManager`**）
 
 | 组件 | 职责 | 成熟度 |
 |------|------|--------|
 | `AddressablesResMgr.LoadSceneAsync` | **Core 资源原语**（场景 Addressables 加载） | ★★★★ |
-| `ScenesManager` | **临时**流程胶水：`GoToMainScene` / `QuitGame`、切场景后 UI 摄像机叠加 | ★★ |
+| `MainMenuState.EnterAsync` | 回主界面：清存档/UI → ShowPanel → LoadScene → UI 摄像机叠加 | ★★★ |
 
-> **决策（§7.5，YAGNI）：** **不**把 Scene 当作框架可选 Module 维护（无 `CMGM.Scene` asmdef、无 Scene 模块支线）。  
+> **决策（§7.5，YAGNI）：** **不**把 Scene 当作框架可选 Module 维护（无 `CMGM.Scene` asmdef、无 `Modules/Scene/`）。  
 > - **已下沉 Core：** `LoadSceneAsync`（与 `LoadAssetAsync` 并列，纯资源原语）。  
-> - **`ScenesManager` 为何还在：** 流程职责（回主界面、清 UI/存档、Quit）尚未迁入 **GameFlow系统**；当前仅为过渡代码，**GameFlow系统1.3 接管后应缩退或删除**，而非扩成完整 Scene 模块。  
-> - **进游戏 Loading：** 由 **Loading系统** 编排，不绑 Scene；**谁有权触发、何时 `SwitchTo`** 见 **§6.5b**。  
-> - **按需再建：** 仅当项目需要 Additive 多场景 / 流式分块 / 场景持久化 / 转场动画等，再评估是否新增 Scene 能力（届时可能落在 GameFlow / Loading / 业务层，而非预建 `Modules/Scene/`）。
+> - **流程已迁入 GameFlow：** 原 `ScenesManager.GoToMainScene` 在 **`MainMenuState.EnterAsync`**；`QuitGame` 由 Panel 直调 **`CmgmApplication.Quit()`**。  
+> - **进游戏 Loading：** 由 **Loading系统** 编排；切场景步骤可做成 **`LoadTasks/`** 下具名 Task。  
+> - **按需再建：** Additive / 流式 / 转场等再评估（落在 GameFlow / Loading / 业务层，不预建 Scene 模块）。
 
 ### 3.7 可选模块
 
@@ -205,7 +205,7 @@ InitScene（CmgmInitializer.Awake）
                     ├─ ManagerInitLoadTask: ArchiveManager, LuaManager, …
                     ├─ 预载主场景、Wwise 壳子 …
             │
-            └─ SwitchToAsync(MainMenuState) → GoToMainScene
+            └─ SwitchToAsync(MainMenuState) → EnterAsync（进主界面）
             │
             └─ GameFlow.MainMenu          ← 正式包体 / 非 Editor 测试路径
 
@@ -251,7 +251,7 @@ InitScene（CmgmInitializer.Awake）          ← #9 ✅
                                       │
         ├─ SwitchToAsync(CmgmInitState)     ← UIManager + CreateTasks + RunAsync 在 EnterAsync 内
         │
-        └─ Logo 结束后 SwitchToAsync(MainMenuState)   ← #7：GoToMainScene 在 EnterAsync 内
+        └─ Logo 结束后 SwitchToAsync(MainMenuState)   ← MainMenuState.EnterAsync
 
 主界面 → 进游戏：
     MainPanel → SwitchToAsync(GameplayState)   ← #8 ✅
@@ -366,7 +366,7 @@ Assets/_WorkSpace/Scripts/
 | **Core** | `CmgmFramework/Runtime/Core/` | `Core` | **必选** | `CMGM.Core` asmdef ✅ |
 | **Modules** | `CmgmFramework/Runtime/Modules/UI/` | `UI` | 推荐 | `CMGM.UI` ✅ |
 | **Modules** | `…/Data/` | `Data` | 推荐 | `CMGM.Data` ✅ |
-| **—** | `Modules/Scene/` | — | **不建模块** | **临时** `ScenesManager`（`Assembly-CSharp`）；流程待 GameFlow 接管（§3.6） |
+| **—** | ~~`Modules/Scene/`~~ | — | **不建模块** | **已删**；流程在 `MainMenuState` / `LoadTasks` |
 | **Modules** | `…/Loading/` | `Loading` | 可选 | 支线「Loading系统」；`CMGM.Loading` |
 | **Modules** | `…/GameFlow/` | `GameFlow` | 推荐 | 支线「GameFlow系统」；`CMGM.GameFlow`；触发 Loading Profile |
 | **Integrations** | `CmgmFramework/Runtime/Integrations/Lua/` | `Lua` | 可选 | **不建 asmdef**，契约 `ILuaService` 入 Core（§7.5） |
@@ -413,7 +413,7 @@ Assets/_WorkSpace/Scripts/
 | `GameCore/` | `Runtime/Core/` | `CMGM.Core` ✅ |
 | `GameUI/` | `Runtime/Modules/UI/` | `CMGM.UI` ✅ |
 | `GameData/` | `Runtime/Modules/Data/` | `CMGM.Data` ✅ |
-| `GameLevel/` | `Runtime/Modules/Scene/` | **不建模块**（临时 `ScenesManager`，§3.6） |
+| `GameLevel/` | — | **不建模块**（§3.6；场景原语在 Core） |
 | `LuaCore/` | `Framework/Integrations/Lua/` | 无 asmdef；`ILuaService` 在 Core ✅ |
 | `AudioSystem/` | `Runtime/Modules/Audio/` | `CMGM.Audio`（编译边界2.7） |
 | `GameInput/` | `Runtime/Modules/Input/` | `CMGM.Input`（编译边界2.8） |
@@ -502,7 +502,7 @@ Boot / CmgmInitializer（#9）
 
 GameFlow 态（#7~#8）
   CmgmInitState.EnterAsync  → UIManager.InitAsync → RunAsync(CreateTasks(), silent) → SwitchTo(MainMenu)
-  MainMenuState.EnterAsync    → GoToMainScene（单步；无 CreateTasks）
+  MainMenuState.EnterAsync    → 进主界面（单步；无 CreateTasks）
   GameplayState.EnterAsync    → RunAsync(CreateTasks(), showProgress)   ← #8
 
 LoadingManager          ← 唯一执行器（顺序 Task + 可选进度条）
@@ -517,7 +517,7 @@ CreateTasks()           ← 与 RunAsync 同址（§6.5f）；具名 ILoadTask �
 |------|------|
 | **宏观态 `EnterAsync`** | `CmgmInitState`：`RunAsync(CreateTasks(), options)` |
 | **同态过渡 API** | `WorldMapState.TravelTo`：同类内 `CreateTasks(regionId)` + `RunAsync` |
-| **单步、无编排** | `MainMenuState` 仅 `GoToMainScene()` → **不必** 强行拆 `CreateTasks()` |
+| **单步、无编排** | `MainMenuState.EnterAsync` 直切主界面 → **不必** 强行拆 `CreateTasks()` |
 
 **纪律**
 
@@ -580,7 +580,7 @@ MainPanel 点开始   → GameFlowMachine.SwitchTo(Gameplay)   // GameplayState.
   → 仍在 WorldMapState；新场景内 WorldSceneEntry 做本地初始化（刷怪点、小地图等）
 ```
 
-**与废止 Scene 模块的关系：** 废 `CMGM.Scene` / 缩退 `ScenesManager` **不是**「只有 `SwitchTo` 才能 Loading」，而是 **不再有第二套场景流程中心**；`GoToMainScene` / `QuitGame` 迁入 **`MainMenuState` 等 GameFlow 态**；`LoadScene` 统一进 **Profile 的 `ILoadTask`**，由 **§6.5b 允许的入口** 触发。
+**与废止 Scene 模块的关系：** 无独立 Scene 流程中心；回主界面在 **`MainMenuState`**；其它切场景进 **`ILoadTask`**，由 GameFlow / Loading 触发（§6.5b）。
 
 #### 6.5c Loading Profile 定位：编排外壳 · 与常见做法非互斥
 
@@ -923,7 +923,7 @@ await SwitchToAsync(new MainMenuState());
 |------|------|------|
 | **GameFlow系统1.1** ✅ | `IGameFlowState`：`EnterAsync` / `Exit` / `Update`（可选） | 基础态可切换 |
 | **GameFlow系统1.2** ✅ | `GameFlowMachine`：`SwitchToAsync` / Push / Pop | 栈操作日志可追踪 |
-| **GameFlow系统1.3** | 基础态 **`CmgmInit`** / `MainMenu` / `Gameplay`（#7 **`CmgmInitState` + `MainMenuState`** ✅）；**`EnterAsync` / 同态过渡 API 内 `CreateTasks` + `RunAsync`**（§6.5f）；接管 `GoToMainScene`（`ScenesManager` 缩退） | 流程 + Loading 衔接 |
+| **GameFlow系统1.3** | 基础态 **`CmgmInit`** / `MainMenu` / `Gameplay`（#7 ✅）；**`EnterAsync` 内 `CreateTasks` + `RunAsync`**（§6.5f）；**已删 `ScenesManager`** | 流程 + Loading 衔接 |
 | **GameFlow系统1.3b** | **Editor：`DirectToTest`** — `CmgmInitializer` 完成后若存在 **`EditorPlayRequest`**，**跳过 MainMenu / MainScene**，`LoadSceneAsync(目标场景)`；可选追加 Profile（与 **Editor测试系统1.2~1.3** 同期） | Editor 与 Runtime 分支 |
 | **GameFlow系统1.4** | 预留态 `Pause` / `Cutscene` / `Battle` 空壳或最小实现 | JRPG / SRPG 可扩展 |
 | **GameFlow系统1.5** | 与 UI / 输入：状态切换时 UI 层、输入 map 切换策略 | 暂停时输入正确 |
@@ -1161,7 +1161,7 @@ await SwitchToAsync(new MainMenuState());
 | 决策 | 结论 |
 |------|------|
 | **阶段 C 顺序** | **#7~#8 GameFlow 先于 #10~#11 Loading 整理**；#6 Boot Init 链抽出 ✅ |
-| **Boot 纪律** | Boot **只** Logo 编排 + **`SwitchToAsync(CmgmInitState)`**；**不**直调 `LoadingManager` / `GoToMainScene` / `UIManager` |
+| **Boot 纪律** | Initializer **只** Logo + **`SwitchToAsync(CmgmInitState)`**；**不**直调 `LoadingManager` / 切场景 / `UIManager` |
 | **Loading 配置** | **`CreateTasks()` 与 `RunAsync` 同址**（§6.5f）；具名 `ILoadTask` 可外置；**#17** 可选 SO |
 | **执行器** | **`LoadingManager` 仍为唯一执行器**；State 不替代它 |
 
@@ -1172,7 +1172,7 @@ await SwitchToAsync(new MainMenuState());
 | **同址原则** | **谁 `RunAsync`，谁 `CreateTasks()`**（同类、通常 `private`） |
 | **State 即清单** | 删独立 `StartupLoading`；`CmgmInitState` 内聚启动任务 |
 | **过渡** | `EnterGameplayLoading` 已废止（#8 ✅） |
-| **例外** | 单步切场景（如 `MainMenuState.GoToMainScene`）**不必** 强行 `CreateTasks()` |
+| **例外** | 单步切场景（如 **`MainMenuState.EnterAsync`**）**不必** 强行 `CreateTasks()` |
 | **UIManager 位置** | **`CmgmInitState.EnterAsync`** 内、**`RunAsync` 前**；Boot 不直调 |
 | **存档日志** | 初始化时 **不** 在 Boot/Init 态打存档条数；由 **存档系统** 自行输出 |
 
@@ -1180,7 +1180,7 @@ await SwitchToAsync(new MainMenuState());
 
 | 决策 | 结论 |
 |------|------|
-| **不建 Scene 模块** | 场景加载原语 `LoadSceneAsync` **下沉 Core**（`AddressablesResMgr`）；**不**维护 `CMGM.Scene` 模块/asmdef。`Modules/Scene/ScenesManager` 仅为**临时流程宿主**（`GoToMainScene` / `QuitGame`），待 **GameFlow系统1.3** 接管后缩退或删除。若未来需 Additive / 流式 / 持久化 / 转场，**按需**评估（可能落在 GameFlow / Loading / 业务层），YAGNI 不预建 Scene 模块。 |
+| **不建 Scene 模块** | `LoadSceneAsync` 在 **Core**（`AddressablesResMgr`）；**无** `Modules/Scene/`、**无** `ScenesManager`。回主界面在 **`MainMenuState`**；其它切场景用 **`LoadTasks/`** 或业务 Task。Additive / 流式按需再评估（GameFlow / Loading / 业务层）。 |
 | **Loading 复活为独立模块** | `Modules/Loading`（`CMGM.Loading`）作为通用加载服务，分步迭代（见 §7.4 Loading系统1.1~1.5+）。之前「Loading 不单独建 Modules」的延后结论就此推翻。 |
 
 > 旧的「Level→Scene 重命名 + `CMGM.Scene` 闭环」程序集部分已回退；相关旧编号映射见 `ARCHITECTURE_DEPRECATED.md`。
@@ -1412,7 +1412,7 @@ ShowPanel<T>() → Addressables 加载 HotRes/UI/Panels/{T}.prefab
   → 挂到对应 E_UILayer 层 Canvas
 ```
 
-- **主界面 / 主场景 ✅**：`CmgmFrameSettings.MAIN_PANEL_NAME`、`MAIN_SCENE_NAME`；`ScenesManager.GoToMainScene` 统一调用。游戏内其他 Panel 仍优先 `ShowPanel<T>()`。
+- **主界面 / 主场景 ✅**：`CmgmFrameSettings.MAIN_PANEL_NAME`、`MAIN_SCENE_NAME`；由 **`MainMenuState.EnterAsync`** 执行。游戏内其他 Panel 仍优先 `ShowPanel<T>()`。
 - **D（AssetAddresses）**：Settings 字符串已够用；Address 键集中管理留待后续按需做。
 
 ### 资源加载分层（Initializer / Profile）
