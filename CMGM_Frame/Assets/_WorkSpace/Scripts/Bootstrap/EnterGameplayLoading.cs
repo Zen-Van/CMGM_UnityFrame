@@ -4,7 +4,7 @@ using CMGM.Loading;
 namespace CMGM.Workspace
 {
     /// <summary>
-    /// 主界面 → 进游戏 Loading 任务清单（#5 过渡；#6 迁入 <c>EnterGameplay</c> Profile SO，#13 废止 <see cref="GameBootstrap"/>）。
+    /// 主界面 → 进游戏 Loading 任务清单（#5 过渡；#8 收进 GameplayState.CreateTasks() 后删除）。
     /// </summary>
     public static class EnterGameplayLoading
     {

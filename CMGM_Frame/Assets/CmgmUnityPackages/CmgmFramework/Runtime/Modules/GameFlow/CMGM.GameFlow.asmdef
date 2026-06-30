@@ -2,7 +2,8 @@
     "name": "CMGM.GameFlow",
     "rootNamespace": "CMGM.GameFlow",
     "references": [
-        "CMGM.Core"
+        "CMGM.Core",
+        "UniTask"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

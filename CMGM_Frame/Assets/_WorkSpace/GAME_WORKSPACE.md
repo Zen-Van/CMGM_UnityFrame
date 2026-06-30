@@ -60,7 +60,7 @@ _WorkSpace/
 
 └── Scripts/
 
-    ├── Bootstrap/              EnterGameplayLoading、GameBootstrap（#13 废止 GameBootstrap）
+    ├── Bootstrap/              GameBootstrap（#16 废止）；EnterGameplayLoading（#8 过渡）
 
     ├── UI/Panels/
 
@@ -112,9 +112,9 @@ _WorkSpace/
 
 |------|------|------|
 
-| Logo → 主界面 | 框架 Boot | `CmgmFrameBoot` |
+| Logo → 主界面 | 框架 Boot + GameFlow | `CmgmFrameBoot` → `CmgmInitState`（含 UIManager + Loading）→ `MainMenuState` |
 
-| 主界面 → 进游戏 | Loading + 业务清单 | `MainPanel` → `EnterGameplayLoading.CreateTasks()` → `GameBootstrap`（#5；#6 Profile / #13 废止 Bootstrap） |
+| 主界面 → 进游戏 | GameFlow + Loading（#8） | `MainPanel` → `SwitchToAsync(GameplayState)`（过渡：`EnterGameplayLoading.CreateTasks()`） |
 
 
 

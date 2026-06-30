@@ -19,7 +19,7 @@ public class ScenesManager : LazySingleton<ScenesManager>
 
     /// <summary>
     /// 回到主界面：主 Panel / 主场景名见 <see cref="CmgmFrameSettings"/>。
-    /// <para>TODO（GameFlow系统1.3）：迁入 GameFlow 的 MainMenu 态。</para>
+    /// <para>由 <see cref="CMGM.Bootstrap.GameFlow.MainMenuState"/> 调用（#7）。</para>
     /// </summary>
     public async UniTask GoToMainScene()
     {

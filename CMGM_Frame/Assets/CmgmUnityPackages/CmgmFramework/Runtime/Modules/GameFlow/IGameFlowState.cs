@@ -1,13 +1,16 @@
+using Cysharp.Threading.Tasks;
+
 namespace CMGM.GameFlow
 {
     /// <summary>
-    /// 游戏宏观流程态（<c>Startup</c> / <c>MainMenu</c> / <c>Gameplay</c> …）。
+    /// 游戏宏观流程态（<c>CmgmInit</c> / <c>MainMenu</c> / <c>Gameplay</c> …）。
     /// </summary>
     public interface IGameFlowState
     {
         string StateName { get; }
 
-        void Enter();
+        /// <summary>进入态；<see cref="GameFlowMachine.SwitchToAsync"/> 会 await 此方法（#7 起支持异步 Loading / 切场景）。</summary>
+        UniTask EnterAsync();
 
         void Exit();
 

@@ -1,7 +1,9 @@
+using Cysharp.Threading.Tasks;
+
 namespace CMGM.GameFlow
 {
     /// <summary>
-    /// <see cref="IGameFlowState"/> 默认实现：空 <see cref="Enter"/> / <see cref="Exit"/> / <see cref="Update"/>。
+    /// <see cref="IGameFlowState"/> 默认实现：空 <see cref="EnterAsync"/> / <see cref="Exit"/> / <see cref="Update"/>。
     /// </summary>
     public abstract class GameFlowStateBase : IGameFlowState
     {
@@ -12,7 +14,7 @@ namespace CMGM.GameFlow
 
         public string StateName { get; }
 
-        public virtual void Enter() { }
+        public virtual UniTask EnterAsync() => UniTask.CompletedTask;
 
         public virtual void Exit() { }
 

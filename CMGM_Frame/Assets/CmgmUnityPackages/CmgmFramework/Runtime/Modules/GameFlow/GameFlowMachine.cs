@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using CMGM.Core;
+using Cysharp.Threading.Tasks;
 
 namespace CMGM.GameFlow
 {
@@ -28,8 +29,8 @@ namespace CMGM.GameFlow
             }
         }
 
-        /// <summary>替换整条流程链：自顶向下 <see cref="IGameFlowState.Exit"/>，再 Enter 新根态。</summary>
-        public void SwitchTo(IGameFlowState next)
+        /// <summary>替换整条流程链：Exit 旧栈 → EnterAsync 新根态（#7 异步 Enter）。</summary>
+        public async UniTask SwitchToAsync(IGameFlowState next)
         {
             if (next == null)
                 return;
@@ -45,11 +46,14 @@ namespace CMGM.GameFlow
 
             CmgmLog.fNormal($"[GameFlow] SwitchTo → {next.StateName}");
             _stack.Push(next);
-            next.Enter();
+            await next.EnterAsync();
             LogStack();
         }
 
-        /// <summary>叠层：保留栈下态，新态 Enter（下态不 Exit）。</summary>
+        /// <summary>替换整条流程链（不等待 EnterAsync 完成；一般请用 <see cref="SwitchToAsync"/>）。</summary>
+        public void SwitchTo(IGameFlowState next) => SwitchToAsync(next).Forget();
+
+        /// <summary>叠层：保留栈下态，新态 EnterAsync（下态不 Exit）。</summary>
         public void Push(IGameFlowState state)
         {
             if (state == null)
@@ -60,7 +64,7 @@ namespace CMGM.GameFlow
 
             CmgmLog.fNormal($"[GameFlow] Push → {state.StateName}");
             _stack.Push(state);
-            state.Enter();
+            state.EnterAsync().Forget();
             LogStack();
         }
 

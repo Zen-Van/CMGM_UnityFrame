@@ -24,6 +24,9 @@ public class ArchiveManager : BootSingleton<ArchiveManager>
     protected override UniTask OnInitAsync()
     {
         LoadArchiveMeta();
+        CmgmLog.fPositive($"存档元数据载入完毕，" +
+            $"其中共检测到{ArchiveMeta.dataSet.Count}个存档资料");
+            
         return UniTask.CompletedTask;
     }
     public ArchiveMetaDataSet ArchiveMeta { get; private set; }
