@@ -65,11 +65,10 @@ namespace CMGM.Core
             public static class Framework
             {
                 public static string Root => Package.Framework;
-                /// <summary>运行时代码根（Core / Modules / Integrations / Bootstrap）</summary>
+                /// <summary>运行时代码根（Core / Modules / Integrations）</summary>
                 public static string Runtime => Root + "/Runtime";
                 public static string Core => Runtime + "/Core";
                 public static string Modules => Runtime + "/Modules";
-                public static string Bootstrap => Runtime + "/Bootstrap";
                 public static string Integrations => Runtime + "/Integrations";
                 /// <summary>框架级 Editor（路径检查、通用模板等，编译边界2.9）</summary>
                 public static string Editor => Root + "/Editor";
@@ -91,7 +90,6 @@ namespace CMGM.Core
             public static class WorkSpaceScripts
             {
                 public static string Root => ScriptsPath;
-                public static string Bootstrap => Root + "/Bootstrap";
                 /// <summary>业务层宏观流程态（Gameplay / WorldMap …）</summary>
                 public static string GameFlowState => Root + "/GameFlowState";
                 /// <summary>业务层 Loading Task（TableLoadTask 等）</summary>

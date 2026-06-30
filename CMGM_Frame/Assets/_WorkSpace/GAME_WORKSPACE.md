@@ -60,7 +60,6 @@ _WorkSpace/
 
 └── Scripts/
 
-    ├── Bootstrap/              过渡；#8/#16 后精简
     ├── GameFlowState/            业务宏观态 + README.txt
     ├── LoadTasks/                业务 LoadTask（TableLoadTask 等）
     ├── UI/Panels/
@@ -113,9 +112,9 @@ _WorkSpace/
 
 |------|------|------|
 
-| Logo → 主界面 | 框架 Boot + GameFlow | `CmgmFrameBoot` → `CmgmInitState`（含 UIManager + Loading）→ `MainMenuState` |
+| Logo → 主界面 | 框架 Initializer + GameFlow | `CmgmInitializer` → `CmgmInitState`（含 UIManager + Loading）→ `MainMenuState` |
 
-| 主界面 → 进游戏 | GameFlow + Loading（#8） | `MainPanel` → `SwitchToAsync(GameplayState)`（过渡：`EnterGameplayLoading.CreateTasks()`） |
+| 主界面 → 进游戏 | GameFlow + Loading | `MainPanel` → `SwitchToAsync(GameplayState)` |
 
 
 
@@ -152,7 +151,7 @@ Boot 参数（主场景名、主 Panel 名、工作区根路径等）在 **`Cmgm
 | `Scripts/GameFlowState/` | 游戏宏观态 | `README.txt` |
 | `Scripts/LoadTasks/` | 游戏 Loading 步骤 | `README.txt` |
 
-框架启动态：`CmgmFramework/.../Bootstrap/GameFlow/`（`CmgmInitState`、`MainMenuState`）。
+框架启动态：`CmgmFramework/.../Modules/GameFlow/GameFlowStates/`（`CmgmInitState`、`MainMenuState`）。
 
 ---
 

@@ -1,17 +1,16 @@
 using System.Collections.Generic;
-using CMGM.Bootstrap.GameFlow;
 using CMGM.Core;
 using CMGM.GameFlow;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Video;
 
-namespace CMGM.Bootstrap
+namespace CMGM
 {
     /// <summary>
-    /// InitScene 框架组合根：Logo 展示 + <see cref="GameFlowMachine"/>（#7 起 Boot 不直调 Loading / Scene）。
+    /// InitScene 薄组合根（#9）：Logo 展示 + <see cref="GameFlowMachine"/>，不直调 Loading / Scene。
     /// </summary>
-    public class CmgmFrameBoot : MonoBehaviour
+    public class CmgmInitializer : MonoBehaviour
     {
         public bool SHOW_LOGO = true;
 
@@ -27,23 +26,17 @@ namespace CMGM.Bootstrap
             InitGame().Forget();
         }
 
-        /// <summary>
-        /// 初始化游戏的方法（包括显示LOGO并跳转主界面）
-        /// </summary>
+        /// <summary>Logo 与 CmgmInitState 并行，完成后淡出并进主界面。</summary>
         public async UniTask InitGame()
         {
-            // CmgmInitState（逻辑） 与 Logo（显示） 并行；两者都完成后再淡出并进主界面
             await UniTask.WhenAll(
                 GameFlowMachine.Instance.SwitchToAsync(new CmgmInitState()),
                 ShowLogosAsync());
 
-            // 淡出Logo
             await HideLogoPresentationAsync();
-            
-            // 进入主界面
+
             await GameFlowMachine.Instance.SwitchToAsync(new MainMenuState());
         }
-
 
         private async UniTask ShowLogosAsync()
         {

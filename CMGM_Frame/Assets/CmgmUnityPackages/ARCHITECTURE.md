@@ -2,7 +2,7 @@
 
 > 本文档是框架化改造的长期参考（「北极星」）。  
 > 目标：将当前工程从「带 Demo 的原型项目」逐步改造为「可跨项目迁移的框架」。  
-> 最后更新：2026-06-20 — **#7 ✅** + **CreateTasks 同址原则**（§6.5f）；当前 **#8 GameplayState**。
+> 最后更新：2026-06-20 — **#8 #9 #16 ✅**；当前 **#10 Loading Profile 整理**。
 
 ---
 
@@ -29,7 +29,7 @@ Assets/
 │   │   ├── Resources/              Settings、UI、Logo、字体
 │   │   ├── Editor/                 框架 Editor、脚手架
 │   │   └── Runtime/                运行时代码 ✅
-│   │       ├── CmgmInitializer.cs    InitScene 薄组合根（**启动编排3.4** 自 Bootstrap/ 迁入）
+│   │       ├── CmgmInitializer.cs    InitScene 薄组合根（#9 ✅）
 │   │       ├── Core/
 │   │       ├── Modules/
 │   │       └── Integrations/
@@ -47,7 +47,8 @@ Assets/_WorkSpace/                  （业务层 · Workspace）
 │   ├── UI/Panels/
 │   └── RhythmMap/                  Demo 专有
 └── Scripts/
-    ├── Bootstrap/
+    ├── GameFlowState/
+    ├── LoadTasks/
     ├── UI/Panels/
     ├── Archive/
     └── _Generated/
@@ -156,13 +157,12 @@ Packages/（项目脚手架1.6 远期 UPM）
 
 | 组件 | 职责 | 成熟度 |
 |------|------|--------|
-| **`CmgmInitializer`** | InitScene **薄组合根**：Logo → **`SwitchToAsync(CmgmInitState)`** | ★（**3.4 待做**；运行时过渡仍为 `CmgmFrameBoot`） |
+| **`CmgmInitializer`** | InitScene **薄组合根**：Logo → **`SwitchToAsync(CmgmInitState)`** | ★（**3.4 ✅ #9**） |
 | **`LoadingManager`** | **一切可编排异步准备**：`ILoadTask`（Manager Init / 资源 / 场景 / 业务回调）+ Profile + 可选进度 UI | ☆（支线 Loading系统） |
 | **`GameFlow`** | **何时跑哪份 Loading Profile**；宏观态切换（`Startup` / `MainMenu` / `Gameplay` / …）；**Editor** 下 `DirectToTest`（见 **Editor测试系统**） | ☆（支线 GameFlow系统） |
 
-> **过渡（3.3 ✅）：** 业务层仍有 **`GameBootstrap.cs`** 与 `MainPanel` 直调；**Loading系统1.4b** 废止该文件，清单并入 **`EnterGameplay` LoadingProfile**（§7.4）。  
-> **目标位置：** `CmgmFramework/Runtime/CmgmInitializer.cs`（**无**独立 `Bootstrap/` 目录、**无**单独 namespace；`Assembly-CSharp` 组合根）。  
-> **设计决策（2026-06-19 修订）：** 废止「双 Boot 组合根」目标形态。除 **`CmgmInitializer`** 外，原 `CmgmFrameBoot` 内 Init / 加载列表 **全部迁入 Loading Profile**；**`GameBootstrap.cs` 计划废止**（清单 = **`EnterGameplay` Profile SO**，见 **Loading系统1.4b**）。**`BootSingleton` 仍保留**（生命周期 guard），但 **`InitAsync` 只允许**在 `CmgmInitializer`（最小集）或 **Loading 任务**中调用。
+> **组合根（3.4 ✅）：** `CmgmFramework/Runtime/CmgmInitializer.cs`（**无** `Bootstrap/` 目录、**无** `CMGM.Bootstrap` namespace）。  
+> **设计决策（2026-06-19 修订）：** 单一薄入口 **`CmgmInitializer`**；Init 链在 **`CmgmInitState.CreateTasks()`**；进游戏在 **`GameplayState.CreateTasks()`** + **`EnterGameplayLoadTask`**（#16 ✅）。**`BootSingleton` 仍保留**（生命周期 guard）。
 
 ### 3.6 场景加载与流程（**不建 Scene 模块**；`ScenesManager` 为临时宿主）
 
@@ -210,9 +210,8 @@ InitScene（CmgmInitializer.Awake）
             └─ GameFlow.MainMenu          ← 正式包体 / 非 Editor 测试路径
 
 主界面 → 进游戏：
-    MainPanel「开始」→ SwitchToAsync(GameplayState)   ← #8 目标
+    MainPanel「开始」→ SwitchToAsync(GameplayState)   ← #8 ✅
         └─ GameplayState.EnterAsync → RunAsync(CreateTasks(), showProgress: true)
-        └─ （#5 过渡）MainPanel 仍直调 EnterGameplayLoading.CreateTasks()
 ```
 
 ### 4.3 Editor 测试启动（**Editor测试系统** + **GameFlow.DirectToTest**）
@@ -241,10 +240,10 @@ InitScene（CmgmInitializer）
 | **进场景后再 Loading** | **支持**；由场景上可选 **`TestSceneEntry`**（`_TestSpace` / 业务层）或菜单勾选「追加 EnterGameplay Profile」在 `LoadSceneAsync` **之后**再 `Run` |
 | **与正式路径关系** | 共用 Initializer + Loading + GameFlow；仅 **GameFlow 分支**与 Profile 裁剪不同 |
 
-### 4.2 当前运行时（过渡 · **#6 #7 ✅** · 待 **#8 Gameplay**）
+### 4.2 当前运行时（**#6 #7 #8 #9 ✅**）
 
 ```
-InitScene（CmgmFrameBoot.Awake）          ← #9 更名为 CmgmInitializer
+InitScene（CmgmInitializer.Awake）          ← #9 ✅
     │
     ├─ 显示 Logo（Video / Texture）
     │
@@ -255,10 +254,10 @@ InitScene（CmgmFrameBoot.Awake）          ← #9 更名为 CmgmInitializer
         └─ Logo 结束后 SwitchToAsync(MainMenuState)   ← #7：GoToMainScene 在 EnterAsync 内
 
 主界面 → 进游戏：
-    MainPanel → EnterGameplayLoading + 进度条   ← #8 改 SwitchToAsync(GameplayState)
+    MainPanel → SwitchToAsync(GameplayState)   ← #8 ✅
 ```
 
-> **资源分层（§8）**：Logo→主界面尽量轻；角色表、关卡、gameplay Bank 在 **Gameplay 态 `CreateTasks()`**（#8 收进 `GameplayState`；过渡仍用 `EnterGameplayLoading`）。
+> **资源分层（§8）**：Logo→主界面尽量轻；角色表、关卡、gameplay Bank 在 **Gameplay 态 `CreateTasks()`**（`GameplayState`，#8 ✅）。
 
 ### 已知生命周期问题（启动编排3.2 已解决 · 纯 C#）
 
@@ -285,7 +284,7 @@ InitScene（CmgmFrameBoot.Awake）          ← #9 更名为 CmgmInitializer
 
 | 问题 | 位置 | 计划归属 |
 |------|------|----------|
-| namespace / asmdef | Core/UI/Data/Audio/Input/Editor 已闭环；Lua / `CmgmInitializer`（过渡 `CmgmFrameBoot`）/ Scene 临时宿主 无 asmdef | §7.2 ✅ |
+| namespace / asmdef | Core/UI/Data/Audio/Input/Editor 已闭环；Lua / **`CmgmInitializer`** / Scene 临时宿主 无 asmdef | §7.2 ✅ |
 | ~~`BinaryFormatter` 序列化~~ | ~~`ArchiveManager`~~ | **存档格式优化1.2 ✅**（`JsonArchiveSerializer`） |
 | 配表 payload 读写分散 | ~~`ExcelTool` / `ConfigTableManager`~~ | **存档格式优化1.2b ✅** |
 | 无 GameFlow 状态机 | — | 支线「GameFlow系统」 |
@@ -326,7 +325,7 @@ Assets/CmgmUnityPackages/
     Resources/
     Editor/
     Runtime/
-      CmgmInitializer.cs          （目标；过渡：Bootstrap/CmgmFrameBoot.cs）
+      CmgmInitializer.cs          （#9 ✅；Runtime 根目录）
       Core/
       Modules/
       Integrations/
@@ -336,7 +335,6 @@ Assets/_WorkSpace/
   GAME_WORKSPACE.md
   HotRes/  Excels/
   Scripts/
-    Bootstrap/                    ← 过渡；#8/#16 后精简
     GameFlowState/                ← 业务宏观态
     LoadTasks/                    ← 业务 ILoadTask
     UI/Panels/
@@ -383,7 +381,7 @@ Assets/_WorkSpace/Scripts/
 |------|------|
 | **已完成基线** | 物理目录 + 去 `Game*` 前缀；UI / Data / Audio / Input / Editor asmdef 闭环 |
 | **主线 编译边界2.6~2.9** ✅ | Lua（Integrations，**无** asmdef）/ Audio / Input / Editor 有 asmdef；`CmgmInitializer` / Scene 临时宿主 / Integrations 无 asmdef |
-| **主线 启动编排3.3** ✅ | `CmgmFrameBoot` → `Runtime/Bootstrap/`（过渡）；**3.4** 迁 `CmgmInitializer` 并废止 Bootstrap 目录 |
+| **主线 启动编排3.4** ✅ | **`CmgmInitializer.cs`** 在 `Runtime/` 根；框架态在 **`GameFlow/GameFlowStates/`** | **#9 #16** ✅ |
 | **内容扩展1.5 / 项目脚手架1.6** | Editor 模块导入向导（远期） |
 
 最小 JRPG 示例：`Core` + `UI` + `Data` + `Lua`（+ `Integrations`）  
@@ -481,7 +479,7 @@ GameFlow（何时、处于哪一宏观态）
 | **宏观态 / 过渡 API** | 触发方（GameFlow） | UI | 任务清单所在类（**§6.5f 同址**） |
 |----------------------|-------------------|-----|--------------------------------|
 | **`CmgmInit`** | `CmgmInitState`（可与 Logo 并行，**静默**） | 无条或仅 Logo | **`CmgmInitState.CreateTasks()`** |
-| **`EnterGameplay`** | `GameplayState`（#8；#5 过渡 `MainPanel` 直调） | **进度条** | **`GameplayState.CreateTasks()`**（过渡：`EnterGameplayLoading`） |
+| **`EnterGameplay`** | `GameplayState`（#8 ✅） | **进度条** | **`GameplayState.CreateTasks()`** |
 | **（按需）** `EnterBattle` 等 | `BattleState.Enter` / 同态 API | 可配置 | **对应 State 类内 `CreateTasks()`** |
 
 > **#17 可选：** Profile SO 仍可作为「一次加载事务」外壳；**默认教学路径**为 State 内 **`private CreateTasks()`**（非独立 static 清单类）。  
@@ -524,7 +522,7 @@ CreateTasks()           ← 与 RunAsync 同址（§6.5f）；具名 ILoadTask �
 **纪律**
 
 - **`UIManager.InitAsync`** 须在 **`RunAsync` 之前**、写在 **`EnterAsync` 内**（不能放进 `CreateTasks()`，见 `LoadingManager` 入口检查）。
-- **禁止** 独立 static 类（如 `XxxLoading.CreateTasks()`）与 **`RunAsync` 分处两类**；`EnterGameplayLoading` 为 **#8 前过渡**，收进 `GameplayState` 后删除。
+- **禁止** 独立 static 类（如 `XxxLoading.CreateTasks()`）与 **`RunAsync` 分处两类**；`EnterGameplayLoading` 已废止（#8 ✅）。
 - **具名 `ILoadTask`** 可在框架 `Loading/Tasks/` 或 **`_WorkSpace/Scripts/LoadTasks/`** 定义，由 **同类的 `CreateTasks()` 组装引用**（#10）。
 - **`LoadingManager`** 仍为唯一执行器；State / 过渡 API 负责 **何时跑 + 清单内容**，不替代执行器。
 
@@ -545,7 +543,7 @@ CreateTasks()           ← 与 RunAsync 同址（§6.5f）；具名 ILoadTask �
 1. **允许触发 `LoadingManager.RunAsync` 的入口（收敛到极少数）**
    - 各 **`IGameFlowState.EnterAsync`**（及 **`TravelTo` / `LoadChapter`** 等同态过渡 API）内部：**同类 `CreateTasks()` + `RunAsync(...)`**（§6.5f）。
    - **Boot / Initializer** 只 **`SwitchToAsync(首态)`**（Logo 编排）；**不**直接 `RunAsync` / `UIManager.InitAsync`（#7 修订）。
-   - **Panel / 场景脚本** 只 **`GameFlowMachine.SwitchToAsync` / 业务态过渡 API**；**不**直接 `LoadingManager.RunAsync`（#8 起；#5 过渡 `MainPanel` 待 #8 收口）。
+   - **Panel / 场景脚本** 只 **`GameFlowMachine.SwitchToAsync` / 业务态过渡 API**；**不**直接 `LoadingManager.RunAsync`（#8 ✅）。
 
 2. **禁止**
    - 场景 Trigger、Collider、关卡脚本、**Panel 按钮回调** 等 **直接** `LoadingManager.Run(...)` 或 **`LoadSceneAsync`**。
@@ -680,14 +678,14 @@ await SwitchToAsync(new MainMenuState());
 | **启动编排3.1** ✅ | 文档约定 Init 纪律 + 三档时机（已被 6.5 修订吸收） | 完成 |
 | **启动编排3.2** ✅ | `LazySingleton` / `BootSingleton` + `InitAsync`；UI / Archive / Lua 迁移 | 完成 |
 | **启动编排3.3** ✅ | `CmgmFrameBoot` → `Runtime/Bootstrap/`（过渡）；Play 验收 | 完成 |
-| **启动编排3.4** | `CmgmFrameBoot` → **`Runtime/CmgmInitializer.cs`**；废止 `Bootstrap/`；长链迁入 **`StartupFramework` Profile**；仅保留 Logo + `UIManager` | **待做**（依赖 Loading系统 **≥1.2**） |
+| **启动编排3.4** ✅ | **`CmgmInitializer.cs`** → `Runtime/` 根；InitScene 挂 Initializer；Play 验收 | **#9** ✅ |
 
-**当前运行时：** 仍为 **3.3** 过渡版 `CmgmFrameBoot`；**目标契约** 见 §4.1、本节。
+**当前运行时：** **3.4** `CmgmInitializer` + GameFlow（#7~#9 ✅）；**StartupFramework Profile** 为 #10 可选收敛。
 
 <details>
 <summary>归档：原「双 Boot 组合根」（2026-06-19 前，见 DEPRECATED）</summary>
 
-曾采用 `CmgmFrameBoot` + `GameBootstrap` 两文件显式 `InitAsync` 链。已由 **Initializer + Loading Profile** 取代；`GameBootstrap.cs` 待 **Loading系统1.4b** 删除。
+曾采用 `CmgmFrameBoot` + `GameBootstrap` 两文件显式 InitAsync 链。已由 **Initializer + GameFlow State + LoadTask** 取代（#9 #16 ✅）。
 </details>
 
 ---
@@ -743,7 +741,7 @@ await SwitchToAsync(new MainMenuState());
 | 启动编排 | `LazySingleton` / `BootSingleton` + `InitAsync`；**#6 #7** ✅；**CreateTasks 同址**（§6.5f）；目标 **#9 Initializer** |
 | **Loading #6** ✅ | Boot Init 链从 Boot 抽出（清单现于 **`CmgmInitState.CreateTasks()`**） |
 | **#7 GameFlow 1.3a** ✅ | `SwitchToAsync` + `CmgmInitState` / `MainMenuState`；Boot 只调 GameFlow |
-| 进游戏入口 | **`GameplayState.CreateTasks()`**（#8）；过渡 **`EnterGameplayLoading`**（#16 废止 `GameBootstrap`） |
+| 进游戏入口 | **`GameplayState.CreateTasks()`**（#8 ✅）；**`EnterGameplayLoadTask`**（#16 ✅） |
 | 项目脚手架1.4 | Framework + GameKits → `CmgmUnityPackages`；`Paths.Package` 收口 ✅ |
 | Lua Boot 修复 | 根脚本 Init 阶段不走 `LuaBridge.Instance`，内部 `CompleteCurrentExecution` |
 | 项目脚手架1.1 | `CmgmUnityPackages/` 占位 + README |
@@ -773,7 +771,7 @@ await SwitchToAsync(new MainMenuState());
 | **启动编排3.1** ✅ | 文档约定：两组合根 + Init 纪律 + 三档时机 + Boot 三方案对比 + Registry 阈值（§6.5、§7.2b）；**不改运行时** | 编译边界2.9 完成 ✅ | **完成 ✅（2026-06-19）** |
 | **启动编排3.2** ✅ | **仅纯 C#**：`LazySingleton` / `BootSingleton` + `InitAsync`；迁移 UI / Archive / Lua；Mono 单例留 Audio 支线 | 启动编排3.1 完成 ✅ | **完成 ✅（已验收）** |
 | **启动编排3.3** ✅ | `CmgmFrameBoot` → `Runtime/Bootstrap/`（过渡）；显式 InitAsync（无 Bootstrap asmdef） | 启动编排3.2 完成 ✅ | **完成 ✅（已验收）** |
-| **启动编排3.4** | `CmgmInitializer`：`Runtime/CmgmInitializer.cs`；废止 `Bootstrap/`；长 Init 链 → `StartupFramework` Profile | Loading系统 **≥1.2** ✅ | **待做** |
+| **启动编排3.4** ✅ | `CmgmInitializer`：`Runtime/CmgmInitializer.cs`；框架态在 `GameFlow/GameFlowStates/` | Loading系统 **≥1.2** ✅ | **✅** |
 
 > 主线 **启动编排3.3** 已完成（过渡运行时）；**3.4** 与 **Loading / GameFlow** 衔接，见 §6.5。Registry 非主线，见 §7.2b。
 
@@ -843,13 +841,13 @@ await SwitchToAsync(new MainMenuState());
 | **Loading系统1.3** ✅ | 主界面 → 进游戏 Loading（#8 收进 `GameplayState`） | 进游戏进度条 |
 | **Loading #6** ✅ | Boot Init 链抽出；现 **`CmgmInitState.CreateTasks()`** | 启动任务 |
 | **Loading #10~#11** | 具名 Task + API 对称；业务层 `Loading/` | 分层、可读 |
-| **Loading #16** | 废止 `GameBootstrap` → 业务 `ILoadTask` | 清单统一 |
+| **Loading #16** ✅ | `EnterGameplayLoadTask` 替代 `GameBootstrap` | 清单统一 |
 | **Loading #17** | 可选 Profile SO | 远期 |
 | **Loading系统1.5+** | Label / 流式 / 转场等 | 进阶 |
 
 > **清单位置（§6.5f）：** **`CreateTasks()` 与 `RunAsync` 同址**——框架 **`CmgmInitState`**、业务 **`GameplayState`**（#8）；**#17** 可选 SO 外壳。  
 > **与 Initializer：** Boot 只 **`SwitchToAsync(CmgmInitState)`**；**`UIManager.InitAsync`** 在 **`CmgmInitState.EnterAsync`**、**`RunAsync` 之前**。存档初始化日志由 **存档系统** 自行输出。  
-> **`GameBootstrap`：** 过渡；**#16** 删除。
+> **`EnterGameplayLoadTask`：** 业务进游戏步骤（`LoadTasks/`）；场景 / Bank 在 Task 内扩展。
 
 #### 存档格式优化（✅ 全线完成 · **存档升级系统前置**）
 
@@ -1007,9 +1005,7 @@ await SwitchToAsync(new MainMenuState());
 | 文本 | `HotRes/Lua/main.lua.txt`、`HotRes/BuildSource/RELEASE_NOTE.txt` |
 | 场景 | `HotRes/Scenes/InitScene.unity`、`MainScene.unity` |
 | UI | `HotRes/UI/Panels/MainPanel.prefab`、`LoadingPanel.prefab`；`Scripts/UI/Panels/MainPanel.cs`、`LoadingPanel.cs` |
-| Boot（业务侧，**过渡**） | `Scripts/Bootstrap/GameBootstrap.cs`（**Loading系统1.4b** 废止 → **`LoadingProfiles/EnterGameplay.asset`**） |
-
-| **GameBootstrap → #16** | 种子仍含 `GameBootstrap.cs`（过渡）；**#16** 改为业务 **`LoadTasks/`** 下具名 Task |
+| 进游戏 LoadTask | `Scripts/LoadTasks/EnterGameplayLoadTask.cs`（#16 ✅） |
 
 #### 模块启动Registry系统（🔒 远期，见 §7.2b）
 
@@ -1054,10 +1050,10 @@ await SwitchToAsync(new MainMenuState());
 
 | 线 | 最前节点 | 状态 | 解锁条件 | 预估变更量 | 教学难度 |
 |----|----------|------|----------|------------|----------|
-| **★ 启动竖切（§7.7）** | **GameFlow 1.3 · #8** | **#6 #7 ✅** | 见 §7.7 | 见 §7.7 | ★★☆ |
-| **主线（编译边界 + 启动编排）** | **启动编排3.4 · #9** | 3.3 ✅ | **#7** ✅ 后 | **中** | ★★★☆ |
-| **Loading系统** | Loading 1.4 · **#10** | **#7~#8 后** | **#6** ✅ | **小** | ★★☆ |
-| **GameFlow系统** | GameFlow 1.3 · **#8** | **§7.7 #8 ← 当前** | **#7** ✅ | **小~中** | ★★☆ |
+| **★ 启动竖切（§7.7）** | **GameFlow 1.3 · #8 #9** ✅ | **#6 #7 #8 #9 ✅** | 见 §7.7 | 见 §7.7 | ★★☆ |
+| **主线（编译边界 + 启动编排）** | **启动编排3.4 · #9** ✅ | 3.3 ✅ | **#9** ✅ | **中** | ★★★☆ |
+| **Loading系统** | Loading 1.4 · **#10** | **#8** ✅ | **#6** ✅ | **小** | ★★☆ |
+| **GameFlow系统** | GameFlow 1.3 · **#8** ✅ | **§7.7 #8 #9 ✅** | **#7** ✅ | **小~中** | ★★☆ |
 | **Editor测试系统** | Editor测试系统1.1 | **§7.7 阶段 D 前置** | Loading **1.1** ✅ | **小~中** | ★★☆ |
 | **存档升级系统** | 存档升级系统1.1 | ⏸ 竖切完成后 | 存档格式优化 ✅ | **中~大** | ★★★★ |
 | **Lua系统** | Lua系统1.1 | ⏸ 竖切完成后 | 2.6 ✅ | **小~中** | ★★★☆ |
@@ -1084,11 +1080,11 @@ await SwitchToAsync(new MainMenuState());
 阶段 B ──► #5 ✅
 阶段 C ──► #6 Boot Init 链抽出 ✅
          ──► #7 GameFlow：CmgmInit + MainMenu（CreateTasks 同址）     ✅
-         ──► #8 GameFlow：Gameplay（MainPanel → SwitchTo）             ← 当前
-         ──► #9 Initializer 更名瘦身
+         ──► #8 GameFlow：Gameplay（MainPanel → SwitchTo）             ✅
+         ──► #9 Initializer 更名瘦身                                   ✅
          ──► #10~#11 Loading 清单整理（具名 Task、业务层目录）
 阶段 D ──► #12~#15 Editor 测试路径
-阶段 E ──► #16 废止 GameBootstrap
+         ──► #16 EnterGameplayLoadTask，废止 Bootstrap 目录              ✅
 可选 ──► #17 Profile SO；Editor 1.4~1.5；Loading 1.5+
 ```
 
@@ -1102,16 +1098,16 @@ await SwitchToAsync(new MainMenuState());
 | **4** | **A · 任务模型** | **Loading系统1.2** | `ILoadTask` + `Weight` + `ManagerInitLoadTask` | **#1** ✅ | 加权进度正确 | `ILoadTask` 等 | **中** | **✅** |
 | **5** | **B · 业务竖切** | **Loading系统1.3** | `MainPanel` → `EnterGameplayLoading` + 进度条 | **#4** ✅ | 进游戏有进度条 | `MainPanel`、`EnterGameplayLoading` | **中** | **✅** |
 | **6** | **C · 启动清单** | **Loading 1.4 · 启动** | Boot 无长 Init 链；清单后迁入 **`CmgmInitState.CreateTasks()`**（#7） | **#5** ✅ | Play 与改前一致 | `CmgmInitState.cs` | **小** | **✅** |
-| **7** | **C · GameFlow** | **GameFlow 1.3a** | **`CmgmInitState` + `MainMenuState`** + **`SwitchToAsync`**；**CreateTasks 同址**（§6.5f） | **#6** ✅ **#3** ✅ | Logo 后进主界面；Boot 无 Loading/Scene 直调 | `Bootstrap/GameFlow/*State` | **中** | **✅** |
-| **8** | C · GameFlow | **GameFlow 1.3b** | **`GameplayState`**；`MainPanel` → **`SwitchToAsync(Gameplay)`** | **#7** ✅ | 进游戏走 GameFlow | `GameplayState`、`MainPanel` | **小~中** | **待做 ← 当前** |
-| **9** | C · 编排 | **启动编排3.4** | `CmgmFrameBoot` → **`CmgmInitializer.cs`**；仅 Logo + `SwitchToAsync(CmgmInitState)` | **#7** ✅ | InitScene 组合根更名 | `CmgmInitializer.cs` | **小** | 待做 |
+| **7** | **C · GameFlow** | **GameFlow 1.3a** | **`CmgmInitState` + `MainMenuState`** + **`SwitchToAsync`** | **#6** ✅ | Logo 后进主界面 | `GameFlow/GameFlowStates/*` | **中** | **✅** |
+| **8** | C · GameFlow | **GameFlow 1.3b** | **`GameplayState`**；`MainPanel` → **`SwitchToAsync(Gameplay)`** | **#7** ✅ | 进游戏走 GameFlow | `GameplayState`、`MainPanel` | **小~中** | **✅** |
+| **9** | C · 编排 | **启动编排3.4** | `CmgmFrameBoot` → **`CmgmInitializer.cs`**；仅 Logo + `SwitchToAsync(CmgmInitState)` | **#7** ✅ | InitScene 组合根更名 | `CmgmInitializer.cs` | **小** | **✅** |
 | **10** | C · Loading 整理 | **Loading 1.4 · Task** | 预载主场景 / Wwise 等 **具名 `ILoadTask`**；**游戏专属 Task → `_WorkSpace/Scripts/LoadTasks/`** | **#8** ✅ | 清单可读、分层清晰 | `*LoadTask.cs` | **小** | 待做 |
 | **11** | C · Loading 整理 | **Loading 1.4 · API** | `RunAsync()` / `LoadingRunOptions` 预设；`Startup` / `EnterGameplay` 入口对称 | **#10** 可选 | 调用方式统一 | 小改 | **小** | 待做 |
 | **12** | **D · Editor** | **Editor测试1.1** | **`EditorPlayRequest`** DTO | **#1** ✅ | Editor/Runtime 可读 | `EditorPlayRequest.cs` | **小** | 待做 |
 | **13** | D · Editor | **GameFlow 1.3c** | **`DirectToTest`**：Editor 跳过 MainScene | **#9** ✅ **#12** ✅ | Editor 进目标场景 | `CmgmInitState` Editor 分支 | **小~中** | 待做 |
 | **14** | D · Editor | **Editor测试1.2** | 菜单「从当前场景 Play」 | **#12** ✅ | 任意场景 Play | `Edt_PlayFromCurrentScene.cs` | **小** | 待做 |
 | **15** | D · Editor | **Editor测试1.3** | E2E：Init → trim Startup → 目标场景 | **#13** **#14** ✅ | 测试场景可达 | 联调验收 | **小** | 待做 |
-| **16** | **E · 清理** | **Loading 1.4b** | **废止 `GameBootstrap.cs`** → 业务 **`LoadTasks/`**；更新 Seeds / manifest | **#8** ✅ | 无 `GameBootstrap` | 业务 `LoadTasks/` | **中** | 待做 |
+| **16** | **E · 清理** | **Loading 1.4b** | **`EnterGameplayLoadTask`**；废止 `GameBootstrap` / `Scripts/Bootstrap/` | **#8** ✅ | 无 Bootstrap 目录 | 业务 `LoadTasks/` | **中** | **✅** |
 | **17** | 可选 | **Loading 1.4 · SO** | 可选 **`LoadingProfile` SO**（**Editor 菜单创建**，禁止手写 YAML） | Task ≥8 | Inspector 可配序 | `.asset` + Editor | **中** | 远期 |
 
 #### 阶段验收清单（里程碑 Definition of Done）
@@ -1122,7 +1118,7 @@ await SwitchToAsync(new MainMenuState());
 | **B** | 5 | 进游戏经 Loading 进度条 | **✅**
 | **C** | 6~11 | Boot→GameFlow→主界面→进游戏；Initializer 更名；Loading 整理 | **#6 #7 ✅**；#8~11 待做 |
 | **D** | 12~15 | Editor「从当前场景 Play」→ Init → 目标测试场景 |
-| **E** | 16 | `GameBootstrap` 删除；业务 Loading 在 `_WorkSpace` |
+| **E** | 16 | `EnterGameplayLoadTask`；无 `Scripts/Bootstrap/` |
 
 #### 竖切完成后可选（不在当前冻结范围）
 
@@ -1153,7 +1149,7 @@ await SwitchToAsync(new MainMenuState());
 | GameFlow **#7~#8** | **#6** ✅ + GameFlow 1.2 ✅ | 态内调清单；Boot 只调 GameFlow |
 | Loading **#10~#11** | 软依赖 **#8** ✅ | 清单整理，不挡 GameFlow |
 | **启动编排3.4 · #9** | **#7** ✅ | Initializer 更名 |
-| Loading **#16** | **#8** ✅ | 废止 `GameBootstrap` |
+| Loading **#16** | **#8** ✅ | **`EnterGameplayLoadTask`** ✅ |
 | Editor **#15** | 软依赖 **#13** + Loading 1.1 ✅ | `DirectToTest` |
 | **项目脚手架1.2** | 依赖 **项目脚手架1.3 ✅** + **1.4 ✅** | 一键骨架应对准搬迁后路径 |
 | **项目脚手架1.4** ✅ | 依赖 启动编排3.3 ✅ + **1.1 ✅** | 物理搬迁至 `CmgmUnityPackages`（勿与其他支线 **1.4** 混淆） |
@@ -1175,7 +1171,7 @@ await SwitchToAsync(new MainMenuState());
 |------|------|
 | **同址原则** | **谁 `RunAsync`，谁 `CreateTasks()`**（同类、通常 `private`） |
 | **State 即清单** | 删独立 `StartupLoading`；`CmgmInitState` 内聚启动任务 |
-| **过渡** | `EnterGameplayLoading` 待 **#8** 收进 `GameplayState` 后删除 |
+| **过渡** | `EnterGameplayLoading` 已废止（#8 ✅） |
 | **例外** | 单步切场景（如 `MainMenuState.GoToMainScene`）**不必** 强行 `CreateTasks()` |
 | **UIManager 位置** | **`CmgmInitState.EnterAsync`** 内、**`RunAsync` 前**；Boot 不直调 |
 | **存档日志** | 初始化时 **不** 在 Boot/Init 态打存档条数；由 **存档系统** 自行输出 |
@@ -1226,9 +1222,9 @@ await SwitchToAsync(new MainMenuState());
 | 项 | 结论 |
 |------|------|
 | **顶层** | `CmgmFramework/{Resources,Editor,Runtime}`；**不用**顶层 `Scripts` |
-| **Runtime** | `CmgmInitializer.cs`、`Core/`、`Modules/`、`Integrations/` 均在 `Runtime/` 下（过渡：`Bootstrap/CmgmFrameBoot.cs` 待删） |
+| **Runtime** | `CmgmInitializer.cs`、`Core/`、`Modules/`（含 **`GameFlow/GameFlowStates/`**）、`Integrations/` |
 | **模块 Editor** | 仍在 `Runtime/Modules/*/Editor/`（asmdef 限定 Editor 平台） |
-| **路径常量** | `Paths.Framework.Runtime`、`Integrations` 等指向 `Runtime/…`（`Paths.Framework.Bootstrap` 过渡保留至 **3.4**） |
+| **路径常量** | `Paths.Framework.Runtime`、`Integrations` 等；**无** `Bootstrap` 路径项（#16 ✅） |
 
 > **说明：** 脚手架 **1.2b ✅** 后本线最前节点为 **1.5**。
 
@@ -1286,7 +1282,7 @@ Editor/
 | **_TestSpace** | 脚手架 **只建顶层**空目录；子文件夹留给使用者自建 |
 | **模板存放** | `Editor/ProjectSetup/Seeds/`（脚手架）；`Editor/AssetTemplates/Templates/`（右键新建） |
 | **清单文件** | `Editor/ProjectSetup/Manifests/project_layer.manifest`（业务层/测试层）；`framework_path_check.manifest`（框架目录） |
-| **GameBootstrap** | **废止**（**Loading系统1.4b**）→ **`EnterGameplay` LoadingProfile**（`_WorkSpace`） |
+| **GameBootstrap** | **已废止**（#16 ✅）→ **`EnterGameplayLoadTask`** |
 
 **设计决策记录 · 2026-06-19（CmgmInitializer + Loading Profile）**
 
@@ -1296,9 +1292,9 @@ Editor/
 | **Initializer 职责** | Logo + **`SwitchToAsync(CmgmInitState)`**；UI 基建在 **`CmgmInitState.EnterAsync`** 内 |
 | **其余编排** | 全部 **Loading Profile** + `ILoadTask`（含 **`ManagerInitLoadTask`**）；由 **GameFlow** 决定何时 `Run(profile)` |
 | **Profile** | **`StartupFramework`**（静默，可与 Logo 并行）、**`EnterGameplay`**（进度条） |
-| **过渡** | 运行时仍为 **`CmgmFrameBoot`**（3.3）；**启动编排3.4** + **Loading 1.4** 收敛 |
+| **过渡** | 运行时 **`CmgmInitializer`**（3.4 ✅）；**Loading 1.4** 可选 Profile 收敛 |
 | **`BootSingleton`** | 类名暂保留；`InitAsync` 仅 Initializer 最小集或 Loading 任务 |
-| **`GameBootstrap.cs`** | **废止**（**Loading系统1.4b**）；清单 = **`EnterGameplay` Profile SO** + Workspace `ILoadTask` 类 |
+| **`EnterGameplayLoadTask`** | 业务进游戏步骤（`LoadTasks/`）；#16 ✅ |
 | **Editor 测试** | **Editor测试系统** + **GameFlow.DirectToTest**（§4.3）；任意场景 Play → Initializer → **目标场景**（可跳过 MainScene） |
 
 **设计决策记录 · 2026-06-20（Loading Profile · 编排定位）**
@@ -1396,7 +1392,7 @@ GameRuntimeData（I_Saveable）
 |----------|------|------|
 | `Paths.WorkSpaceScripts.Archive` | `_WorkSpace/Scripts/Archive/` | 运行时存档结构脚本（可变） |
 | `Paths.WorkSpaceScripts.Config` | `_WorkSpace/Scripts/_Generated/Config/` | Excel 导出的配表 Container（只读，勿手改） |
-| `Paths.WorkSpaceScripts.Bootstrap` | `_WorkSpace/Scripts/Bootstrap/` | **过渡**；**1.4b** 后改 `LoadingProfiles/`（或废止 Bootstrap 目录） |
+| `Paths.WorkSpaceScripts.LoadTasks` | `_WorkSpace/Scripts/LoadTasks/` | `EnterGameplayLoadTask` 等 |
 | `Paths.WorkSpaceScripts.UI_Panels` | `_WorkSpace/Scripts/UI/Panels/` | Panel 脚本 |
 | `Paths.Framework.DataModule.Archive` | `CmgmFramework/Runtime/Modules/Data/Archive/` | 存档框架（`ArchiveManager`、`I_Saveable`） |
 | `Paths.Framework.DataModule.Config` | `CmgmFramework/Runtime/Modules/Data/Config/` | 配表框架（`ConfigTableManager`） |
@@ -1425,11 +1421,11 @@ ShowPanel<T>() → Addressables 加载 HotRes/UI/Panels/{T}.prefab
 |------|------|--------|------------------|
 | **`CmgmInitializer`** | Logo + `SwitchToAsync(CmgmInitState)` | — | UI 基建在 CmgmInit 态 |
 | **Logo → 主界面** | **`CmgmInitState.CreateTasks()`**（静默，可与 Logo 并行） | `UIManager`、`ArchiveManager`、`LuaManager`、主场景预载、Wwise 壳子… | 角色配表、gameplay Bank |
-| **主界面 → 进游戏** | **`GameplayState.CreateTasks()`**（#8；过渡 `EnterGameplayLoading`） | `LoadTable`、关卡 Addressables、Bank、Gameplay 场景 | — |
+| **主界面 → 进游戏** | **`GameplayState.CreateTasks()`**（#8 ✅） | `LoadTable`、关卡 Addressables、Bank、Gameplay 场景 | — |
 | **运行时懒加载** | `GetTable` / Addressables 按需 | 非关键表、可选资源 | 已在 Profile 声明的必需项 |
 
 - `ConfigTableManager.GetTable<T>()` 仍保留懒加载兜底，但**进游戏必需表**应在 **`EnterGameplay` Profile** 显式 `LoadTable`。
-- 业务进游戏清单：维护 **`GameplayState.CreateTasks()`**（#8）；**#16** 废止 `GameBootstrap.cs`。
+- 业务进游戏清单：维护 **`GameplayState.CreateTasks()`**（`TableLoadTask` + **`EnterGameplayLoadTask`**）。
 
 ### 框架 / 业务层命名（2026-06-19 修订）
 

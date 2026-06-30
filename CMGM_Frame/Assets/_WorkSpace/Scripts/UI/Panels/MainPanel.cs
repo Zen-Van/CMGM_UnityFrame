@@ -1,6 +1,7 @@
 using CMGM.Core;
-using CMGM.Loading;
+using CMGM.GameFlow;
 using CMGM.UI;
+using CMGM.Workspace.GameFlowState;
 using Cysharp.Threading.Tasks;
 
 namespace CMGM.Workspace
@@ -12,8 +13,7 @@ namespace CMGM.Workspace
             switch (btnName)
             {
                 case "btnStart":
-                    CmgmLog.fNormal("开始游戏");
-                    EnterGameplayAsync().Forget();
+                    GameFlowMachine.Instance.SwitchToAsync(new GameplayState()).Forget();
                     break;
                 case "btnLoad":
                     CmgmLog.fNormal("加载游戏");
@@ -22,16 +22,6 @@ namespace CMGM.Workspace
                     CmgmApplication.Quit();
                     break;
             }
-        }
-
-        /// <summary>主界面 → 进游戏：Loading 进度条 + 业务清单（#5；#8 起交 GameFlow）。</summary>
-        private async UniTaskVoid EnterGameplayAsync()
-        {
-            await LoadingManager.Instance.RunAsync(
-                EnterGameplayLoading.CreateTasks(),
-                new LoadingRunOptions { ShowProgress = true });
-
-            // TODO #8：GameFlowMachine.SwitchTo(Gameplay)
         }
     }
 }

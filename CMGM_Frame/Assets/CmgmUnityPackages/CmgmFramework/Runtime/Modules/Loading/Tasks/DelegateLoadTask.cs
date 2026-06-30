@@ -5,7 +5,7 @@ using Cysharp.Threading.Tasks;
 namespace CMGM.Loading
 {
     /// <summary>
-    /// 将已有 async 逻辑包装为 <see cref="ILoadTask"/>（#5 过渡包 <c>GameBootstrap</c> 等）。
+    /// 将已有 async 逻辑包装为 <see cref="ILoadTask"/>（框架启动链等过渡场景用）。
     /// </summary>
     public sealed class DelegateLoadTask : ILoadTask
     {

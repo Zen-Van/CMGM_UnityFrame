@@ -25,12 +25,7 @@ namespace CMGM.Workspace.GameFlowState
             return new ILoadTask[]
             {
                 new TableLoadTask<RoleInfo>(),
-                // 表多了继续加 TableLoadTask<XXX>()，不必新建 Task 类
-                // TODO #16：废止 GameBootstrap 后，进场景 / Bank 等用具名 LoadTask
-                new DelegateLoadTask(
-                    "进游戏（过渡）",
-                    _ => GameBootstrap.EnterGameplayAsync(),
-                    weight: 5f),
+                new EnterGameplayLoadTask(),
             };
         }
     }

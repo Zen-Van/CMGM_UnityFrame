@@ -4,7 +4,7 @@ using Cysharp.Threading.Tasks;
 namespace CMGM.GameFlow
 {
     /// <summary>
-    /// 1.1 验收 / 调试用态：EnterAsync / Exit 打日志。正式宏观态见 Bootstrap 层 CmgmInitState / MainMenuState（#7 起）。
+    /// 1.1 验收 / 调试用态：EnterAsync / Exit 打日志。正式宏观态见 <see cref="CmgmInitState"/> / <see cref="MainMenuState"/>。
     /// </summary>
     public sealed class LogGameFlowState : GameFlowStateBase
     {

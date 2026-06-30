@@ -23,7 +23,7 @@ TableLoadTask<T>
 不要写在 Panel 里。
 
 ────────────────────────────────
-区域切换 / TravelTo（远期 · 与流式无关）
+区域切换 / TravelTo
 
 SRPG 式「换地图、进传送门」一类：流程在 GameFlowState 的 WorldMapState.TravelTo，
 栈顶不变，一次 RunAsync + 进度条。
@@ -58,4 +58,5 @@ Task 仍建议放在本文件夹，例如：
 ────────────────────────────────
 现有文件
 
-TableLoadTask.cs   — 配表预加载样板
+TableLoadTask.cs          — 配表预加载样板
+EnterGameplayLoadTask.cs  — 进游戏（场景 / Bank 等）

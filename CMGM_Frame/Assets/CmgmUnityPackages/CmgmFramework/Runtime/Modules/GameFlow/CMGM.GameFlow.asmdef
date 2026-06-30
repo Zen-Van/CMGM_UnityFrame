@@ -3,6 +3,10 @@
     "rootNamespace": "CMGM.GameFlow",
     "references": [
         "CMGM.Core",
+        "CMGM.Loading",
+        "CMGM.UI",
+        "CMGM.Data",
+        "CMGM.Audio",
         "UniTask"
     ],
     "includePlatforms": [],

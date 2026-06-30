@@ -19,7 +19,7 @@ public class ScenesManager : LazySingleton<ScenesManager>
 
     /// <summary>
     /// 回到主界面：主 Panel / 主场景名见 <see cref="CmgmFrameSettings"/>。
-    /// <para>由 <see cref="CMGM.Bootstrap.GameFlow.MainMenuState"/> 调用（#7）。</para>
+    /// <para><see cref="GoToMainScene"/> 逻辑已迁入 <see cref="CMGM.GameFlow.MainMenuState"/>（#7）。</para>
     /// </summary>
     public async UniTask GoToMainScene()
     {
