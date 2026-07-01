@@ -3,6 +3,7 @@
 # 每行一条 Assets 路径；有扩展名视为文件（从 ProjectSetup/Seeds 复制），否则视为目录
 # 种子文件在 Seeds 中多为 *.txt 后缀（如 *.cs.txt、*.md.txt）；已存在的路径不会覆盖
 # Assets/_WorkSpace 会替换为 CmgmFrameSettings.WORK_SPACE_ROOT
+# 配表二进制（StreamingAssets/TableConfig/*.cmgm）由项目初始化末尾 ExcelTool 导表生成，不进 Seeds
 # DialogPanel 预制体随 Modules/Story/Panels（CmgmUnityPackages），不进 project_layer
 
 Assets/_TestSpace
@@ -12,6 +13,9 @@ Assets/_PublicRes
 Assets/_PublicRes/_PublicRes文件夹说明.txt
 Assets/_WorkSpace/GAME_WORKSPACE.md
 Assets/_WorkSpace/Excels
+Assets/_WorkSpace/Excels/案例.xlsx
+Assets/_WorkSpace/Excels/Excel文件标准说明.txt
+Assets/_WorkSpace/Scripts/_Generated/Config/RoleInfoContainer.cs
 Assets/_WorkSpace/HotRes
 Assets/_WorkSpace/HotRes/BuildSource/RELEASE_NOTE.txt
 Assets/_WorkSpace/HotRes/Lua/main.lua.txt

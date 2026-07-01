@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using CMGM.GameFlow;
 using CMGM.Loading;
+using CMGM.Workspace;
 using CMGM.Workspace.LoadTasks;
 using Cysharp.Threading.Tasks;
 

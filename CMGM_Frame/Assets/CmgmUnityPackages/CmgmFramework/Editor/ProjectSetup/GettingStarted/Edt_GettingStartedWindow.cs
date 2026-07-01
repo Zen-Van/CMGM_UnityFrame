@@ -114,7 +114,7 @@ public sealed class Edt_GettingStartedWindow : EditorWindow
     private void DrawProjectInitBody()
     {
         EditorGUILayout.HelpBox(
-            "按 project_layer.manifest 创建 _WorkSpace 目录与种子文件；已存在路径不会覆盖。",
+            "按 project_layer.manifest 创建 _WorkSpace 目录与种子文件，并自动导表（Excels → Container + TableConfig）；已存在路径不会覆盖。",
             MessageType.Info);
         if (!_projectInitReport.HasValidManifest)
         {

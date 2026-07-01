@@ -34,6 +34,16 @@ public class ExcelTool
     };
 
 
+    /// <summary>
+    /// 扫描 <see cref="EXCEL_PATH"/> 下 xlsx/xls，生成 Container 脚本与 StreamingAssets 二进制。
+    /// 供项目初始化等 Editor 流程调用（经反射，避免 CMGM.Editor ↔ CMGM.Data.Editor 环依赖）。
+    /// </summary>
+    public static void BuildFromWorkSpaceExcels()
+    {
+        ImportExcelData();
+        AssetDatabase.Refresh();
+    }
+
     [MenuItem("草木句萌/构建Excel数据", false, 112)]
     private static void ImportExcelData()
     {
