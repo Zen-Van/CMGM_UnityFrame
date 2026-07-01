@@ -31,12 +31,11 @@ Assets/
 │   │   ├── Editor/                 框架 Editor、脚手架
 │   │   └── Runtime/                运行时代码 ✅
 │   │       ├── Core/               CMGM.Core（有 asmdef）
-│   │       ├── Modules/            UI / Data / Loading / Audio / Input（有 asmdef）
+│   │       ├── Modules/            UI / Data / Loading / Audio / Input / Story（有 asmdef）
 │   │       └── Host/               无 asmdef（Assembly-CSharp）
 │   │           ├── CmgmInitializer.cs
 │   │           ├── GameFlow/
-│   │           ├── Lua/
-│   │           └── Story/
+│   │           └── Lua/
 │   └── CmgmGameKits/
 ├── _WorkSpace/                     **业务层**：脚本、HotRes、Excels（无 Resources）
 ├── _TestSpace/                     **测试层**
@@ -140,16 +139,17 @@ Packages/（项目脚手架1.6 远期 UPM）
 | `GameRuntimeData` | 游戏存档结构（`_WorkSpace/Scripts/Archive/`）✅ | — |
 | `CipherTool` | 配表 / 存档加解密 | ★★★ |
 
-### 3.4 Lua / Story（契约 `Runtime/Core/ILuaService`；实现 `Runtime/Host/Lua/`、`Host/Story/`）
+### 3.4 Lua / Story（契约 `Runtime/Core/ILuaService`；Lua 实现 `Host/Lua/`；Story 模块 `Modules/Story/`）
 
 | 组件 | 职责 | 程序集 | 成熟度 |
 |------|------|--------|--------|
 | `ILuaService` | Lua 服务契约（执行脚本 / 桥接注册等） | `CMGM.Core`（asmdef） | 已实现 ✅ |
 | `LuaManager` | LuaEnv 生命周期、Loader 链、脚本执行；实现 `ILuaService` | `Assembly-CSharp`（`Host/Lua/`） | ★★★ |
 | `LuaBridge` | C# ↔ Lua 桥接（Talk / Wait / DebugLog）；保留全局 namespace（`main.lua` 调 `CS.LuaBridge`） | `Assembly-CSharp`（`Host/Lua/`） | ★★ |
-| `StoryDialogueManager` | Lua `Talk` 编排：`ShowPanel<DialogPanel>` → `PrintContent` → Hide | `Assembly-CSharp`（`Host/Story/`） | ★ |
+| `DialogPanel` | 剧情对话 UI；`PrintContent` 供 `StoryDialogueManager` 调用 | `Modules/Story/Panels/`（`CMGM.Story`；Prefab 随包） | ★ |
+| `StoryDialogueManager` | Lua `Talk` 编排（经 `LuaBridge` 转发）：`ShowPanelAtAddress<DialogPanel>` → Hide | `Modules/Story/`（`CMGM.Story`） | ★ |
 
-> **现状（2026-06-19 决策 + 2026-07 Host 目录，见 §7.5）：** Lua **不单独建 asmdef**。XLua 待在 `Assembly-CSharp`；契约 `ILuaService` 放 `CMGM.Core`，实现放 **`Runtime/Host/Lua/`**；`StoryDialogueManager` 放 **`Host/Story/`**（直连业务层 `DialogPanel`，不抽跨程序集 Interface）。`LuaManager.InitAsync()` 在 **`CmgmInitState.CreateTasks()`** 的 `ManagerInitLoadTask<LuaManager>` 中执行（§6.5f）。GameFlow 与 Lua 同处 **`Host/`**，可读性优先于 asmdef 隔离。
+> **现状（2026-06-19 决策 + 2026-07，见 §7.5）：** Lua **不单独建 asmdef**（XLua 留 `Host/Lua` / `Assembly-CSharp`）；契约 `ILuaService` 在 **`CMGM.Core`**，实现在 **`Host/Lua/`**。**剧情**独立为 **`CMGM.Story`**（`Modules/Story/`）：`DialogPanel` + `StoryDialogueManager` 与 Prefab 同目录随包迁移；**Lua → `LuaBridge.Talk` → Story**，Story **不**反向依赖 Lua。加载用 **`ShowPanelAtAddress`** + `DialogPanel.AddressKey`（Address `Story/Panels/...`）。`LuaManager.InitAsync()` 在 **`CmgmInitState.CreateTasks()`** 的 `ManagerInitLoadTask<LuaManager>` 中执行（§6.5f）。
 
 **Lua 加载策略：**
 
@@ -393,12 +393,11 @@ Assets/CmgmUnityPackages/
     Editor/
     Runtime/
       Core/                         CMGM.Core（有 asmdef）
-      Modules/                      UI / Data / Loading / Audio / Input（有 asmdef）
+      Modules/                      UI / Data / Loading / Audio / Input / Story（有 asmdef）
       Host/                         无 asmdef（Assembly-CSharp）
         CmgmInitializer.cs          （#9 ✅）
         GameFlow/
         Lua/
-        Story/
   CmgmGameKits/
 
 Assets/_WorkSpace/
@@ -440,7 +439,7 @@ Assets/_WorkSpace/Scripts/
 | **Modules** | `…/Loading/` | `Loading` | 可选 | 支线「Loading系统」；`CMGM.Loading` |
 | **Host** | `…/Host/GameFlow/` | `GameFlow` | 推荐 | 支线「GameFlow系统」；`namespace CMGM.GameFlow`；**无 asmdef** |
 | **Host** | `…/Host/Lua/` | `Lua` | 可选 | **无 asmdef**；契约 `ILuaService` 入 Core（§7.5） |
-| **Host** | `…/Host/Story/` | `Story` | 可选 | Lua `Talk` 编排；**无 asmdef** |
+| **Story** | `…/Modules/Story/` | `Story` | 可选 | `CMGM.Story`：`DialogPanel` + `StoryDialogueManager`；Prefab 在 `Panels/` |
 | **Host** | `…/Host/CmgmInitializer.cs` | — | **必选** | InitScene 薄组合根（#9 ✅）；**无 asmdef** |
 | **Modules** | `…/Audio/` | `Audio` | 可选 | `CMGM.Audio`（编译边界2.7） |
 | **Modules** | `…/Input/` | `Input` | 可选 | `CMGM.Input`（编译边界2.8） |
@@ -456,7 +455,7 @@ Assets/_WorkSpace/Scripts/
 | **主线 启动编排3.4** ✅ | **`Host/CmgmInitializer.cs`**；框架态在 **`Host/GameFlow/GameFlowStates/`** | **#9 #16** ✅ |
 | **内容扩展1.5 / 项目脚手架1.6** | Editor 模块导入向导（远期） |
 
-最小 JRPG 示例：`Core` + `UI` + `Data` + `Host/Lua`（+ `Host/Story` 按需）
+最小 JRPG 示例：`Core` + `UI` + `Data` + `Story`（按需）+ `Host/Lua`
 最小 MUG 示例：`Core` + `UI` + `Audio` + `Input`
 
 ### 6.2 Editor 目录分层（Runtime 与 Editor 分离）
@@ -808,7 +807,8 @@ await SwitchToAsync(new MainMenuState());
 | Core 程序集 | `CMGM.Core` asmdef + `namespace CMGM.Core`；`Consts.Paths` 单文件；`WorkSpace` 根入 `CmgmFrameSettings`；**`LoadSceneAsync` 原语** |
 | 框架/业务分层 | `CmgmUnityPackages/` + `_WorkSpace/Scripts/`；Panel / 配表 / 存档在业务层脚本目录 |
 | UI / Data / Audio / Input / Editor | 各模块 asmdef 闭环（Editor 含 `CMGM.Editor`、`CMGM.UI.Editor`、`CMGM.Data.Editor`） |
-| Lua | `Host/Lua/` + `Host/Story/` + `ILuaService`（**无** Lua asmdef，方案 C） |
+| Lua | `Host/Lua/` + `ILuaService`（**无** Lua asmdef，方案 C） |
+| Story | `Modules/Story/` + `CMGM.Story` asmdef（Lua 经 `LuaBridge` 调用，Story 不依赖 Lua） |
 | 启动编排 | `LazySingleton` / `BootSingleton` + `InitAsync`；**#6 #7** ✅；**CreateTasks 同址**（§6.5f）；目标 **#9 Initializer** |
 | **Loading #6** ✅ | Boot Init 链从 Boot 抽出（清单现于 **`CmgmInitState.CreateTasks()`**） |
 | **#7 GameFlow 1.3a** ✅ | `SwitchToAsync` + `CmgmInitState` / `MainMenuState`；Boot 只调 GameFlow |
@@ -1079,7 +1079,7 @@ await SwitchToAsync(new MainMenuState());
 | 目录 | `Excels/`、`HotRes/`、`Scripts/_Generated/Config/` |
 | 文本 | `HotRes/Lua/main.lua.txt`、`HotRes/BuildSource/RELEASE_NOTE.txt` |
 | 场景 | `HotRes/Scenes/InitScene.unity`、`MainScene.unity` |
-| UI | `HotRes/UI/Panels/MainPanel.prefab`、`LoadingPanel.prefab`；`Scripts/UI/Panels/MainPanel.cs`、`LoadingPanel.cs` |
+| UI | `HotRes/UI/Panels/MainPanel.prefab`、`LoadingPanel.prefab`；`Scripts/UI/Panels/MainPanel.cs`、`LoadingPanel.cs`（**系统 Panel** 如剧情 `DialogPanel` 在 `Modules/Story/Panels`，不进本表） |
 | 进游戏 LoadTask | `Scripts/LoadTasks/EnterGameplayLoadTask.cs`（#16 ✅） |
 
 **项目脚手架1.8（待做 · Addressables 模板）**
@@ -1098,7 +1098,8 @@ await SwitchToAsync(new MainMenuState());
 
 | 标记路径（默认 `_WorkSpace` 下） | Address | Label | 运行时用途 |
 |-----------------------------------|---------|-------|------------|
-| `{WorkSpace}/HotRes/UI` | `Assets/_WorkSpace/HotRes/UI` | **`UI`** | `UIManager` → `LoadAssetAsync("UI/Panels/{Panel}.prefab")` → 完整键 `{HotRes}/UI/Panels/...` |
+| `{WorkSpace}/HotRes/UI` | `Assets/_WorkSpace/HotRes/UI` | **`UI`** | `UIManager.ShowPanel<T>()` → `UI/Panels/{Panel}.prefab` |
+| `CmgmFramework/Runtime/Modules/Story/Panels` | `Story/Panels`（文件夹 Address） | **`UI`** | `ShowPanelAtAddress<DialogPanel>` → `Story/Panels/DialogPanel.prefab` |
 | `{WorkSpace}/HotRes/Lua` | `Assets/_WorkSpace/HotRes/Lua` | **`Lua`** | `LuaManager` 正式包：`LoadResourceLocationsAsync("Lua", TextAsset)` |
 | `{WorkSpace}/HotRes/Scenes` | `Assets/_WorkSpace/HotRes/Scenes` | （无） | `SceneLoadTask` 预载/加载（场景名如 `InitScene`、`MainScene`） |
 | `{WorkSpace}/HotRes/LevelPrefabs` | 同路径 | （无） | 关卡 Prefab 预载（按需） |
@@ -1319,10 +1320,11 @@ await SwitchToAsync(new MainMenuState());
 | 项 | 结论 |
 |------|------|
 | **背景** | `GameFlow` / Lua 曾各自 asmdef 或挂在 `Integrations/`，导致 `LuaBootInit`、`IStoryPanel` 等仅为过编译的间接层，启动清单可读性下降。 |
-| **目录** | 新增 **`Runtime/Host/`**（无 asmdef）：`CmgmInitializer`、`GameFlow/`、`Lua/`、`Story/`；**废止** `Integrations/`；**废止** `CMGM.GameFlow` / `CMGM.Story` asmdef。 |
-| **Modules** | 仅保留**有 asmdef** 的能力模块：UI / Data / Loading / Audio / Input。 |
+| **目录** | **`Runtime/Host/`**（无 asmdef）：`CmgmInitializer`、`GameFlow/`、`Lua/`；**Story** 后迁至 **`Modules/Story/`**（见下）。**废止** `Integrations/`；**废止** 早期 `CMGM.GameFlow` asmdef。 |
+| **Modules** | 有 asmdef 的能力模块：UI / Data / Loading / Audio / Input / **Story**（`CMGM.Story`）。 |
+| **Story 竖切** | `DialogPanel` + `StoryDialogueManager` + Prefab 同包；**Lua → `LuaBridge` → Story**，Story **不**依赖 Lua / XLua。 |
 | **协作规则** | 详见 `.cursor/rules/asmdef-policy.mdc`：可读性优先、按需建 asmdef。 |
-| **路径常量** | `Consts.Paths.Framework.Host`、`HostGameFlow`、`HostLua`、`HostStory`（`Integrations` 已删）。 |
+| **路径常量** | `Consts.Paths.Framework.Host`、`HostGameFlow`、`HostLua`、`StoryModule`（`Integrations` 已删）。 |
 
 **设计决策记录 · 2026-06-19（编译边界2.7 Audio 解耦）**
 
@@ -1348,9 +1350,9 @@ await SwitchToAsync(new MainMenuState());
 | 项 | 结论 |
 |------|------|
 | **顶层** | `CmgmFramework/{Resources,Editor,Runtime}`；**不用**顶层 `Scripts` |
-| **Runtime** | **`Host/`**（`CmgmInitializer`、`GameFlow/`、`Lua/`、`Story/`）、`Core/`、`Modules/`（UI / Data / Loading / Audio / Input，有 asmdef） |
+| **Runtime** | **`Host/`**（`CmgmInitializer`、`GameFlow/`、`Lua/`）、`Core/`、`Modules/`（UI / Data / Loading / Audio / Input / **Story**，有 asmdef） |
 | **模块 Editor** | 仍在 `Runtime/Modules/*/Editor/`（asmdef 限定 Editor 平台） |
-| **路径常量** | `Paths.Framework.Host`、`HostGameFlow`、`HostLua`、`HostStory` 等；**无** `Integrations` / `Bootstrap` 路径项（#16 ✅） |
+| **路径常量** | `Paths.Framework.Host`、`HostGameFlow`、`HostLua`、`StoryModule` 等；**无** `Integrations` / `Bootstrap` 路径项（#16 ✅） |
 
 > **说明：** 脚手架 **入门引导 ✅** 后本线最前节点为 **1.8（Addressables 模板）**。
 
@@ -1537,13 +1539,13 @@ GameRuntimeData（I_Saveable）
 ### UI 管线
 
 ```
-ShowPanel<T>() → Addressables 加载 HotRes/UI/Panels/{T}.prefab
-  → 完整 Address：{HotRes}/UI/Panels/{T}.prefab（如 Assets/_WorkSpace/HotRes/UI/Panels/MainPanel.prefab）
+ShowPanel<T>() → Addressables 加载 UI/Panels/{T}.prefab（业务层 HotRes/UI）
+ShowPanelAtAddress<T>(addressKey) → 系统 Panel（如 Story/Panels/DialogPanel.prefab，Prefab 与脚本同目录随包）
   → 挂到对应 E_UILayer 层 Canvas
 ```
 
-- **Addressables 组/标签：** 须将 **`HotRes/UI` 文件夹** Mark 为 Addressable，Label **`UI`**（详见 **项目脚手架1.8**）；**项目初始化当前不会自动创建**。
-- **主界面 / 主场景 ✅**：`CmgmFrameSettings.MAIN_PANEL_NAME`、`MAIN_SCENE_NAME`；由 **`MainMenuState.EnterAsync`** 执行。游戏内其他 Panel 仍优先 `ShowPanel<T>()`。
+- **Addressables 组/标签：** 业务 Panel 须 Mark **`HotRes/UI`**，Label **`UI`**；**系统 Panel**（如剧情）Mark **`Modules/Story/Panels`** → Address `Story/Panels`，Label 可与 UI 共用 **`UI`**（详见 **项目脚手架1.8**）。
+- **主界面 / 主场景 ✅**：`CmgmFrameSettings.MAIN_PANEL_NAME`、`MAIN_SCENE_NAME`；由 **`MainMenuState.EnterAsync`** 执行。业务 Panel 用 `ShowPanel<T>()`；**整系统迁移**的 Panel 与 Prefab 放 Host 模块目录 + `ShowPanelAtAddress`。
 - **D（AssetAddresses）**：Settings 字符串已够用；Address 键集中管理留待后续按需做。
 
 ### 资源加载分层（Initializer / Profile）

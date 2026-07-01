@@ -155,8 +155,10 @@ public sealed class Edt_GettingStartedWindow : EditorWindow
         EditorGUILayout.HelpBox(
             "Window → Asset Management → Addressables → Groups，确认含下列文件夹条目（Address = 文件夹路径）：",
             MessageType.None);
-        EditorGUILayout.LabelField("· HotRes/UI  →  Label: UI", EditorStyles.miniLabel);
-        EditorGUILayout.LabelField("    ShowPanel → UI/Panels/{Panel}.prefab", EditorStyles.centeredGreyMiniLabel);
+        EditorGUILayout.LabelField("· HotRes/UI  →  Label: UI（业务 Panel · MainPanel 等）", EditorStyles.miniLabel);
+        EditorGUILayout.LabelField("    ShowPanel<T>() → UI/Panels/{Panel}.prefab", EditorStyles.centeredGreyMiniLabel);
+        EditorGUILayout.LabelField("· Modules/Story/Panels  →  Label: UI（剧情 DialogPanel 等）", EditorStyles.miniLabel);
+        EditorGUILayout.LabelField("    ShowPanelAtAddress → Story/Panels/DialogPanel.prefab", EditorStyles.centeredGreyMiniLabel);
         EditorGUILayout.LabelField("· HotRes/Lua  →  Label: Lua", EditorStyles.miniLabel);
         EditorGUILayout.LabelField("    正式包 Lua 预载", EditorStyles.centeredGreyMiniLabel);
         EditorGUILayout.LabelField("· HotRes/Scenes  →  无 Label", EditorStyles.miniLabel);

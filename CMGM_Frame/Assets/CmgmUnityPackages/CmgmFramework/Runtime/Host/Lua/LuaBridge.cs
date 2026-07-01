@@ -1,9 +1,9 @@
 ﻿using System;
 using CMGM.Core;
+using CMGM.Story;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using XLua;
-
 
 [LuaCallCSharp]
 public class LuaBridge
@@ -25,10 +25,9 @@ public class LuaBridge
     /// <param name="content">文本内容</param>
     public static void Talk(int roleId, int imgId, string content, Action callback)
     {
-        // 编排见 StoryDialogueManager；展示见业务层 DialogPanel.PrintContent
+        // Lua → Host/LuaBridge → CMGM.Story.StoryDialogueManager（Story 不反向依赖 Lua）
         StoryDialogueManager.Talk(roleId, imgId, content, callback);
-    }
-    /// <summary>
+    }    /// <summary>
     /// 对话命令（默认立绘）
     /// </summary>
     /// <param name="roleId">说话角色ID</param>
@@ -49,7 +48,6 @@ public class LuaBridge
     {
         UniTask.WaitForSeconds(sec).ContinueWith(callback).Forget();
     }
-
 
     #endregion
 }

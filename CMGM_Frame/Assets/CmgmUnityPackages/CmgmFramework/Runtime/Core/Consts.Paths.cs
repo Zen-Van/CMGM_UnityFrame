@@ -69,13 +69,19 @@ namespace CMGM.Core
                 public static string Runtime => Root + "/Runtime";
                 public static string Core => Runtime + "/Core";
                 public static string Modules => Runtime + "/Modules";
-                /// <summary>无 asmdef：组合根、GameFlow、Lua、Story 等（Assembly-CSharp）</summary>
+                /// <summary>无 asmdef：组合根、GameFlow、Lua 等（Assembly-CSharp）；Story 已迁至 Modules/Story</summary>
                 public static string Host => Runtime + "/Host";
                 public static string HostGameFlow => Host + "/GameFlow";
                 public static string HostLua => Host + "/Lua";
-                public static string HostStory => Host + "/Story";
                 /// <summary>框架级 Editor（路径检查、通用模板等，编译边界2.9）</summary>
                 public static string Editor => Root + "/Editor";
+
+                /// <summary>Runtime/Modules/Story/ 剧情模块（DialogPanel + StoryDialogueManager）</summary>
+                public static class StoryModule
+                {
+                    public static string Root => Modules + "/Story";
+                    public static string Panels => Root + "/Panels";
+                }
 
                 /// <summary>框架内置 Resources（Settings、UI 基建、Logo、字体；Resources.Load）</summary>
                 public static string Resources => Root + "/Resources";

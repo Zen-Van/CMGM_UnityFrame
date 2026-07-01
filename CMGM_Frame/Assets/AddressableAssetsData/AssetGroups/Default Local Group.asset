@@ -42,11 +42,6 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: aac7246b9f2844bf88fb4d9ad89964de
-    m_Address: Assets/_TestSpace/Scenes
-    m_ReadOnly: 0
-    m_SerializedLabels: []
-    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: e798c53c71f95404cb242f3db5068120
     m_Address: Assets/_WorkSpace/HotRes/BuildSource
     m_ReadOnly: 0

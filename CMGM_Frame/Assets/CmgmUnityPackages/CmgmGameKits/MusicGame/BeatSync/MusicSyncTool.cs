@@ -167,7 +167,7 @@ public static class MusicSyncTool
 
         curBgmPlayingId = WwiseAudioManager.Instance.PlayWwiseEventWithCallback(
             eventName, WwiseAudioManager.Instance.gameObject,
-            AkCallbackType.AK_EnableGetMusicPlayPosition | AkCallbackType.AK_EnableGetSourcePlayPosition | AkCallbackType.AK_MusicSyncAll,
+            AkCallbackType.AK_EnableGetMusicPlayPosition | AkCallbackType.AK_MusicSyncAll,
             callbackFunc == null ? MusicEventDefaultCallbackFunc : callbackFunc);
 
         if (beatMapName != null)

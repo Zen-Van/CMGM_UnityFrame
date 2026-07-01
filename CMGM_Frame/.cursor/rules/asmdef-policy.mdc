@@ -27,7 +27,6 @@ alwaysApply: true
 | `Host/CmgmInitializer.cs` | 组合根，需 new 各 State |
 | `Host/GameFlow/` | 宏观流程 + `CreateTasks()`；`ManagerInitLoadTask<LuaManager>` 直写 |
 | `Host/Lua/` | XLua 约束；与 GameFlow 同程序集 |
-| `Host/Story/` | Lua Talk 编排；直连 `DialogPanel` |
 | `_WorkSpace/Scripts/` | 业务层 |
 
 ### 保留 asmdef
@@ -36,6 +35,7 @@ alwaysApply: true
 |--------|------|
 | `CMGM.Core` | 契约 + BootSingleton + 路径常量；全员引用 |
 | `CMGM.UI` / `CMGM.Data` / `CMGM.Loading` | API 稳定；经公开 Manager 调用 |
+| `CMGM.Story` | 剧情竖切；`LuaBridge`（Host）单向调用，Story 不依赖 Lua |
 | `CMGM.Audio` / `CMGM.Input` | Wwise / InputSystem 隔离 |
 | `CMGM.*.Editor` | Editor-only |
 

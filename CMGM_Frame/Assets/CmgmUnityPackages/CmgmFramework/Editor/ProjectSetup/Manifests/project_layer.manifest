@@ -3,6 +3,7 @@
 # 每行一条 Assets 路径；有扩展名视为文件（从 ProjectSetup/Seeds 复制），否则视为目录
 # 种子文件在 Seeds 中多为 *.txt 后缀（如 *.cs.txt、*.md.txt）；已存在的路径不会覆盖
 # Assets/_WorkSpace 会替换为 CmgmFrameSettings.WORK_SPACE_ROOT
+# DialogPanel 预制体随 Modules/Story/Panels（CmgmUnityPackages），不进 project_layer
 
 Assets/_TestSpace
 Assets/_TestSpace/_TestSpace文件夹说明.txt
@@ -18,7 +19,6 @@ Assets/_WorkSpace/HotRes/Scenes/InitScene.unity
 Assets/_WorkSpace/HotRes/Scenes/MainScene.unity
 Assets/_WorkSpace/HotRes/UI/Panels/MainPanel.prefab
 Assets/_WorkSpace/HotRes/UI/Panels/LoadingPanel.prefab
-Assets/_WorkSpace/HotRes/UI/Panels/DialogPanel.prefab
 Assets/_WorkSpace/Scripts/LoadTasks/EnterGameplayLoadTask.cs
 Assets/_WorkSpace/Scripts/GameFlowState/README.txt
 Assets/_WorkSpace/Scripts/GameFlowState/GameplayState.cs
@@ -29,5 +29,4 @@ Assets/_WorkSpace/Scripts/Archive
 Assets/_WorkSpace/Scripts/Archive/GameRuntimeData.cs
 Assets/_WorkSpace/Scripts/UI/Panels/MainPanel.cs
 Assets/_WorkSpace/Scripts/UI/Panels/LoadingPanel.cs
-Assets/_WorkSpace/Scripts/UI/Panels/DialogPanel.cs
 Assets/_WorkSpace/HotRes/Lua/Story/demo_intro.lua.txt

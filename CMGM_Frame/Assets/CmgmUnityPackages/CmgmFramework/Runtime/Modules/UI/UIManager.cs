@@ -181,15 +181,20 @@ public class UIManager : BootSingleton<UIManager>
 
     private Dictionary<string, PanelWrapperBase> panelDic = new Dictionary<string, PanelWrapperBase>();
 
+    /// <summary>业务层 Panel 默认 Addressables 键：<c>UI/Panels/{panelName}.prefab</c>（HotRes/UI）。</summary>
+    public static string WorkSpacePanelAddress(string panelName) => $"UI/Panels/{panelName}.prefab";
 
     /// <summary>
-    /// 通过类型显示面板
+    /// 通过类型显示面板（默认从 <see cref="WorkSpacePanelAddress"/> 加载）。
     /// </summary>
-    /// <typeparam name="T">面板类型（与面板名相同）</typeparam>
-    /// <param name="layer">显示层级</param>
-    /// <param name="OnProgressChanged">面板加载进度回调，默认为空</param>
-    /// <returns></returns>
     public async UniTask<T> ShowPanel<T>(E_UILayer layer = E_UILayer.Middle) where T : BasePanel
+        => await ShowPanelAtAddress<T>(WorkSpacePanelAddress(typeof(T).Name), layer);
+
+    /// <summary>
+    /// 通过类型显示面板，指定 Addressables 键（系统 Panel 可放在 Modules/Story/Panels 等目录）。
+    /// </summary>
+    /// <param name="addressKey">Addressables Address，如 <c>Story/Panels/DialogPanel.prefab</c></param>
+    public async UniTask<T> ShowPanelAtAddress<T>(string addressKey, E_UILayer layer = E_UILayer.Middle) where T : BasePanel
     {
         string panelName = typeof(T).Name;
         PanelWrapper<T> panelInfo;
@@ -218,7 +223,7 @@ public class UIManager : BootSingleton<UIManager>
         panelInfo = new PanelWrapper<T>(null, true, layer);   //初始化一个面板为空的加载信息
         panelDic.Add(panelName, panelInfo);     //占位置
         //赋值且启动伪线程
-        panelInfo.loadTask = AddressablesResMgr.Instance.LoadAssetAsync<GameObject>($"UI/Panels/{panelName}.prefab");
+        panelInfo.loadTask = AddressablesResMgr.Instance.LoadAssetAsync<GameObject>(addressKey);
         GameObject panelObj = null;
         try
         {
@@ -288,7 +293,7 @@ public class UIManager : BootSingleton<UIManager>
         panelInfo = new PanelWrapper<BasePanel>(null, true, layer);   //初始化一个面板为空的加载信息
         panelDic.Add(panelName, panelInfo);     //占位置
         //赋值且启动伪线程
-        panelInfo.loadTask = AddressablesResMgr.Instance.LoadAssetAsync<GameObject>($"UI/Panels/{panelName}.prefab");
+        panelInfo.loadTask = AddressablesResMgr.Instance.LoadAssetAsync<GameObject>(WorkSpacePanelAddress(panelName));
         GameObject panelObj = null;
         try
         {
